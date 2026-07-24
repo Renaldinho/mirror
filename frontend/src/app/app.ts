@@ -8,10 +8,12 @@ import { DashboardService } from './dashboard/dashboard.service';
 import { AmbienceService } from './dashboard/ambience.service';
 import { ThemePicker } from './dashboard/theme-picker';
 import { RetroCursor } from './dashboard/retro-cursor';
+import { GamesLauncher } from './minigames/games-launcher';
+import { GameOverlay } from './minigames/game-overlay';
 
 @Component({
   selector: 'app-root',
-  imports: [Background, LightingControl, WidgetGrid, WidgetFrame, PetRenderer, ThemePicker, RetroCursor],
+  imports: [Background, LightingControl, WidgetGrid, WidgetFrame, PetRenderer, ThemePicker, RetroCursor, GamesLauncher, GameOverlay],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './app.html',
   styleUrl: './app.css',

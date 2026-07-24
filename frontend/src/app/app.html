@@ -5,6 +5,7 @@
   <app-widget-grid />
   <app-theme-picker />
   <app-lighting-control />
+  <app-games-launcher />
 
   <!-- desktop pet -->
   <app-pet />
@@ -12,6 +13,8 @@
   @for (w of dash.widgets(); track w.type) {
     <app-widget-frame [widget]="w" />
   }
+
+  <app-game-overlay />
 
   <app-retro-cursor />
 </main>
