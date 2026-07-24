@@ -6,10 +6,17 @@ export interface GameMeta {
   id: GameId;
   label: string;
   glyph: string;
+  thumbnail?: string;
   description: string;
 }
 
 export const GAMES: GameMeta[] = [
-  { id: 'duck-hunt', label: 'Duck Hunt', glyph: '🦆', description: 'Shoot the ducks before they flee.' },
+  {
+    id: 'duck-hunt',
+    label: 'Duck Hunt',
+    glyph: '🦆',
+    thumbnail: '/games/duck-hunt/thumbnail.webp',
+    description: 'Shoot the ducks before they flee.',
+  },
   { id: 'whack', label: 'Whack-a-Mole', glyph: '🔨', description: 'Bonk the moles as they pop.' },
 ];

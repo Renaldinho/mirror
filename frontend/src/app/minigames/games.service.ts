@@ -11,6 +11,7 @@ const MUTED_KEY = 'dash.games.muted';
 @Injectable({ providedIn: 'root' })
 export class GamesService {
   readonly activeGame = signal<GameId | null>(null);
+  readonly gameCursorSuppressed = signal(false);
   readonly muted = signal(this.loadMuted());
   readonly playing = computed(() => this.activeGame() !== null);
 
@@ -22,10 +23,12 @@ export class GamesService {
   }
 
   open(id: GameId): void {
+    this.gameCursorSuppressed.set(false);
     this.activeGame.set(id);
   }
 
   close(): void {
+    this.gameCursorSuppressed.set(false);
     this.activeGame.set(null);
   }
 

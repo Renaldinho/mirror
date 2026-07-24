@@ -10,6 +10,7 @@ import {
   inject,
   viewChild,
 } from '@angular/core';
+import { GamesService } from '../minigames/games.service';
 import { CursorFxMode, SettingsService } from './settings.service';
 
 type SparkKind = 'orb' | 'diamond' | 'bubble' | 'glyph' | 'flame';
@@ -246,6 +247,7 @@ interface Spark {
 })
 export class RetroCursor implements AfterViewInit {
   readonly settings = inject(SettingsService);
+  private readonly games = inject(GamesService);
   private readonly document = inject(DOCUMENT);
   private readonly zone = inject(NgZone);
   private readonly destroyRef = inject(DestroyRef);
@@ -274,6 +276,7 @@ export class RetroCursor implements AfterViewInit {
   constructor() {
     effect(() => {
       this.settings.cursorFx();
+      this.games.gameCursorSuppressed();
       if (this.viewReady) this.refresh();
     });
   }
@@ -304,6 +307,7 @@ export class RetroCursor implements AfterViewInit {
 
     const shouldRun =
       this.settings.cursorFx() &&
+      !this.games.gameCursorSuppressed() &&
       (this.finePointer?.matches ?? false) &&
       !(this.reducedMotion?.matches ?? false);
 
