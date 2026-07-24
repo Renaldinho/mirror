@@ -43,7 +43,6 @@ interface Spark {
         <span class="reticle"></span>
         <span class="laser-core"></span>
         <span class="satellite one"></span>
-        <span class="satellite two"></span>
         <span class="mode-icon"></span>
       </div>
     </div>
@@ -71,7 +70,6 @@ interface Spark {
         height: 34px;
         opacity: 0;
         pointer-events: none;
-        will-change: transform;
       }
       .retro-pointer.visible {
         opacity: 1;
@@ -79,7 +77,6 @@ interface Spark {
       .pointer-shape {
         position: absolute;
         inset: 0;
-        transition: transform 90ms ease;
       }
       .retro-pointer.pressed .pointer-shape {
         transform: scale(.72) rotate(45deg);
@@ -141,14 +138,6 @@ interface Spark {
         right: 0;
         top: 3px;
         animation: satellite-pulse 850ms ease-in-out infinite alternate;
-      }
-      .satellite.two {
-        bottom: 1px;
-        left: 4px;
-        width: 3px;
-        height: 3px;
-        background: #ff68d8;
-        animation: satellite-pulse 680ms 180ms ease-in-out infinite alternate-reverse;
       }
       .mode-icon {
         display: none;
