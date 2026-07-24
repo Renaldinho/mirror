@@ -1,26 +1,16 @@
 import { Injectable, computed, effect, signal } from '@angular/core';
+import { PET_CATALOG, PetInfo } from './pets';
 
-export interface PetKind {
-  id: string;
-  emoji: string;
-  label: string;
-}
+export type PetKind = PetInfo;
 
-/** The critters she can choose from. Emoji-based so it works with no assets. */
-export const PETS: PetKind[] = [
-  { id: 'cat', emoji: '🐈', label: 'Cat' },
-  { id: 'puppy', emoji: '🐕', label: 'Puppy' },
-  { id: 'spider', emoji: '🕷️', label: 'Spider' },
-  { id: 'moth', emoji: '🦋', label: 'Moth' },
-  { id: 'frog', emoji: '🐸', label: 'Frog' },
-  { id: 'snail', emoji: '🐌', label: 'Snail' },
-];
+/** The critters she can choose from (shared with the pet factory). */
+export const PETS = PET_CATALOG;
 
 /** Which desktop pet is roaming (empty = none). Persisted. */
 @Injectable({ providedIn: 'root' })
 export class PetService {
   readonly petId = signal(localStorage.getItem('dash.pet') ?? '');
-  readonly kind = computed<PetKind | null>(() => PETS.find((p) => p.id === this.petId()) ?? null);
+  readonly kind = computed<PetInfo | null>(() => PETS.find((p) => p.id === this.petId()) ?? null);
 
   constructor() {
     effect(() => localStorage.setItem('dash.pet', this.petId()));
