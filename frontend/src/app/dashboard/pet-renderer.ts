@@ -10,6 +10,7 @@ import {
 } from '@angular/core';
 import { PetService } from './pet.service';
 import { createPet, Pet } from './pets';
+import { PET_SIZE } from './pets/pet-state';
 import { PetContext } from './pets/pet-types';
 
 /**
@@ -23,9 +24,8 @@ import { PetContext } from './pets/pet-types';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div #root class="pet-root">
-      <span #thread class="thread"></span>
       <span #bubble class="bubble"></span>
-      <span #emoji class="emoji" (click)="poke()"></span>
+      <span #visual class="visual" (click)="poke()"></span>
     </div>
   `,
   styles: [
@@ -38,27 +38,20 @@ import { PetContext } from './pets/pet-types';
         will-change: transform;
         pointer-events: none;
       }
-      .emoji {
+      .visual {
         position: absolute;
         left: 0;
         top: 0;
-        font-size: 38px;
-        line-height: 1;
+        width: 44px;
+        height: 44px;
+        background-repeat: no-repeat;
+        image-rendering: pixelated;
         user-select: none;
         cursor: pointer;
         pointer-events: auto;
         display: inline-block;
-        transform-origin: 50% 90%;
+        transform-origin: 50% 100%;
         filter: drop-shadow(0 3px 4px rgba(0, 0, 0, 0.5));
-      }
-      .thread {
-        position: absolute;
-        left: 18px;
-        top: 6px;
-        width: 1px;
-        height: 0;
-        background: rgba(230, 224, 205, 0.5);
-        transform: translateY(-100%);
       }
       .bubble {
         position: absolute;
@@ -76,15 +69,15 @@ export class PetRenderer implements AfterViewInit {
   private readonly destroyRef = inject(DestroyRef);
 
   private readonly rootRef = viewChild.required<ElementRef<HTMLElement>>('root');
-  private readonly emojiRef = viewChild.required<ElementRef<HTMLElement>>('emoji');
-  private readonly threadRef = viewChild.required<ElementRef<HTMLElement>>('thread');
+  private readonly visualRef = viewChild.required<ElementRef<HTMLElement>>('visual');
   private readonly bubbleRef = viewChild.required<ElementRef<HTMLElement>>('bubble');
 
   private pet: Pet | null = null;
   private raf = 0;
   private prev = 0;
   private readonly pointer = { x: 0, y: 0, last: -1e9 };
-  private lastEmoji = '';
+  private lastSprite = '';
+  private lastSpriteClass = '';
   private lastBubble = '';
 
   constructor() {
@@ -149,14 +142,26 @@ export class PetRenderer implements AfterViewInit {
 
     root.style.transform = `translate(${v.x}px, ${v.y}px)`;
 
-    const em = this.emojiRef().nativeElement;
+    const em = this.visualRef().nativeElement;
     em.style.transform = v.innerTransform;
-    if (v.emoji !== this.lastEmoji) {
-      em.textContent = v.emoji;
-      this.lastEmoji = v.emoji;
-    }
+    em.style.width = `${v.visualWidth}px`;
+    em.style.height = `${v.visualHeight}px`;
+    em.style.top = `${PET_SIZE - v.visualHeight}px`;
 
-    this.threadRef().nativeElement.style.height = `${v.thread ?? 0}px`;
+    const { sheet, row, column } = v.sprite;
+    const spriteKey = `${sheet.cssClass}:${row}:${column}`;
+    if (sheet.cssClass !== this.lastSpriteClass) {
+      if (this.lastSpriteClass) em.classList.remove(this.lastSpriteClass);
+      em.classList.add(sheet.cssClass);
+      this.lastSpriteClass = sheet.cssClass;
+    }
+    if (spriteKey !== this.lastSprite) {
+      em.style.backgroundSize =
+        `${sheet.columns * sheet.displayWidth}px ${sheet.rows * sheet.displayHeight}px`;
+      em.style.backgroundPosition =
+        `${-column * sheet.displayWidth}px ${-row * sheet.displayHeight}px`;
+      this.lastSprite = spriteKey;
+    }
 
     const bubbleText = v.bubble ?? '';
     if (bubbleText !== this.lastBubble) {
@@ -165,5 +170,8 @@ export class PetRenderer implements AfterViewInit {
       bu.style.opacity = bubbleText ? '1' : '0';
       this.lastBubble = bubbleText;
     }
+    const bubble = this.bubbleRef().nativeElement;
+    bubble.style.left = `${Math.max(30, v.visualWidth * 0.7)}px`;
+    bubble.style.top = `${PET_SIZE - v.visualHeight - 18}px`;
   }
 }

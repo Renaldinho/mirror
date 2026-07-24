@@ -40,6 +40,26 @@ body {
   font-family: var(--font-serif);
 }
 
+/*
+ * Sprite URLs live in compiled CSS so Angular fingerprints and serves them in
+ * both dev and production. Runtime code only chooses a class and sheet cell.
+ */
+.pet-sprite-capy {
+  background-image: url('./app/dashboard/pets/capy/capy.webp');
+}
+
+.pet-sprite-collie {
+  background-image: url('./app/dashboard/pets/collie/collie.webp');
+}
+
+.pet-sprite-frog {
+  background-image: url('./app/dashboard/pets/frog/frog.webp');
+}
+
+.pet-sprite-shadow-cat {
+  background-image: url('./app/dashboard/pets/shadow-cat/shadow-cat.webp');
+}
+
 /* Slim, in-theme scrollbars for widget bodies. */
 * {
   scrollbar-width: thin;

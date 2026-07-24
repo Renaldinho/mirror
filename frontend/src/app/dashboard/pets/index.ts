@@ -1,37 +1,60 @@
-import { CatPet } from './cat';
+import { CapyPet } from './capy';
+import { ColliePet } from './collie';
 import { FrogPet } from './frog';
-import { MothPet } from './moth';
 import { Pet } from './pet';
-import { PuppyPet } from './puppy';
-import { SnailPet } from './snail';
-import { SpiderPet } from './spider';
+import {
+  CAPY_SPRITE,
+  COLLIE_SPRITE,
+  FROG_SPRITE,
+  SHADOW_CAT_SPRITE,
+} from './pet-sprites';
+import { PetSpriteSheet } from './pet-types';
+import { ShadowCatPet } from './shadow-cat';
 
-/** Picker metadata (id + display emoji + label). */
+/** Picker metadata shared with the selection service. */
 export interface PetInfo {
   id: string;
-  emoji: string;
   label: string;
+  description: string;
+  sprite: PetSpriteSheet;
 }
 
 const REGISTRY: Record<string, () => Pet> = {
-  cat: () => new CatPet(),
-  puppy: () => new PuppyPet(),
-  spider: () => new SpiderPet(),
-  moth: () => new MothPet(),
+  capy: () => new CapyPet(),
+  lando: () => new ColliePet(),
   frog: () => new FrogPet(),
-  snail: () => new SnailPet(),
+  'shadow-kit': () => new ShadowCatPet(),
 };
 
+/** Only companions backed by a supplied pet folder belong in this catalog. */
 export const PET_CATALOG: PetInfo[] = [
-  { id: 'cat', emoji: '🐈', label: 'Cat' },
-  { id: 'puppy', emoji: '🐕', label: 'Puppy' },
-  { id: 'spider', emoji: '🕷️', label: 'Spider' },
-  { id: 'moth', emoji: '🦋', label: 'Moth' },
-  { id: 'frog', emoji: '🐸', label: 'Frog' },
-  { id: 'snail', emoji: '🐌', label: 'Snail' },
+  {
+    id: 'capy',
+    label: 'Capy',
+    description: 'An emotionally stable capybara with a tiny orange.',
+    sprite: CAPY_SPRITE,
+  },
+  {
+    id: 'lando',
+    label: 'Lando',
+    description: 'A friendly black-and-white border collie.',
+    sprite: COLLIE_SPRITE,
+  },
+  {
+    id: 'frog',
+    label: 'Frog',
+    description: 'A cheerful frog companion perched on lily pads.',
+    sprite: FROG_SPRITE,
+  },
+  {
+    id: 'shadow-kit',
+    label: 'Shadow Kit',
+    description: 'A black kitten with amber eyes and a purple collar.',
+    sprite: SHADOW_CAT_SPRITE,
+  },
 ];
 
-/** Instantiate a fresh pet for the given id (null if unknown/none). */
+/** Instantiate a fresh pet for the given folder-backed id. */
 export function createPet(id: string): Pet | null {
   return REGISTRY[id]?.() ?? null;
 }

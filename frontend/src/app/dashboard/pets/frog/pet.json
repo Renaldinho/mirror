@@ -1,0 +1,6 @@
+{
+  "id": "frog",
+  "displayName": "Frog",
+  "description": "A cheerful pixel frog companion perched on lily pads.",
+  "spritesheetPath": "frog.webp"
+}

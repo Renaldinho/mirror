@@ -23,6 +23,39 @@ export interface Personality {
   restfulness: number;
 }
 
+/** One animation strip inside a fixed-grid sprite sheet. */
+export interface PetSpriteAnimation {
+  /** Zero-based sheet row. */
+  row: number;
+  /** Number of populated frames in the row. */
+  frames: number;
+  fps: number;
+  /** Optional row containing the same animation facing left. */
+  reverseRow?: number;
+  /** Defaults to true. */
+  loop?: boolean;
+}
+
+/** Layout and state mapping for a pet's sprite sheet. */
+export interface PetSpriteSheet {
+  cssClass: string;
+  columns: number;
+  rows: number;
+  frameWidth: number;
+  frameHeight: number;
+  displayWidth: number;
+  displayHeight: number;
+  animations: Readonly<Record<string, PetSpriteAnimation>>;
+  reactions: readonly PetSpriteAnimation[];
+}
+
+/** The exact sheet cell selected for this render frame. */
+export interface PetSpriteFrame {
+  sheet: PetSpriteSheet;
+  row: number;
+  column: number;
+}
+
 /** A single procedural animation frame produced by a state each tick. */
 export interface PetPose {
   /** vertical offset for the sprite (bob / hop / arc). */
@@ -30,20 +63,17 @@ export interface PetPose {
   rotate?: number;
   scaleX?: number;
   scaleY?: number;
-  /** override the pet's emoji for this frame. */
-  emoji?: string;
-  /** little status glyph above the pet (💤, ❤, ❗). */
+  /** Little status glyph above the pet (💤, ❤, ❗). */
   bubble?: string;
-  /** spider-thread length in px, rendered above the sprite. */
-  thread?: number;
 }
 
 /** What the renderer paints for the current tick. */
 export interface PetView {
   x: number;
   y: number;
-  emoji: string;
+  sprite: PetSpriteFrame;
+  visualWidth: number;
+  visualHeight: number;
   innerTransform: string;
   bubble: string | null;
-  thread: number | null;
 }

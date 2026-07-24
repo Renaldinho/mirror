@@ -15,6 +15,10 @@ export abstract class PetState {
   protected elapsed = 0;
   protected duration = 0;
 
+  get animationTime(): number {
+    return this.elapsed;
+  }
+
   enter(pet: Pet, ctx: PetContext): void {}
   exit(pet: Pet): void {}
 
@@ -42,6 +46,21 @@ export class RestState extends PetState {
   }
 }
 
+/** A short ambient expression using the sheet's secondary idle row. */
+export class CuriousState extends PetState {
+  readonly name = 'curious';
+  override enter(): void {
+    this.duration = 1.5;
+  }
+  protected tick(pet: Pet, ctx: PetContext): PetState | null {
+    pet.y = pet.homeY(ctx);
+    return this.elapsed > this.duration ? pet.newRest() : null;
+  }
+  pose(): PetPose {
+    return {};
+  }
+}
+
 /** Walk back and forth along the home line with a bobbing gait. */
 export class WalkState extends PetState {
   readonly name = 'walk';
@@ -52,7 +71,7 @@ export class WalkState extends PetState {
   protected tick(pet: Pet, ctx: PetContext): PetState | null {
     pet.x += pet.facing * pet.personality.speed * ctx.dt;
     if (pet.x < 0) { pet.x = 0; pet.facing = 1; }
-    if (pet.x > ctx.width - PET_SIZE) { pet.x = ctx.width - PET_SIZE; pet.facing = -1; }
+    if (pet.x > ctx.width - pet.width) { pet.x = ctx.width - pet.width; pet.facing = -1; }
     pet.y = pet.homeY(ctx);
     return this.elapsed > this.duration ? pet.newRest() : null;
   }
@@ -86,7 +105,7 @@ export class PlayState extends PetState {
     this.duration = 3 + Math.random() * 2;
   }
   protected tick(pet: Pet, ctx: PetContext): PetState | null {
-    const target = ctx.pointer.x - PET_SIZE / 2;
+    const target = ctx.pointer.x - pet.width / 2;
     const dx = target - pet.x;
     pet.facing = dx >= 0 ? 1 : -1;
     pet.x += Math.sign(dx) * Math.min(Math.abs(dx), pet.personality.speed * 1.8 * ctx.dt);

@@ -1,5 +1,6 @@
 import { Pet } from './pet';
-import { PET_SIZE, PetState } from './pet-state';
+import { FROG_SPRITE } from './pet-sprites';
+import { PetState } from './pet-state';
 import { Personality, PetContext, PetPose } from './pet-types';
 
 /** A run of arcing hops with squash-and-stretch, then a rest. */
@@ -20,7 +21,7 @@ class HopState extends PetState {
     if (inCycle < this.air) {
       pet.x += pet.facing * pet.personality.speed * 2.6 * ctx.dt;
       if (pet.x < 0) { pet.x = 0; pet.facing = 1; }
-      if (pet.x > ctx.width - PET_SIZE) { pet.x = ctx.width - PET_SIZE; pet.facing = -1; }
+      if (pet.x > ctx.width - pet.width) { pet.x = ctx.width - pet.width; pet.facing = -1; }
     }
     return null;
   }
@@ -40,8 +41,7 @@ export class FrogPet extends Pet {
   readonly id = 'frog';
   readonly name = 'Frog';
   readonly personality: Personality = { speed: 22, sleepiness: 0.2, playfulness: 0.1, restfulness: 0.6 };
-  protected readonly emojiByState: Record<string, string> = {};
-  protected readonly defaultEmoji = '🐸';
+  protected override readonly spriteSheet = FROG_SPRITE;
 
   override newWalk(): PetState {
     return new HopState();
