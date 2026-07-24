@@ -1,15 +1,20 @@
+import { ArtKey } from './specimen-art';
+
 /** The widget kinds available on the board. Add a new kind here + a component
  *  branch in widget-frame.ts to extend the dashboard. */
 export type WidgetType = 'weather' | 'clock' | 'quote' | 'notes' | 'spotify';
 
 export interface WidgetMeta {
   type: WidgetType;
+  /** Common name shown on the herbarium label. */
   label: string;
-  /** Small glyph in the sidebar/title. */
+  /** Latin binomial (flavour) under the label. */
+  latin: string;
+  /** Small glyph in the picker. */
   icon: string;
-  /** Large faint botanical watermark drawn in the card — gives each widget its own identity. */
-  motif: string;
-  /** Per-widget accent color (borders, ornaments, title) so widgets are distinguishable. */
+  /** Botanical illustration for this plate. */
+  art: ArtKey;
+  /** Per-widget accent color so plates are distinguishable. */
   accent: string;
   /** Default frame size in px when first placed. */
   width: number;
@@ -17,11 +22,11 @@ export interface WidgetMeta {
 }
 
 export const WIDGETS: WidgetMeta[] = [
-  { type: 'clock', label: 'Hours', icon: '⏳', motif: '⚘', accent: '#b8975a', width: 260, height: 180 },
-  { type: 'weather', label: 'Weather', icon: '☁', motif: '❀', accent: '#7d97a3', width: 300, height: 230 },
-  { type: 'quote', label: 'Aphorism', icon: '❝', motif: '❦', accent: '#b05a44', width: 330, height: 210 },
-  { type: 'notes', label: 'Marginalia', icon: '✒', motif: '❧', accent: '#8a9a5b', width: 300, height: 260 },
-  { type: 'spotify', label: 'Now Playing', icon: '♪', motif: '✿', accent: '#9578a6', width: 320, height: 300 },
+  { type: 'clock', label: 'Hours', latin: 'Hora nocturna', icon: '⏳', art: 'moth', accent: '#c2a15f', width: 260, height: 210 },
+  { type: 'weather', label: 'Weather', latin: 'Nimbus vagus', icon: '☁', art: 'fern', accent: '#88a3af', width: 300, height: 250 },
+  { type: 'quote', label: 'Aphorism', latin: 'Flora poetica', icon: '❝', art: 'bloom', accent: '#c06a52', width: 340, height: 240 },
+  { type: 'notes', label: 'Marginalia', latin: 'Hedera scripta', icon: '✒', art: 'ivy', accent: '#93a563', width: 300, height: 280 },
+  { type: 'spotify', label: 'Now Playing', latin: 'Fungus sonorus', icon: '♪', art: 'mushroom', accent: '#a487b8', width: 320, height: 320 },
 ];
 
 export const WIDGET_META: Record<WidgetType, WidgetMeta> = Object.fromEntries(

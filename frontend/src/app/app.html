@@ -6,11 +6,8 @@
   <app-widget-grid />
   <app-lighting-control />
 
-  <!-- corner title -->
-  <div class="pointer-events-none absolute bottom-4 right-5 z-10 text-right">
-    <div class="text-base uppercase tracking-[0.35em] text-gold">La Fleur</div>
-    <div class="text-[10px] tracking-[0.25em] text-parchment-dim">a private study</div>
-  </div>
+  <!-- desktop pet -->
+  <app-pet />
 
   @for (w of dash.widgets(); track w.type) {
     <app-widget-frame [widget]="w" />

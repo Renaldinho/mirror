@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { DashboardService } from './dashboard.service';
+import { PetService, PETS } from './pet.service';
 import { WIDGETS } from './widget-registry';
 
 /**
@@ -46,6 +47,24 @@ import { WIDGETS } from './widget-registry';
             </button>
           }
         </div>
+
+        <!-- desktop pet picker -->
+        <div class="mt-2 w-56 rounded-sm border border-gold/30 bg-wine/85 p-2 backdrop-blur-sm shadow-2xl shadow-black/60">
+          <div class="mb-1 px-1 text-[10px] uppercase tracking-[0.2em] text-parchment-dim">Companion</div>
+          <div class="flex flex-wrap gap-1">
+            @for (p of pets; track p.id) {
+              <button
+                class="flex h-9 w-9 items-center justify-center rounded-sm border text-lg transition hover:bg-white/5"
+                [style.border-color]="pet.petId() === p.id ? 'var(--color-gold)' : 'rgba(173,165,147,0.18)'"
+                [style.background]="pet.petId() === p.id ? 'rgba(169,138,79,0.18)' : 'transparent'"
+                (click)="pet.select(p.id)"
+                [title]="pet.petId() === p.id ? 'Dismiss ' + p.label : p.label"
+              >
+                {{ p.emoji }}
+              </button>
+            }
+          </div>
+        </div>
       }
     </div>
   `,
@@ -53,7 +72,9 @@ import { WIDGETS } from './widget-registry';
 })
 export class WidgetGrid {
   readonly dash = inject(DashboardService);
+  readonly pet = inject(PetService);
   readonly widgets = WIDGETS;
+  readonly pets = PETS;
   readonly open = signal(true);
 
   /** translucent wash of an accent for the active tile background. */

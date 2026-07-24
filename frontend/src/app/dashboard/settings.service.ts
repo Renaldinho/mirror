@@ -10,7 +10,7 @@ export class SettingsService {
   /** Botanical background on (false = pure black = mirror). */
   readonly bgOn = signal(this.loadBool('dash.bg.on', true));
   /** Lighting level 0–100 (how much glow the background gives off). */
-  readonly bgLight = signal(this.loadNum('dash.bg.light', 55));
+  readonly bgLight = signal(this.loadNum('dash.bg.light', 75));
 
   constructor() {
     effect(() => localStorage.setItem('dash.bg.on', JSON.stringify(this.bgOn())));
