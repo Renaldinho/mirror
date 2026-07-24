@@ -91,6 +91,8 @@ export class SleepState extends PetState {
   }
   protected tick(pet: Pet, ctx: PetContext): PetState | null {
     pet.y = pet.homeY(ctx);
+    // Stay asleep as long as the mirror is dimmed; otherwise wake after a nap.
+    if (ctx.dim) return null;
     return this.elapsed > this.duration ? pet.newRest() : null;
   }
   pose(): PetPose {

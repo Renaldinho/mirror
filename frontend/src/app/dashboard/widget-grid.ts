@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { DashboardService } from './dashboard.service';
 import { PetService, PETS } from './pet.service';
+import { PetMoodService } from './pets/pet-mood.service';
 import { PetSpriteSheet } from './pets/pet-types';
 import { WIDGETS } from './widget-registry';
 
@@ -68,6 +69,29 @@ import { WIDGETS } from './widget-registry';
               </button>
             }
           </div>
+
+          @if (pet.petId()) {
+            <div class="mt-2 flex flex-col gap-1.5">
+              <input
+                class="name-field px-2 py-1 text-[11px]"
+                [value]="mood.name()"
+                (input)="mood.setName($any($event.target).value)"
+                placeholder="name your companion…"
+                aria-label="Companion name"
+                maxlength="24"
+              />
+              <div
+                class="energy"
+                role="meter"
+                aria-label="Companion energy"
+                aria-valuemin="0"
+                aria-valuemax="100"
+                [attr.aria-valuenow]="round(mood.energy())"
+              >
+                <div class="energy-fill" [style.width.%]="mood.energy()"></div>
+              </div>
+            </div>
+          }
         </div>
       }
     </div>
@@ -94,12 +118,33 @@ import { WIDGETS } from './widget-registry';
         image-rendering: pixelated;
         filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.45));
       }
+      .name-field {
+        width: 100%;
+        border: 1px solid var(--theme-border);
+        border-radius: var(--control-radius);
+        background: var(--theme-control-bg);
+        color: var(--theme-text);
+        letter-spacing: 0.04em;
+      }
+      .energy {
+        height: 5px;
+        border-radius: 999px;
+        overflow: hidden;
+        background: var(--theme-surface-soft);
+      }
+      .energy-fill {
+        height: 100%;
+        border-radius: 999px;
+        background: linear-gradient(to right, var(--theme-primary), var(--theme-primary-bright));
+        transition: width 0.4s ease;
+      }
     `,
   ],
 })
 export class WidgetGrid {
   readonly dash = inject(DashboardService);
   readonly pet = inject(PetService);
+  readonly mood = inject(PetMoodService);
   readonly widgets = WIDGETS;
   readonly pets = PETS;
   readonly open = signal(true);
@@ -111,5 +156,9 @@ export class WidgetGrid {
 
   spriteSize(sprite: PetSpriteSheet): string {
     return `${sprite.columns * 100}% ${sprite.rows * 100}%`;
+  }
+
+  round(value: number): number {
+    return Math.round(value);
   }
 }

@@ -4,6 +4,16 @@ import { isThemeId, ThemeId } from './theme-registry';
 
 export type LightingPreset = 'off' | 'soft' | 'bright';
 
+export const CURSOR_FX_MODES = [
+  { id: 'laser', label: 'Laser', glyph: '✦' },
+  { id: 'glitter', label: 'Glitter', glyph: '❈' },
+  { id: 'matrix', label: 'Matrix', glyph: '01' },
+  { id: 'flame', label: 'Flame', glyph: '♨' },
+  { id: 'bubbles', label: 'Bubbles', glyph: '○' },
+] as const;
+
+export type CursorFxMode = (typeof CURSOR_FX_MODES)[number]['id'];
+
 export const LIGHTING_LEVELS: Record<Exclude<LightingPreset, 'off'>, number> = {
   soft: 40,
   bright: 100,
@@ -23,6 +33,10 @@ export class SettingsService {
   readonly bgLight = signal(this.clampLight(this.loadNum('dash.bg.light', LIGHTING_LEVELS.soft)));
   /** Active visual system. Layout and widget state remain theme-independent. */
   readonly theme = signal<ThemeId>(this.loadTheme());
+  /** Nostalgic custom pointer and particle trail for mouse-like input. */
+  readonly cursorFx = signal(this.loadBool('dash.cursor.fx', true));
+  /** Selected pointer particle system. */
+  readonly cursorFxMode = signal<CursorFxMode>(this.loadCursorFxMode());
 
   constructor() {
     effect(() => localStorage.setItem('dash.bg.on', JSON.stringify(this.bgOn())));
@@ -31,6 +45,14 @@ export class SettingsService {
       const theme = this.theme();
       localStorage.setItem('dash.theme.v1', theme);
       this.document.documentElement.dataset['theme'] = theme;
+    });
+    effect(() => {
+      const enabled = this.cursorFx();
+      const mode = this.cursorFxMode();
+      localStorage.setItem('dash.cursor.fx', JSON.stringify(enabled));
+      localStorage.setItem('dash.cursor.fx.mode', mode);
+      this.document.documentElement.dataset['cursorFx'] = enabled ? 'on' : 'off';
+      this.document.documentElement.dataset['cursorFxMode'] = mode;
     });
   }
 
@@ -56,6 +78,17 @@ export class SettingsService {
     this.theme.set(theme);
   }
 
+  toggleCursorFx(): void {
+    this.cursorFx.update((enabled) => !enabled);
+  }
+
+  cycleCursorFxMode(): void {
+    const current = CURSOR_FX_MODES.findIndex((mode) => mode.id === this.cursorFxMode());
+    const next = CURSOR_FX_MODES[(current + 1) % CURSOR_FX_MODES.length];
+    this.cursorFxMode.set(next.id);
+    this.cursorFx.set(true);
+  }
+
   private loadBool(key: string, fallback: boolean): boolean {
     const raw = localStorage.getItem(key);
     return raw === null ? fallback : raw === 'true';
@@ -70,6 +103,13 @@ export class SettingsService {
   private loadTheme(): ThemeId {
     const stored = localStorage.getItem('dash.theme.v1') ?? '';
     return isThemeId(stored) ? stored : 'bare';
+  }
+
+  private loadCursorFxMode(): CursorFxMode {
+    const stored = localStorage.getItem('dash.cursor.fx.mode');
+    return CURSOR_FX_MODES.some((mode) => mode.id === stored)
+      ? (stored as CursorFxMode)
+      : 'laser';
   }
 
   private clampLight(value: number): number {

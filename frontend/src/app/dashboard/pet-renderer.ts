@@ -9,7 +9,9 @@ import {
   viewChild,
 } from '@angular/core';
 import { PetService } from './pet.service';
+import { SettingsService } from './settings.service';
 import { createPet, Pet } from './pets';
+import { PetMoodService } from './pets/pet-mood.service';
 import { PET_SIZE } from './pets/pet-state';
 import { PetContext } from './pets/pet-types';
 
@@ -25,7 +27,8 @@ import { PetContext } from './pets/pet-types';
   template: `
     <div #root class="pet-root">
       <span #bubble class="bubble"></span>
-      <span #visual class="visual" (click)="poke()"></span>
+      <span #name class="pet-name"></span>
+      <span #visual class="visual" (click)="onClick()"></span>
     </div>
   `,
   styles: [
@@ -61,16 +64,35 @@ import { PetContext } from './pets/pet-types';
         opacity: 0;
         transition: opacity 0.15s ease;
       }
+      .pet-name {
+        position: absolute;
+        left: 50%;
+        top: -20px;
+        transform: translateX(-50%);
+        padding: 1px 7px;
+        border-radius: 999px;
+        border: 1px solid var(--theme-border);
+        background: var(--theme-panel-opaque);
+        color: var(--theme-text);
+        font: 600 10px/1.4 var(--theme-font-body);
+        white-space: nowrap;
+        opacity: 0;
+        transition: opacity 0.15s ease;
+        pointer-events: none;
+      }
     `,
   ],
 })
 export class PetRenderer implements AfterViewInit {
   private readonly pets = inject(PetService);
+  private readonly mood = inject(PetMoodService);
+  private readonly settings = inject(SettingsService);
   private readonly destroyRef = inject(DestroyRef);
 
   private readonly rootRef = viewChild.required<ElementRef<HTMLElement>>('root');
   private readonly visualRef = viewChild.required<ElementRef<HTMLElement>>('visual');
   private readonly bubbleRef = viewChild.required<ElementRef<HTMLElement>>('bubble');
+  private readonly nameRef = viewChild.required<ElementRef<HTMLElement>>('name');
 
   private pet: Pet | null = null;
   private raf = 0;
@@ -96,6 +118,18 @@ export class PetRenderer implements AfterViewInit {
     };
     window.addEventListener('mousemove', onMove);
 
+    // Reveal the pet's name on hover.
+    const visual = this.visualRef().nativeElement;
+    const nameEl = this.nameRef().nativeElement;
+    const showName = () => {
+      const name = this.mood.name();
+      nameEl.textContent = name;
+      nameEl.style.opacity = name ? '1' : '0';
+    };
+    const hideName = () => (nameEl.style.opacity = '0');
+    visual.addEventListener('mouseenter', showName);
+    visual.addEventListener('mouseleave', hideName);
+
     const loop = (t: number) => {
       this.frame(t);
       this.raf = requestAnimationFrame(loop);
@@ -105,11 +139,15 @@ export class PetRenderer implements AfterViewInit {
     this.destroyRef.onDestroy(() => {
       cancelAnimationFrame(this.raf);
       window.removeEventListener('mousemove', onMove);
+      visual.removeEventListener('mouseenter', showName);
+      visual.removeEventListener('mouseleave', hideName);
     });
   }
 
-  poke(): void {
-    this.pet?.poke();
+  /** Clicking the pet feeds it: refill energy + play a happy reaction. */
+  onClick(): void {
+    this.mood.feed();
+    this.pet?.feed();
   }
 
   private frame(t: number): void {
@@ -135,6 +173,8 @@ export class PetRenderer implements AfterViewInit {
         y: this.pointer.y,
         active: performance.now() - this.pointer.last < 4000,
       },
+      energy: this.mood.energy() / 100,
+      dim: !this.settings.bgOn() || this.settings.bgLight() < 25,
     };
 
     this.pet.update(ctx);

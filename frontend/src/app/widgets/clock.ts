@@ -10,7 +10,7 @@ import { WidgetVariantId } from '../dashboard/widget-registry';
       <div
         class="dial-layout"
         role="timer"
-        [attr.aria-label]="time() + ', ' + date()"
+        [attr.aria-label]="greeting() + '. ' + time() + ', ' + date()"
       >
         <div class="dial" aria-hidden="true">
           @for (marker of markers; track marker) {
@@ -22,9 +22,11 @@ import { WidgetVariantId } from '../dashboard/widget-registry';
           <span class="pin"></span>
           <span class="dial-date">{{ shortDate() }}</span>
         </div>
+        <span class="dial-greeting" aria-hidden="true">{{ greeting() }}</span>
       </div>
     } @else {
       <div class="digital-layout select-none">
+        <div class="greeting">{{ greeting() }}</div>
         <div class="digital-time">{{ time() }}</div>
         <div class="digital-date">{{ date() }}</div>
       </div>
@@ -39,15 +41,30 @@ import { WidgetVariantId } from '../dashboard/widget-registry';
 
       .digital-layout,
       .dial-layout {
+        position: relative;
         display: flex;
         height: 100%;
         align-items: center;
         justify-content: center;
         text-align: center;
       }
-      .digital-layout {
+      .digital-layout,
+      .dial-layout {
         flex-direction: column;
         gap: 8px;
+      }
+      .greeting {
+        color: var(--accent);
+        font-size: .7rem;
+        letter-spacing: .22em;
+        text-transform: uppercase;
+        opacity: .85;
+      }
+      .dial-greeting {
+        color: var(--theme-text-muted);
+        font-size: .62rem;
+        letter-spacing: .2em;
+        text-transform: uppercase;
       }
       .digital-time {
         color: var(--theme-text);
@@ -60,6 +77,20 @@ import { WidgetVariantId } from '../dashboard/widget-registry';
         font-size: .72rem;
         letter-spacing: .26em;
         text-transform: uppercase;
+      }
+      .greeting,
+      .dial-greeting {
+        color: var(--theme-text-muted);
+        font-size: .6rem;
+        letter-spacing: .2em;
+        text-transform: uppercase;
+      }
+      .dial-greeting {
+        position: absolute;
+        left: 50%;
+        bottom: 0;
+        transform: translateX(-50%);
+        white-space: nowrap;
       }
 
       .dial {
@@ -155,6 +186,14 @@ export class ClockWidget {
   readonly shortDate = computed(() =>
     this.now().toLocaleDateString([], { day: '2-digit', month: 'short' }),
   );
+  readonly greeting = computed(() => {
+    const hour = this.now().getHours();
+    if (hour < 5) return 'Still dreaming';
+    if (hour < 12) return 'Good morning';
+    if (hour < 18) return 'Good afternoon';
+    if (hour < 22) return 'Good evening';
+    return 'Good night';
+  });
   readonly hourHand = computed(() => {
     const now = this.now();
     return this.handTransform(((now.getHours() % 12) + now.getMinutes() / 60) * 30);

@@ -45,13 +45,20 @@ export abstract class Pet {
   newPlay(): PetState { return new PlayState(); }
   newCurious(): PetState { return new CuriousState(); }
 
-  /** Personality-weighted decision made whenever an idle finishes. */
+  /**
+   * Personality-weighted decision made whenever an idle finishes. Energy (0..1)
+   * tilts the odds — a lively pet plays/wanders, a tired one naps — but every
+   * branch reuses an animation the sheet already has.
+   */
   chooseNext(ctx: PetContext): PetState {
     const p = this.personality;
+    const energy = ctx.energy;
     if (Math.random() < 0.14) return this.newCurious();
     const r = Math.random();
-    if (ctx.pointer.active && r < p.playfulness) return this.newPlay();
-    if (r < p.playfulness + p.sleepiness) return this.newSleep();
+    const playChance = ctx.pointer.active ? p.playfulness * (0.4 + energy) : 0;
+    const sleepChance = p.sleepiness + (1 - energy) * 0.5; // tired → naps more
+    if (r < playChance) return this.newPlay();
+    if (r < playChance + sleepChance) return this.newSleep();
     return this.newWalk();
   }
 
@@ -66,6 +73,10 @@ export abstract class Pet {
       this.y = this.homeY(ctx);
       this.setState(this.newRest(), ctx);
     }
+    // Dim the mirror and the companion curls up to sleep (existing sleep state).
+    if (ctx.dim && this.state!.name !== 'sleep') {
+      this.setState(this.newSleep(), ctx);
+    }
     const next = this.state!.update(this, ctx);
     if (next) this.setState(next, ctx);
   }
@@ -74,6 +85,16 @@ export abstract class Pet {
   poke(): void {
     const reactions = this.spriteSheet.reactions;
     this.reaction = reactions[Math.floor(Math.random() * reactions.length)] ?? reactions[0];
+    this.pokeStart = performance.now();
+  }
+
+  /** Feeding: play a *positive* existing reaction (sparkle, else wave). */
+  feed(): void {
+    const reactions = this.spriteSheet.reactions;
+    this.reaction =
+      reactions.find((r) => r.row === 8) ??
+      reactions.find((r) => r.row === 3) ??
+      reactions[0];
     this.pokeStart = performance.now();
   }
 

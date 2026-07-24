@@ -625,6 +625,14 @@ body {
   opacity: 0.48;
 }
 
+@media (any-pointer: fine) and (prefers-reduced-motion: no-preference) {
+  html[data-cursor-fx='on'],
+  html[data-cursor-fx='on'] body,
+  html[data-cursor-fx='on'] :where(a, button, input, textarea, select, label, [role='button'], [cdkdraghandle]) {
+    cursor: none !important;
+  }
+}
+
 :where(.rounded, .rounded-sm) {
   border-radius: var(--control-radius);
 }
@@ -653,6 +661,31 @@ body {
 * {
   scrollbar-width: thin;
   scrollbar-color: var(--theme-primary) transparent;
+}
+
+/* Themed WebKit scrollbars + tactile button feedback across the board. */
+.board-surface ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+.board-surface ::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--theme-primary) 55%, transparent);
+}
+.board-surface ::-webkit-scrollbar-track {
+  background: transparent;
+}
+.board-surface button {
+  transition: transform 0.12s ease, background-color 0.2s ease, color 0.2s ease,
+    box-shadow 0.2s ease, border-color 0.2s ease;
+}
+.board-surface button:active {
+  transform: scale(0.96);
+}
+@media (prefers-reduced-motion: reduce) {
+  .board-surface button:active {
+    transform: none;
+  }
 }
 
 /* The clock's dial variant makes the frame itself part of the clock face. */

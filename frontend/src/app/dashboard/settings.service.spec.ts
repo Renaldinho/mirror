@@ -5,6 +5,7 @@ describe('SettingsService', () => {
   beforeEach(() => {
     localStorage.clear();
     document.documentElement.removeAttribute('data-theme');
+    document.documentElement.removeAttribute('data-cursor-fx');
     TestBed.configureTestingModule({});
   });
 
@@ -53,5 +54,26 @@ describe('SettingsService', () => {
 
     settings.setLight(Number.NaN);
     expect(settings.bgLight()).toBe(LIGHTING_LEVELS.soft);
+  });
+
+  it('persists the retro pointer effects preference', () => {
+    const settings = TestBed.inject(SettingsService);
+    expect(settings.cursorFx()).toBe(true);
+    expect(settings.cursorFxMode()).toBe('laser');
+
+    settings.toggleCursorFx();
+    TestBed.flushEffects();
+
+    expect(settings.cursorFx()).toBe(false);
+    expect(localStorage.getItem('dash.cursor.fx')).toBe('false');
+    expect(document.documentElement.dataset['cursorFx']).toBe('off');
+
+    settings.cycleCursorFxMode();
+    TestBed.flushEffects();
+
+    expect(settings.cursorFx()).toBe(true);
+    expect(settings.cursorFxMode()).toBe('glitter');
+    expect(localStorage.getItem('dash.cursor.fx.mode')).toBe('glitter');
+    expect(document.documentElement.dataset['cursorFxMode']).toBe('glitter');
   });
 });

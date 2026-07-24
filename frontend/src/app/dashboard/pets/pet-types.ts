@@ -9,6 +9,10 @@ export interface PetContext {
   /** y of the floor where floor-walkers stand. */
   floorY: number;
   pointer: { x: number; y: number; active: boolean };
+  /** Companion energy 0..1 — biases which existing states run (tired vs lively). */
+  energy: number;
+  /** True when the mirror is dark/dimmed — the pet should curl up and sleep. */
+  dim: boolean;
 }
 
 /** Behaviour weights that give each species its temperament. */

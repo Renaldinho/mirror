@@ -1,5 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { AmbienceService } from './ambience.service';
 import {
+  CURSOR_FX_MODES,
   LIGHTING_LEVELS,
   LightingPreset,
   SettingsService,
@@ -24,13 +26,25 @@ import { THEMES } from './theme-registry';
         {{ settings.bgOn() ? themeGlyph() : '◑' }}
       </button>
 
+      <button
+        type="button"
+        class="auto"
+        [class.on]="ambience.autoLight()"
+        (click)="ambience.toggleAuto()"
+        [attr.aria-pressed]="ambience.autoLight()"
+        [attr.aria-label]="ambience.autoLight() ? 'Auto lighting on (dims by time of day)' : 'Auto lighting off'"
+        title="Auto-dim by time of day"
+      >
+        <span aria-hidden="true">☾</span><small>AUTO</small>
+      </button>
+
       <div class="presets" role="group" aria-label="Lighting presets">
         @for (preset of presets; track preset.id) {
           <button
             type="button"
             [class.active]="isPreset(preset.id)"
             [attr.aria-pressed]="isPreset(preset.id)"
-            (click)="settings.setLightingPreset(preset.id)"
+            (click)="onPreset(preset.id)"
           >
             {{ preset.label }}
           </button>
@@ -46,13 +60,37 @@ import { THEMES } from './theme-registry';
           class="lamp"
           [disabled]="!settings.bgOn()"
           [value]="settings.bgLight()"
-          (input)="settings.setLight($any($event.target).valueAsNumber)"
+          (input)="onManualLight($any($event.target).valueAsNumber)"
         />
       </label>
 
       <output class="level" aria-live="polite">
         {{ settings.bgOn() ? settings.bgLight() : 'off' }}
       </output>
+
+      <span class="divider" aria-hidden="true"></span>
+      <button
+        type="button"
+        class="pointer-fx"
+        [class.on]="settings.cursorFx()"
+        [attr.aria-pressed]="settings.cursorFx()"
+        [attr.aria-label]="settings.cursorFx() ? 'Turn retro pointer effects off' : 'Turn retro pointer effects on'"
+        [title]="settings.cursorFx() ? 'Retro pointer FX on' : 'Retro pointer FX off'"
+        (click)="settings.toggleCursorFx()"
+      >
+        <span aria-hidden="true">✦</span>
+        <small>FX</small>
+      </button>
+      <button
+        type="button"
+        class="pointer-style"
+        [attr.aria-label]="'Pointer style: ' + cursorMode().label + '. Activate for next style.'"
+        [title]="'Pointer style: ' + cursorMode().label + ' · click to change'"
+        (click)="settings.cycleCursorFxMode()"
+      >
+        <span aria-hidden="true">{{ cursorMode().glyph }}</span>
+        <small>{{ cursorMode().label }}</small>
+      </button>
     </div>
   `,
   styles: [
@@ -73,6 +111,19 @@ import { THEMES } from './theme-registry';
         color: var(--theme-text-muted); font-size: 17px; line-height: 1;
       }
       .power.on { color: var(--theme-primary-bright); }
+      .auto {
+        display: flex; height: 28px; align-items: center; gap: 3px; padding: 0 6px;
+        border: 1px solid transparent;
+        border-radius: calc(var(--control-radius) - 2px);
+        color: var(--theme-text-muted);
+      }
+      .auto span { font-size: 13px; line-height: 1; }
+      .auto small { font: 700 8px/1 var(--theme-font-body); letter-spacing: .08em; }
+      .auto.on {
+        border-color: color-mix(in srgb, var(--theme-primary) 42%, transparent);
+        background: var(--theme-primary-soft);
+        color: var(--theme-primary-bright);
+      }
       .presets {
         display: flex; overflow: hidden;
         border: 1px solid var(--theme-border);
@@ -110,15 +161,72 @@ import { THEMES } from './theme-registry';
         font: 600 9px/1 var(--theme-font-body);
         text-align: right; text-transform: uppercase;
       }
+      .divider {
+        width: 1px;
+        height: 20px;
+        background: var(--theme-border);
+      }
+      .pointer-fx {
+        display: flex;
+        height: 28px;
+        align-items: center;
+        gap: 3px;
+        padding: 0 6px;
+        border: 1px solid transparent;
+        border-radius: calc(var(--control-radius) - 2px);
+        color: var(--theme-text-muted);
+        transition: 160ms ease;
+      }
+      .pointer-fx span {
+        font-size: 15px;
+        line-height: 1;
+      }
+      .pointer-fx small {
+        font: 700 8px/1 var(--theme-font-body);
+        letter-spacing: .08em;
+      }
+      .pointer-fx.on {
+        border-color: color-mix(in srgb, var(--theme-primary) 42%, transparent);
+        background: var(--theme-primary-soft);
+        color: var(--theme-primary-bright);
+        text-shadow: 0 0 8px currentColor;
+      }
+      .pointer-style {
+        display: flex;
+        height: 28px;
+        align-items: center;
+        gap: 4px;
+        max-width: 72px;
+        padding: 0 7px;
+        border: 1px solid var(--theme-border);
+        border-radius: calc(var(--control-radius) - 2px);
+        background: var(--theme-control-bg);
+        color: var(--theme-primary-bright);
+      }
+      .pointer-style span {
+        min-width: 13px;
+        font: 700 11px/1 monospace;
+        text-align: center;
+        text-shadow: 0 0 7px currentColor;
+      }
+      .pointer-style small {
+        overflow: hidden;
+        color: var(--theme-text-muted);
+        font: 600 8px/1 var(--theme-font-body);
+        letter-spacing: .04em;
+        text-overflow: ellipsis;
+        text-transform: uppercase;
+      }
       @media (max-width: 700px) {
         .lighting-shell { right: 12px; top: 60px; }
-        .slider-label, .level { display: none; }
+        .slider-label, .level, .divider, .pointer-fx, .pointer-style { display: none; }
       }
     `,
   ],
 })
 export class LightingControl {
   readonly settings = inject(SettingsService);
+  readonly ambience = inject(AmbienceService);
   readonly presets: readonly { id: LightingPreset; label: string }[] = [
     { id: 'off', label: 'Off' },
     { id: 'soft', label: 'Soft' },
@@ -127,6 +235,22 @@ export class LightingControl {
   readonly themeGlyph = computed(
     () => THEMES.find((theme) => theme.id === this.settings.theme())?.glyph ?? '◉',
   );
+  readonly cursorMode = computed(
+    () =>
+      CURSOR_FX_MODES.find((mode) => mode.id === this.settings.cursorFxMode()) ??
+      CURSOR_FX_MODES[0],
+  );
+
+  /** Manual control takes over from the auto-dim scheduler. */
+  onManualLight(value: number): void {
+    this.settings.setLight(value);
+    this.ambience.disableAuto();
+  }
+
+  onPreset(preset: LightingPreset): void {
+    this.settings.setLightingPreset(preset);
+    this.ambience.disableAuto();
+  }
 
   isPreset(preset: LightingPreset): boolean {
     if (preset === 'off') {
