@@ -15,8 +15,8 @@ describe('Background', () => {
 
     const backdrop = fixture.nativeElement.querySelector('.backdrop') as HTMLElement;
     expect(backdrop.dataset['motif']).toBe('bare');
-    expect(backdrop.querySelector('svg')).toBeNull();
-    expect(backdrop.querySelector('.warm-light')).not.toBeNull();
+    expect(backdrop.querySelector('.theme-art')).toBeNull();
+    expect(backdrop.querySelector('.practical-light')).not.toBeNull();
   });
 
   it('renders a dedicated motif for every decorative theme', () => {
@@ -28,8 +28,10 @@ describe('Background', () => {
       fixture.detectChanges();
 
       const backdrop = fixture.nativeElement.querySelector('.backdrop') as HTMLElement;
+      const image = backdrop.querySelector('.theme-art') as HTMLImageElement;
       expect(backdrop.dataset['motif']).toBe(theme);
-      expect(backdrop.querySelector('svg')).not.toBeNull();
+      expect(image).not.toBeNull();
+      expect(image.getAttribute('src')).toBe(`/themes/${theme}.webp`);
     }
   });
 });

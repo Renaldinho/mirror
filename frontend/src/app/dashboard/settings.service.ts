@@ -5,8 +5,8 @@ import { isThemeId, ThemeId } from './theme-registry';
 export type LightingPreset = 'off' | 'soft' | 'bright';
 
 export const LIGHTING_LEVELS: Record<Exclude<LightingPreset, 'off'>, number> = {
-  soft: 35,
-  bright: 75,
+  soft: 40,
+  bright: 100,
 };
 
 /**

@@ -23,7 +23,7 @@ export const THEMES: readonly ThemeDefinition[] = [
   {
     id: 'bare',
     label: 'Bare Mirror',
-    description: 'Clear black glass with a soft amber edge light.',
+    description: 'Clean black glass with adjustable soft amber light.',
     glyph: '◯',
     swatches: ['#000000', '#20180e', '#e5b96e'],
   },

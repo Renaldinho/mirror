@@ -6,7 +6,7 @@
     "start": "ng serve",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test",
+    "test": "ng test --watch=false --progress=false",
     "gen:types": "json2ts -i ../backend/schema/ws-events.schema.json -o src/app/generated/model.ts"
   },
   "private": true,

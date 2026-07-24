@@ -1,5 +1,4 @@
 <main class="board-surface relative h-screen w-screen overflow-hidden bg-black">
-  <!-- botanical background / mirror lighting (fades to pure black when off) -->
   <app-background />
 
   <!-- controls -->
@@ -12,11 +11,5 @@
 
   @for (w of dash.widgets(); track w.type) {
     <app-widget-frame [widget]="w" />
-  }
-
-  @if (dash.widgets().length === 0) {
-    <div class="pointer-events-none absolute inset-0 flex items-center justify-center">
-      <p class="text-parchment-dim">Open the cabinet <span class="text-gold">❦</span> and place a widget…</p>
-    </div>
   }
 </main>
