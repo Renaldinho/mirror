@@ -1,36 +1,38 @@
 import { PetSpriteAnimation, PetSpriteSheet } from './pet-types';
 
-const IDLE: PetSpriteAnimation = { row: 0, frames: 6, fps: 3 };
-const WALK: PetSpriteAnimation = { row: 1, reverseRow: 2, frames: 8, fps: 9 };
-const WAVE: PetSpriteAnimation = { row: 3, frames: 4, fps: 7, loop: false };
-const HOP: PetSpriteAnimation = { row: 4, frames: 5, fps: 4.5 };
-const POKE: PetSpriteAnimation = { row: 4, frames: 5, fps: 8, loop: false };
-const SAD: PetSpriteAnimation = { row: 5, frames: 8, fps: 8, loop: false };
-const CURIOUS: PetSpriteAnimation = { row: 6, frames: 6, fps: 4 };
-const RUN: PetSpriteAnimation = { row: 7, frames: 6, fps: 11 };
-const SPECIAL: PetSpriteAnimation = { row: 8, frames: 6, fps: 7, loop: false };
+const IDLE: PetSpriteAnimation = { row: 0, frames: 4, fps: 2.4 };
+const WALK: PetSpriteAnimation = {
+  row: 1,
+  frames: 4,
+  fps: 8,
+  directionRows: { right: 1, left: 2, up: 3, down: 4 },
+};
+const SLEEP: PetSpriteAnimation = { row: 5, frames: 4, fps: 1.8, loop: false };
+const EAT: PetSpriteAnimation = { row: 6, frames: 4, fps: 3.2, loop: false };
+const HAPPY: PetSpriteAnimation = { row: 7, frames: 4, fps: 4.5, loop: false };
 
 const COMMON_ANIMATIONS: Readonly<Record<string, PetSpriteAnimation>> = {
   rest: IDLE,
   walk: WALK,
-  sleep: IDLE,
-  play: RUN,
-  hop: HOP,
-  curious: CURIOUS,
-  wave: WAVE,
+  sleep: SLEEP,
+  eat: EAT,
+  play: WALK,
+  hop: WALK,
+  curious: HAPPY,
+  wave: HAPPY,
 };
 
 function sheet(cssClass: string): PetSpriteSheet {
   return {
     cssClass,
-    columns: 8,
-    rows: 9,
-    frameWidth: 192,
-    frameHeight: 208,
-    displayWidth: 96,
-    displayHeight: 104,
+    columns: 4,
+    rows: 8,
+    frameWidth: 128,
+    frameHeight: 128,
+    displayWidth: 80,
+    displayHeight: 80,
     animations: COMMON_ANIMATIONS,
-    reactions: [POKE, POKE, WAVE, WAVE, SPECIAL, SAD],
+    reactions: [HAPPY],
   };
 }
 

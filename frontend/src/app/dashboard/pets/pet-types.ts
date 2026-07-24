@@ -27,6 +27,8 @@ export interface Personality {
   restfulness: number;
 }
 
+export type PetDirection = 'up' | 'down' | 'left' | 'right';
+
 /** One animation strip inside a fixed-grid sprite sheet. */
 export interface PetSpriteAnimation {
   /** Zero-based sheet row. */
@@ -36,6 +38,8 @@ export interface PetSpriteAnimation {
   fps: number;
   /** Optional row containing the same animation facing left. */
   reverseRow?: number;
+  /** Optional rows for true four-direction locomotion. */
+  directionRows?: Readonly<Partial<Record<PetDirection, number>>>;
   /** Defaults to true. */
   loop?: boolean;
 }

@@ -1,7 +1,16 @@
-import { CuriousState, PetState, PlayState, RestState, SleepState, WalkState } from './pet-state';
+import {
+  CuriousState,
+  EatState,
+  PetState,
+  PlayState,
+  RestState,
+  SleepState,
+  WalkState,
+} from './pet-state';
 import {
   Personality,
   PetContext,
+  PetDirection,
   PetSpriteAnimation,
   PetSpriteFrame,
   PetSpriteSheet,
@@ -9,10 +18,8 @@ import {
 } from './pet-types';
 
 /**
- * Abstract base for every desktop pet. Owns position/facing, runs the state
- * machine, and turns the active state's pose into a `PetView` for the renderer.
- * Subclasses supply temperament and a sprite sheet, and may override the
- * default state constructors to change locomotion.
+ * Base companion: owns position/direction, runs the behaviour state machine,
+ * and resolves each state to a cell in the species' common action atlas.
  */
 export abstract class Pet {
   abstract readonly id: string;
@@ -23,79 +30,102 @@ export abstract class Pet {
   x = 120;
   y = 0;
   facing: 1 | -1 = 1;
+  direction: PetDirection = 'down';
 
   private state: PetState | null = null;
   private pokeStart = -1;
   private reaction: PetSpriteAnimation | null = null;
+  private lastContext: PetContext | null = null;
+  private pendingFeed = false;
 
-  /** Horizontal footprint used by movement and edge clamping. */
   get width(): number {
     return this.spriteSheet.displayWidth;
   }
 
-  /** Baseline y for floor-walking companions. */
+  get stateName(): string {
+    return this.state?.name ?? 'rest';
+  }
+
+  /** Initial baseline for newly-created companions. */
   homeY(ctx: PetContext): number {
     return ctx.floorY;
   }
 
-  // Default state factory — subclasses override for custom locomotion.
+  /** Highest baseline the companion may roam to without disappearing under chrome. */
+  roamTop(ctx: PetContext): number {
+    return Math.min(ctx.floorY, Math.max(84, ctx.height * .16));
+  }
+
+  clampPosition(ctx: PetContext): void {
+    this.x = Math.max(0, Math.min(Math.max(0, ctx.width - this.width), this.x));
+    this.y = Math.max(this.roamTop(ctx), Math.min(ctx.floorY, this.y));
+  }
+
+  setMotionDirection(dx: number, dy: number): void {
+    if (Math.abs(dx) > Math.abs(dy)) {
+      this.direction = dx >= 0 ? 'right' : 'left';
+      this.facing = dx >= 0 ? 1 : -1;
+    } else {
+      this.direction = dy >= 0 ? 'down' : 'up';
+    }
+  }
+
   newRest(): PetState { return new RestState(); }
   newWalk(): PetState { return new WalkState(); }
   newSleep(): PetState { return new SleepState(); }
+  newEat(): PetState { return new EatState(); }
   newPlay(): PetState { return new PlayState(); }
   newCurious(): PetState { return new CuriousState(); }
 
-  /**
-   * Personality-weighted decision made whenever an idle finishes. Energy (0..1)
-   * tilts the odds — a lively pet plays/wanders, a tired one naps — but every
-   * branch reuses an animation the sheet already has.
-   */
   chooseNext(ctx: PetContext): PetState {
     const p = this.personality;
     const energy = ctx.energy;
-    if (Math.random() < 0.14) return this.newCurious();
-    const r = Math.random();
-    const playChance = ctx.pointer.active ? p.playfulness * (0.4 + energy) : 0;
-    const sleepChance = p.sleepiness + (1 - energy) * 0.5; // tired → naps more
-    if (r < playChance) return this.newPlay();
-    if (r < playChance + sleepChance) return this.newSleep();
+    if (Math.random() < .14) return this.newCurious();
+    const roll = Math.random();
+    const playChance = ctx.pointer.active ? p.playfulness * (.4 + energy) : 0;
+    const sleepChance = p.sleepiness + (1 - energy) * .5;
+    if (roll < playChance) return this.newPlay();
+    if (roll < playChance + sleepChance) return this.newSleep();
     return this.newWalk();
   }
 
-  setState(s: PetState, ctx: PetContext): void {
+  setState(state: PetState, ctx: PetContext): void {
     this.state?.exit(this);
-    this.state = s;
-    s.enter(this, ctx);
+    this.state = state;
+    state.enter(this, ctx);
   }
 
   update(ctx: PetContext): void {
+    this.lastContext = ctx;
     if (!this.state) {
       this.y = this.homeY(ctx);
       this.setState(this.newRest(), ctx);
     }
-    // Dim the mirror and the companion curls up to sleep (existing sleep state).
-    if (ctx.dim && this.state!.name !== 'sleep') {
+    if (this.pendingFeed) {
+      this.pendingFeed = false;
+      this.setState(this.newEat(), ctx);
+    } else if (ctx.dim && this.state!.name !== 'sleep' && this.state!.name !== 'eat') {
       this.setState(this.newSleep(), ctx);
     }
+
     const next = this.state!.update(this, ctx);
     if (next) this.setState(next, ctx);
   }
 
-  /** Pick one of the supplied interaction strips whenever the pet is clicked. */
+  /** Play the consistent happy strip when a non-feeding interaction is added. */
   poke(): void {
     const reactions = this.spriteSheet.reactions;
     this.reaction = reactions[Math.floor(Math.random() * reactions.length)] ?? reactions[0];
     this.pokeStart = performance.now();
   }
 
-  /** Feeding: play a *positive* existing reaction (sparkle, else wave). */
+  /** Feeding is a real stationary state, not an overlay on a moving pet. */
   feed(): void {
-    const reactions = this.spriteSheet.reactions;
-    this.reaction =
-      reactions.find((r) => r.row === 8) ??
-      reactions.find((r) => r.row === 3) ??
-      reactions[0];
-    this.pokeStart = performance.now();
+    if (this.lastContext) {
+      this.setState(this.newEat(), this.lastContext);
+    } else {
+      this.pendingFeed = true;
+    }
   }
 
   view(): PetView {
@@ -107,66 +137,52 @@ export abstract class Pet {
     if (this.pokeStart >= 0 && this.reaction) {
       const elapsedMs = performance.now() - this.pokeStart;
       const durationMs = Math.max(650, (this.reaction.frames / this.reaction.fps) * 1000);
-      const p = elapsedMs / durationMs;
-      if (p >= 1) {
+      const progress = elapsedMs / durationMs;
+      if (progress >= 1) {
         this.pokeStart = -1;
         this.reaction = null;
-      }
-      else {
+      } else {
         pokeTime = elapsedMs / 1000;
-        if (this.reaction.row === 4) dy += -Math.sin(p * Math.PI) * 22;
-        bubble = bubble ?? this.reactionBubble(this.reaction.row);
+        dy -= Math.sin(progress * Math.PI) * 10;
+        bubble = bubble ?? '✦';
       }
     }
 
     const animation = this.animationFor(pokeTime);
     const sprite = this.spriteFrame(animation, pokeTime);
-    const rot = pose.rotate ?? 0;
-    const hasDirectionalRows = animation.reverseRow !== undefined;
-    const spriteFacing = hasDirectionalRows ? 1 : this.facing;
-    const sx = (pose.scaleX ?? 1) * spriteFacing;
-    const sy = pose.scaleY ?? 1;
-    const visualWidth = this.spriteSheet.displayWidth;
-    const visualHeight = this.spriteSheet.displayHeight;
+    const rotation = pose.rotate ?? 0;
+    const directional = animation.directionRows !== undefined || animation.reverseRow !== undefined;
+    const spriteFacing = directional ? 1 : this.facing;
+    const scaleX = (pose.scaleX ?? 1) * spriteFacing;
+    const scaleY = pose.scaleY ?? 1;
+
     return {
       x: this.x,
       y: this.y,
       sprite,
-      visualWidth,
-      visualHeight,
-      innerTransform: `translateY(${dy}px) rotate(${rot}deg) scale(${sx}, ${sy})`,
+      visualWidth: this.spriteSheet.displayWidth,
+      visualHeight: this.spriteSheet.displayHeight,
+      innerTransform: `translateY(${dy}px) rotate(${rotation}deg) scale(${scaleX}, ${scaleY})`,
       bubble,
     };
   }
 
   private animationFor(pokeTime: number | null): PetSpriteAnimation {
     if (pokeTime !== null && this.reaction) return this.reaction;
-    return this.spriteSheet.animations[this.state?.name ?? 'rest'] ??
-      this.spriteSheet.animations['rest'];
+    return this.spriteSheet.animations[this.stateName] ?? this.spriteSheet.animations['rest'];
   }
 
-  private spriteFrame(
-    animation: PetSpriteAnimation,
-    pokeTime: number | null,
-  ): PetSpriteFrame {
-    const sheet = this.spriteSheet;
+  private spriteFrame(animation: PetSpriteAnimation, pokeTime: number | null): PetSpriteFrame {
     const time = pokeTime ?? this.state?.animationTime ?? 0;
     const rawFrame = Math.floor(time * animation.fps);
     const column = animation.loop === false
       ? Math.min(rawFrame, animation.frames - 1)
       : rawFrame % animation.frames;
-    const row = this.facing === -1 && animation.reverseRow !== undefined
-      ? animation.reverseRow
-      : animation.row;
+    const row = animation.directionRows?.[this.direction] ??
+      (this.facing === -1 && animation.reverseRow !== undefined
+        ? animation.reverseRow
+        : animation.row);
 
-    return { sheet, row, column };
-  }
-
-  private reactionBubble(row: number): string | null {
-    if (row === 3) return '♡';
-    if (row === 4) return '❗';
-    if (row === 5) return '💧';
-    if (row === 8) return '✦';
-    return null;
+    return { sheet: this.spriteSheet, row, column };
   }
 }

@@ -361,6 +361,11 @@ export class DuckHunt implements AfterViewInit {
     return 90 + this.round() * 16 + Math.min(150, this.elapsed * 2);
   }
 
+  /** Shrinks with rounds + time survived, so precise aim matters more and more. */
+  private hitRadius(): number {
+    return Math.max(13, HIT_RADIUS - 8 - (this.round() - 1) * 1.6 - Math.min(6, this.elapsed * 0.1));
+  }
+
   private concurrent(): number {
     return Math.min(1 + Math.floor((this.round() - 1) / 3), 3);
   }
@@ -395,7 +400,7 @@ export class DuckHunt implements AfterViewInit {
     const shot = this.aim.point();
     this.shotFx = { x: shot.x, y: shot.y, t: 0 };
     let best: Duck | null = null;
-    let bestDistance = HIT_RADIUS;
+    let bestDistance = this.hitRadius();
     for (const duck of this.ducks) {
       if (duck.phase !== 'fly') continue;
       const distance = Math.hypot(duck.x - shot.x, duck.y - shot.y);
@@ -468,6 +473,9 @@ export class DuckHunt implements AfterViewInit {
   private updateDuck(duck: Duck, dt: number): void {
     duck.t += dt;
     if (duck.phase === 'fly') {
+      // Evasive jitter grows with the round so the flight path gets twitchy.
+      duck.vy += (Math.random() - 0.5) * (40 + this.round() * 22) * dt;
+      duck.vy = Math.max(-170, Math.min(170, duck.vy));
       duck.x += duck.vx * dt;
       duck.y += duck.vy * dt;
       if (duck.y < 40) duck.vy = Math.abs(duck.vy);

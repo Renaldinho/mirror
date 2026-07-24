@@ -1,15 +1,10 @@
 import type { Pet } from './pet';
 import { PetContext, PetPose } from './pet-types';
 
-/** Sprite footprint, used for edge clamping. */
+/** Vertical anchor from a pet's position to the bottom of its visual. */
 export const PET_SIZE = 44;
 
-/**
- * State pattern for the pet's behaviour/animation FSM. A state advances the pet
- * each tick (`tick`) and, when its business is done, returns the *next* state
- * (or null to stay). `pose` produces the procedural keyframe for the current
- * moment. Base `update` keeps `elapsed` (seconds in this state) for both.
- */
+/** One state in the companion behaviour machine. */
 export abstract class PetState {
   abstract readonly name: string;
   protected elapsed = 0;
@@ -31,91 +26,162 @@ export abstract class PetState {
   abstract pose(pet: Pet): PetPose;
 }
 
-/** Sitting/resting: a slow breathing idle that ends in a personality choice. */
+/** A breathing front-facing idle that ends in a personality choice. */
 export class RestState extends PetState {
   readonly name = 'rest';
+
   override enter(pet: Pet): void {
-    this.duration = 1.4 + Math.random() * 3 * (0.5 + pet.personality.restfulness);
+    this.duration = 1.4 + Math.random() * 3 * (.5 + pet.personality.restfulness);
   }
+
   protected tick(pet: Pet, ctx: PetContext): PetState | null {
-    pet.y = pet.homeY(ctx);
+    pet.clampPosition(ctx);
     return this.elapsed > this.duration ? pet.chooseNext(ctx) : null;
   }
+
   pose(): PetPose {
-    return { scaleY: 1 + Math.sin(this.elapsed * 2) * 0.03 };
+    return { scaleY: 1 + Math.sin(this.elapsed * 2) * .02 };
   }
 }
 
-/** A short ambient expression using the sheet's secondary idle row. */
+/** A short happy ambient expression. */
 export class CuriousState extends PetState {
   readonly name = 'curious';
+
   override enter(): void {
-    this.duration = 1.5;
+    this.duration = 1.2;
   }
+
   protected tick(pet: Pet, ctx: PetContext): PetState | null {
-    pet.y = pet.homeY(ctx);
+    pet.clampPosition(ctx);
     return this.elapsed > this.duration ? pet.newRest() : null;
   }
+
   pose(): PetPose {
     return {};
   }
 }
 
-/** Walk back and forth along the home line with a bobbing gait. */
+/** Wander toward a stable point in the two-dimensional desktop space. */
 export class WalkState extends PetState {
   readonly name = 'walk';
-  override enter(pet: Pet): void {
-    this.duration = 2 + Math.random() * 3;
-    if (Math.random() < 0.5) pet.facing = (pet.facing * -1) as 1 | -1;
+  private targetX = 0;
+  private targetY = 0;
+
+  override enter(pet: Pet, ctx: PetContext): void {
+    this.duration = 4 + Math.random() * 4;
+    const maxX = Math.max(0, ctx.width - pet.width);
+    const minY = pet.roamTop(ctx);
+    this.targetX = Math.random() * maxX;
+    this.targetY = minY + Math.random() * Math.max(0, ctx.floorY - minY);
+
+    if (Math.hypot(this.targetX - pet.x, this.targetY - pet.y) < 90) {
+      this.targetX = pet.x < maxX / 2 ? maxX * .82 : maxX * .18;
+      this.targetY = pet.y < (minY + ctx.floorY) / 2 ? ctx.floorY * .86 : minY;
+    }
   }
+
   protected tick(pet: Pet, ctx: PetContext): PetState | null {
-    pet.x += pet.facing * pet.personality.speed * ctx.dt;
-    if (pet.x < 0) { pet.x = 0; pet.facing = 1; }
-    if (pet.x > ctx.width - pet.width) { pet.x = ctx.width - pet.width; pet.facing = -1; }
-    pet.y = pet.homeY(ctx);
-    return this.elapsed > this.duration ? pet.newRest() : null;
+    const arrived = movePet(pet, ctx, this.targetX, this.targetY, pet.personality.speed);
+    return arrived || this.elapsed > this.duration ? pet.newRest() : null;
   }
-  pose(): PetPose {
+
+  pose(pet: Pet): PetPose {
+    const vertical = pet.direction === 'up' || pet.direction === 'down';
     return {
-      dy: -Math.abs(Math.sin(this.elapsed * 9)) * 3,
-      rotate: Math.sin(this.elapsed * 9) * 4,
+      dy: -Math.abs(Math.sin(this.elapsed * 9)) * (pet.id === 'frog' ? 5 : 2),
+      rotate: vertical ? 0 : Math.sin(this.elapsed * 9) * 2,
     };
   }
 }
 
-/** Curl up and snooze with a 💤; wakes to rest. */
+/** Use the dedicated curled-up sleep strip and remain asleep while dimmed. */
 export class SleepState extends PetState {
   readonly name = 'sleep';
+
   override enter(): void {
     this.duration = 4 + Math.random() * 6;
   }
+
   protected tick(pet: Pet, ctx: PetContext): PetState | null {
-    pet.y = pet.homeY(ctx);
-    // Stay asleep as long as the mirror is dimmed; otherwise wake after a nap.
+    pet.clampPosition(ctx);
     if (ctx.dim) return null;
     return this.elapsed > this.duration ? pet.newRest() : null;
   }
+
   pose(): PetPose {
-    return { rotate: 6, scaleY: 1 + Math.sin(this.elapsed * 1.3) * 0.04, bubble: '💤' };
+    return { scaleY: 1 + Math.sin(this.elapsed * 1.3) * .025, bubble: '💤' };
   }
 }
 
-/** Chase the pointer excitedly, then tire back to rest. */
+/** Stop roaming and play the species-specific food strip from start to finish. */
+export class EatState extends PetState {
+  readonly name = 'eat';
+
+  override enter(): void {
+    this.duration = 1.6;
+  }
+
+  protected tick(pet: Pet, ctx: PetContext): PetState | null {
+    pet.clampPosition(ctx);
+    return this.elapsed > this.duration ? pet.newRest() : null;
+  }
+
+  pose(): PetPose {
+    return { bubble: '♡' };
+  }
+}
+
+/** Chase the live pointer in both axes, then tire back to rest. */
 export class PlayState extends PetState {
   readonly name = 'play';
+
   override enter(): void {
     this.duration = 3 + Math.random() * 2;
   }
+
   protected tick(pet: Pet, ctx: PetContext): PetState | null {
-    const target = ctx.pointer.x - pet.width / 2;
-    const dx = target - pet.x;
-    pet.facing = dx >= 0 ? 1 : -1;
-    pet.x += Math.sign(dx) * Math.min(Math.abs(dx), pet.personality.speed * 1.8 * ctx.dt);
-    pet.y = pet.homeY(ctx);
-    if (this.elapsed > this.duration || (Math.abs(dx) < 6 && this.elapsed > 1)) return pet.newRest();
+    const arrived = movePet(
+      pet,
+      ctx,
+      ctx.pointer.x - pet.width / 2,
+      ctx.pointer.y,
+      pet.personality.speed * 1.8,
+    );
+    if (this.elapsed > this.duration || (arrived && this.elapsed > 1)) return pet.newRest();
     return null;
   }
-  pose(): PetPose {
-    return { dy: -Math.abs(Math.sin(this.elapsed * 14)) * 5, bubble: '❤' };
+
+  pose(pet: Pet): PetPose {
+    return {
+      dy: -Math.abs(Math.sin(this.elapsed * 14)) * (pet.id === 'frog' ? 7 : 4),
+      bubble: '❤',
+    };
   }
+}
+
+function movePet(
+  pet: Pet,
+  ctx: PetContext,
+  targetX: number,
+  targetY: number,
+  speed: number,
+): boolean {
+  const boundedX = Math.max(0, Math.min(Math.max(0, ctx.width - pet.width), targetX));
+  const boundedY = Math.max(pet.roamTop(ctx), Math.min(ctx.floorY, targetY));
+  const dx = boundedX - pet.x;
+  const dy = boundedY - pet.y;
+  const distance = Math.hypot(dx, dy);
+  if (distance < 4) {
+    pet.x = boundedX;
+    pet.y = boundedY;
+    return true;
+  }
+
+  pet.setMotionDirection(dx, dy);
+  const step = Math.min(distance, speed * ctx.dt);
+  pet.x += dx / distance * step;
+  pet.y += dy / distance * step;
+  pet.clampPosition(ctx);
+  return false;
 }

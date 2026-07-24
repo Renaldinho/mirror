@@ -46,10 +46,13 @@ export class DuckHuntAim {
 
   update(dt: number, elapsed: number, round: number): void {
     if (dt <= 0) return;
-    const sway = Math.min(12, 4 + Math.max(0, round - 1) * .7);
-    const targetX = this.rawX + this.offsetX + Math.sin(elapsed * 1.65 + this.phase) * sway;
-    const targetY = this.rawY + this.offsetY + Math.cos(elapsed * 1.27 + this.phase * 1.31) * sway * .72;
-    const follow = 1 - Math.exp(-dt * 8.5);
+    // Sway wobbles the scope more each round; the follow lag also grows so the
+    // scope trails the mouse — both make holding a small target genuinely hard.
+    const sway = Math.min(24, 6 + Math.max(0, round - 1) * 1.8);
+    const targetX = this.rawX + this.offsetX + Math.sin(elapsed * 1.9 + this.phase) * sway;
+    const targetY = this.rawY + this.offsetY + Math.cos(elapsed * 1.5 + this.phase * 1.31) * sway * .8;
+    const followRate = Math.max(4.5, 9 - Math.max(0, round - 1) * 0.5);
+    const follow = 1 - Math.exp(-dt * followRate);
     this.scopeX += (targetX - this.scopeX) * follow;
     this.scopeY += (targetY - this.scopeY) * follow;
     this.clampScope();

@@ -2,5 +2,5 @@
   "id": "frog",
   "displayName": "Frog",
   "description": "A cheerful pixel frog companion perched on lily pads.",
-  "spritesheetPath": "frog.webp"
+  "spritesheetPath": "frog-actions-v2.png"
 }
