@@ -2,23 +2,27 @@ import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/cor
 import { FormsModule } from '@angular/forms';
 import { UiService } from '../core/ui.service';
 import { WsService } from '../core/ws.service';
+import { PeterFace } from '../face/peter-face';
 
 /**
- * Bottom-right chat: a small round launcher bubble that expands into a compact
- * panel. The message log + composer are unchanged from the old pane; only the
- * shell and animation are new.
+ * Bottom-right chat: a round launcher bubble showing Peter's face that expands
+ * into a compact panel. Peter's face lives here (both as the collapsed avatar and
+ * as a banner atop the open panel) — the fullscreen stage stays a bare mirror.
  */
 @Component({
   selector: 'app-chat',
-  imports: [FormsModule],
+  imports: [FormsModule, PeterFace],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="dock">
       <div class="panel" [class.open]="ui.chatOpen()">
         <div class="panel-head">
-          <span class="dot" [attr.data-status]="ws.status()"></span>
-          <strong>Peter</strong>
-          <span class="sub">{{ ws.status() }}</span>
+          <div class="banner"><app-peter-face /></div>
+          <div class="head-meta">
+            <span class="dot" [attr.data-status]="ws.status()"></span>
+            <strong>Peter</strong>
+            <span class="sub">{{ ws.status() }}</span>
+          </div>
           <button class="min" (click)="ui.toggleChat()" aria-label="Minimize">–</button>
         </div>
         <div class="log">
@@ -43,7 +47,7 @@ import { WsService } from '../core/ws.service';
       </div>
 
       <button class="launcher" [class.hidden]="ui.chatOpen()" (click)="ui.toggleChat()" aria-label="Open chat">
-        💬
+        <app-peter-face />
         @if (!ws.connected()) { <span class="off-dot"></span> }
       </button>
     </div>
@@ -53,14 +57,15 @@ import { WsService } from '../core/ws.service';
       .dock { position: absolute; right: 20px; bottom: 20px; z-index: 30; }
 
       .launcher {
-        width: 60px; height: 60px; border-radius: 50%; border: none; cursor: pointer;
-        font-size: 26px; color: #fff; background: linear-gradient(135deg, #4a80ff, #7a5cff);
-        box-shadow: 0 8px 24px rgba(74, 128, 255, 0.5);
+        width: 66px; height: 66px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.25);
+        cursor: pointer; padding: 0; overflow: hidden; background: #1a1d2e;
+        box-shadow: 0 8px 24px rgba(74, 128, 255, 0.45);
         transition: transform 0.25s ease, opacity 0.25s ease; position: relative;
       }
       .launcher:hover { transform: scale(1.08); }
       .launcher.hidden { opacity: 0; transform: scale(0.4); pointer-events: none; }
-      .off-dot { position: absolute; top: 6px; right: 6px; width: 12px; height: 12px; border-radius: 50%; background: #e74c3c; border: 2px solid #fff; }
+      .launcher app-peter-face { display: block; width: 100%; height: 100%; }
+      .off-dot { position: absolute; top: 4px; right: 4px; width: 13px; height: 13px; border-radius: 50%; background: #e74c3c; border: 2px solid #1a1d2e; }
 
       .panel {
         position: absolute; right: 0; bottom: 0;
@@ -75,10 +80,20 @@ import { WsService } from '../core/ws.service';
       }
       .panel.open { transform: scale(1) translateY(0); opacity: 1; pointer-events: auto; }
 
-      .panel-head { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-bottom: 1px solid rgba(255,255,255,0.1); }
-      .panel-head strong { font-size: 14px; }
-      .panel-head .sub { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; opacity: 0.5; }
-      .panel-head .min { margin-left: auto; border: none; background: transparent; color: #cdd; font-size: 22px; line-height: 1; cursor: pointer; padding: 0 4px; }
+      .panel-head { position: relative; border-bottom: 1px solid rgba(255,255,255,0.1); }
+      .banner { width: 100%; height: 150px; }
+      .head-meta {
+        position: absolute; left: 0; right: 0; bottom: 0;
+        display: flex; align-items: center; gap: 8px; padding: 8px 12px;
+        background: linear-gradient(to top, rgba(20,22,34,0.92), rgba(20,22,34,0));
+      }
+      .head-meta strong { font-size: 14px; }
+      .head-meta .sub { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; opacity: 0.6; }
+      .panel-head .min {
+        position: absolute; top: 6px; right: 8px; border: none;
+        background: rgba(0,0,0,0.35); color: #fff; width: 26px; height: 26px; border-radius: 50%;
+        font-size: 20px; line-height: 1; cursor: pointer;
+      }
       .dot { width: 9px; height: 9px; border-radius: 50%; background: #7a8; }
       .dot[data-status='offline'] { background: #e74c3c; }
       .dot[data-status='idle'] { background: #2ecc71; }

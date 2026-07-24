@@ -1,4 +1,30 @@
-/* You can add global styles to this file, and also import other style files */
+@import 'tailwindcss';
+@import '@fontsource/eb-garamond/400.css';
+@import '@fontsource/eb-garamond/500.css';
+@import '@fontsource/eb-garamond/600.css';
+
+/* "Mushroom & ink botanical" theme tokens (Tailwind v4 CSS-first config).
+   Token *names* are kept stable across the app; only the values changed from the
+   earlier oxblood palette to an ink / moss / mushroom botanical scheme.
+   Exposes utilities like bg-oxblood(=ink), text-parchment(=spore), border-gold(=brass). */
+@theme {
+  --color-oxblood: #0b0d0a;      /* ink — near-black green base */
+  --color-wine: #14170f;         /* panel — deep moss-ink */
+  --color-wine-2: #1e231a;       /* panel raised */
+  --color-parchment: #e7e0cd;    /* spore-print cream (primary text) */
+  --color-parchment-dim: #ada593; /* faded ink text */
+  --color-gold: #a98a4f;         /* brass / gilt accent */
+  --color-gold-bright: #c6a45f;
+  --color-oxblood-accent: #a2503b; /* mushroom-cap red */
+
+  /* botanical accents (used per-widget + ornaments) */
+  --color-moss: #7c8a52;
+  --color-fern: #55613a;
+  --color-cap: #a2503b;
+  --color-spore: #e7e0cd;
+
+  --font-serif: 'EB Garamond', Georgia, 'Times New Roman', serif;
+}
 
 html,
 body {
@@ -9,9 +35,13 @@ body {
 
 body {
   overflow: hidden;
-  background: #0b0d18;
+  background: #000; /* pure black under everything — the mirror surface */
+  color: var(--color-parchment);
+  font-family: var(--font-serif);
 }
 
+/* Slim, in-theme scrollbars for widget bodies. */
 * {
-  box-sizing: border-box;
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-gold) transparent;
 }

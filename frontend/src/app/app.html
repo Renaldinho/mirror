@@ -1,29 +1,24 @@
-<div class="stage">
-  <!-- back layer: reactive particles (toggleable) -->
-  <app-background-fx />
+<main class="board-surface relative h-screen w-screen overflow-hidden bg-black">
+  <!-- botanical background / mirror lighting (fades to pure black when off) -->
+  <app-background />
 
-  <!-- centerpiece: Peter's face, reacts to status -->
-  <app-peter-face />
+  <!-- controls -->
+  <app-widget-grid />
+  <app-lighting-control />
 
-  <!-- top-left corner label + status -->
-  <div class="corner">
-    <span class="brand">Peter Griffin <small>on your desk</small></span>
-    <span class="status" [class.on]="ws.connected()">
-      <span class="dot"></span>{{ ws.connected() ? 'online' : 'offline' }}
-    </span>
+  <!-- corner title -->
+  <div class="pointer-events-none absolute bottom-4 right-5 z-10 text-right">
+    <div class="text-base uppercase tracking-[0.35em] text-gold">La Fleur</div>
+    <div class="text-[10px] tracking-[0.25em] text-parchment-dim">a private study</div>
   </div>
 
-  <!-- background toggle -->
-  <button
-    class="bg-toggle"
-    (click)="ui.toggleBg()"
-    [class.off]="!ui.bgEnabled()"
-    [attr.aria-pressed]="ui.bgEnabled()"
-  >
-    {{ ui.bgEnabled() ? '✦ background on' : '○ background off' }}
-  </button>
+  @for (w of dash.widgets(); track w.type) {
+    <app-widget-frame [widget]="w" />
+  }
 
-  <!-- floating overlays -->
-  <app-notification-tray />
-  <app-chat />
-</div>
+  @if (dash.widgets().length === 0) {
+    <div class="pointer-events-none absolute inset-0 flex items-center justify-center">
+      <p class="text-parchment-dim">Open the cabinet <span class="text-gold">❦</span> and place a widget…</p>
+    </div>
+  }
+</main>

@@ -3,85 +3,55 @@ import { WsService } from '../core/ws.service';
 import { FACE_LABEL, FACE_SRC } from './faces';
 
 /**
- * The mirror centerpiece: Peter's face, swapped by `ws.status()`. If the artwork
- * for a state is missing, we fall back to a labeled placeholder circle so the app
- * still runs before any assets have been dropped into `public/peter/`.
+ * Peter's face as a container-filling avatar. It fills whatever box the parent
+ * gives it (`object-fit: cover`), so every state renders at the same on-screen
+ * size regardless of the source image's dimensions — no more size jumping.
+ * If a state's artwork is missing, a labeled placeholder is shown instead so the
+ * app still runs before assets exist.
  */
 @Component({
   selector: 'app-peter-face',
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="stage" [attr.data-status]="status()">
+    <div class="face-box" [attr.data-status]="status()">
       @if (broken()) {
         <div class="placeholder">
-          <div class="ring"></div>
           <span class="face-emoji">🙂</span>
-          <span class="label">Peter · {{ label() }}</span>
+          <span class="label">{{ label() }}</span>
         </div>
       } @else {
-        <img
-          class="face"
-          [src]="src()"
-          alt="Peter Griffin"
-          (error)="broken.set(true)"
-        />
+        <img class="face" [src]="src()" alt="Peter Griffin" (error)="broken.set(true)" />
       }
     </div>
   `,
   styles: [
     `
-      .stage {
-        position: absolute;
-        inset: 0;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        pointer-events: none;
-      }
+      :host { display: block; width: 100%; height: 100%; }
+      .face-box { width: 100%; height: 100%; position: relative; overflow: hidden; }
       .face {
-        max-width: min(70vmin, 620px);
-        max-height: 80vh;
-        object-fit: contain;
-        filter: drop-shadow(0 12px 40px rgba(0, 0, 0, 0.35));
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
         transition: filter 0.4s ease, opacity 0.4s ease;
         animation: breathe 5s ease-in-out infinite;
       }
-      /* idle = gentle breathing (default). talking = livelier bob on top of the gif. */
-      .stage[data-status='talking'] .face { animation: bob 0.6s ease-in-out infinite; }
-      .stage[data-status='thinking'] .face { animation: sway 2.4s ease-in-out infinite; }
-      .stage[data-status='offline'] .face {
-        filter: grayscale(1) brightness(0.6);
-        opacity: 0.55;
-        animation: none;
-      }
+      .face-box[data-status='talking'] .face { animation: bob 0.7s ease-in-out infinite; }
+      .face-box[data-status='thinking'] .face { animation: sway 2.4s ease-in-out infinite; }
+      .face-box[data-status='offline'] .face { filter: grayscale(1) brightness(0.6); opacity: 0.6; animation: none; }
 
-      @keyframes breathe { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.02); } }
-      @keyframes bob { 0%, 100% { transform: translateY(0) scale(1.01); } 50% { transform: translateY(-10px) scale(1.03); } }
-      @keyframes sway { 0%, 100% { transform: rotate(-1.5deg); } 50% { transform: rotate(1.5deg); } }
+      @keyframes breathe { 0%, 100% { transform: scale(1.02); } 50% { transform: scale(1.06); } }
+      @keyframes bob { 0%, 100% { transform: scale(1.03) translateY(0); } 50% { transform: scale(1.05) translateY(-3px); } }
+      @keyframes sway { 0%, 100% { transform: scale(1.02) rotate(-1deg); } 50% { transform: scale(1.02) rotate(1deg); } }
+      @media (prefers-reduced-motion: reduce) { .face { animation: none !important; } }
 
-      @media (prefers-reduced-motion: reduce) {
-        .face { animation: none !important; }
-      }
-
-      /* Fallback shown until real artwork exists. */
       .placeholder {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 14px;
-        color: #cbd5e1;
+        width: 100%; height: 100%;
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        gap: 4px; background: rgba(255, 255, 255, 0.06); color: #cbd5e1;
       }
-      .ring {
-        position: absolute;
-        width: min(52vmin, 420px);
-        height: min(52vmin, 420px);
-        border-radius: 50%;
-        border: 2px dashed rgba(148, 163, 184, 0.4);
-        animation: breathe 5s ease-in-out infinite;
-      }
-      .face-emoji { font-size: min(28vmin, 220px); line-height: 1; }
-      .label { font-size: 14px; letter-spacing: 2px; text-transform: uppercase; opacity: 0.7; }
-      .stage[data-status='offline'] .placeholder { opacity: 0.5; }
+      .face-emoji { font-size: 2.2rem; line-height: 1; }
+      .label { font-size: 11px; letter-spacing: 1px; text-transform: uppercase; opacity: 0.7; }
     `,
   ],
 })
