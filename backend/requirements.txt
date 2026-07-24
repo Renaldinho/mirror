@@ -1,0 +1,11 @@
+fastapi
+uvicorn[standard]
+semantic-kernel
+ollama
+pydantic
+pydantic-settings
+apscheduler
+# dev / test
+pytest
+pytest-asyncio
+httpx

@@ -1,0 +1,29 @@
+<div class="stage">
+  <!-- back layer: reactive particles (toggleable) -->
+  <app-background-fx />
+
+  <!-- centerpiece: Peter's face, reacts to status -->
+  <app-peter-face />
+
+  <!-- top-left corner label + status -->
+  <div class="corner">
+    <span class="brand">Peter Griffin <small>on your desk</small></span>
+    <span class="status" [class.on]="ws.connected()">
+      <span class="dot"></span>{{ ws.connected() ? 'online' : 'offline' }}
+    </span>
+  </div>
+
+  <!-- background toggle -->
+  <button
+    class="bg-toggle"
+    (click)="ui.toggleBg()"
+    [class.off]="!ui.bgEnabled()"
+    [attr.aria-pressed]="ui.bgEnabled()"
+  >
+    {{ ui.bgEnabled() ? '✦ background on' : '○ background off' }}
+  </button>
+
+  <!-- floating overlays -->
+  <app-notification-tray />
+  <app-chat />
+</div>
