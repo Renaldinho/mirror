@@ -123,13 +123,18 @@ import { SettingsService } from './settings.service';
       }
 
       [data-motif='emo'] .ambient {
-        opacity: .55;
-        background: linear-gradient(104deg, transparent 15%, rgba(73, 54, 79, .28), transparent 63%);
+        opacity: .32;
+        background:
+          radial-gradient(ellipse at 50% 100%, rgba(218, 226, 230, .24), transparent 42%),
+          linear-gradient(104deg, transparent 18%, rgba(194, 204, 210, .1), transparent 72%);
+      }
+      [data-motif='emo'] .theme-art {
+        opacity: .94;
+        filter: grayscale(1) contrast(1.08);
+        mix-blend-mode: screen;
       }
       [data-motif='emo'] .atmosphere {
-        opacity: .32;
-        background: repeating-linear-gradient(103deg, transparent 0 27px, rgba(180, 190, 205, .3) 28px, transparent 30px 45px);
-        animation: rain 5s linear infinite;
+        display: none;
       }
 
       [data-motif='spooky-gay'] .ambient {
@@ -161,10 +166,6 @@ import { SettingsService } from './settings.service';
       @keyframes embers {
         from { transform: translateY(5%); }
         to { transform: translateY(-8%); }
-      }
-      @keyframes rain {
-        from { transform: translateY(-7%); }
-        to { transform: translateY(7%); }
       }
       @keyframes hue-drift {
         from { filter: hue-rotate(-8deg); }

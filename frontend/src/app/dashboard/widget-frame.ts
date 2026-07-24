@@ -38,9 +38,10 @@ import { SettingsService } from './settings.service';
       cdkDragBoundary=".board-surface"
       class="plate group absolute flex flex-col"
       [attr.data-widget]="widget().type"
+      [attr.data-variant]="layout().id"
       [style.--accent]="meta().accent"
-      [style.width.px]="meta().width"
-      [style.height.px]="meta().height"
+      [style.width.px]="layout().width"
+      [style.height.px]="layout().height"
       [cdkDragFreeDragPosition]="{ x: widget().x, y: widget().y }"
       [cdkDragDisabled]="widget().pinned"
       (cdkDragEnded)="onDragEnded($event)"
@@ -63,6 +64,16 @@ import { SettingsService } from './settings.service';
           <span class="theme-emblem" aria-hidden="true">{{ meta().icon }}</span>
         }
         <div class="controls">
+          @if (meta().layouts.length > 1) {
+            <button
+              class="text-parchment-dim hover:text-cap"
+              [title]="'Change layout · ' + layout().label"
+              [attr.aria-label]="'Change ' + meta().label + ' layout. Current: ' + layout().label"
+              (click)="dash.cycleVariant(widget().type)"
+            >
+              ◫
+            </button>
+          }
           <button
             [class.text-parchment-dim]="!widget().pinned"
             [style.color]="widget().pinned ? meta().accent : null"
@@ -78,10 +89,10 @@ import { SettingsService } from './settings.service';
       </div>
 
       <!-- specimen body -->
-      <div class="relative z-10 min-h-0 flex-1 overflow-auto px-4">
+      <div class="widget-body relative z-10 min-h-0 flex-1 overflow-hidden px-4">
         @switch (widget().type) {
-          @case ('clock') { <app-clock /> }
-          @case ('weather') { <app-weather /> }
+          @case ('clock') { <app-clock [variant]="layout().id" /> }
+          @case ('weather') { <app-weather [variant]="layout().id" /> }
           @case ('quote') { <app-quote /> }
           @case ('notes') { <app-notes /> }
           @case ('spotify') { <app-spotify /> }
@@ -223,6 +234,11 @@ export class WidgetFrame {
   readonly dash = inject(DashboardService);
   readonly settings = inject(SettingsService);
   readonly meta = computed(() => WIDGET_META[this.widget().type]);
+  readonly layout = computed(
+    () =>
+      this.meta().layouts.find((layout) => layout.id === this.widget().variant) ??
+      this.meta().layouts[0],
+  );
 
   onDragEnded(event: CdkDragEnd): void {
     const p = event.source.getFreeDragPosition();

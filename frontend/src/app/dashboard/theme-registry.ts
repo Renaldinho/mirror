@@ -65,9 +65,9 @@ export const THEMES: readonly ThemeDefinition[] = [
   {
     id: 'emo',
     label: 'Emo Sad',
-    description: 'Rainy charcoal, bruised violet, and broken-heart scribbles.',
+    description: 'Grainy monochrome nights, ocean light, and quiet romance.',
     glyph: '☂',
-    swatches: ['#08080c', '#49364f', '#9c789e'],
+    swatches: ['#030303', '#53585c', '#d6dcde'],
   },
   {
     id: 'spooky-gay',

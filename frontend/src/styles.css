@@ -655,6 +655,16 @@ body {
   scrollbar-color: var(--theme-primary) transparent;
 }
 
+/* The clock's dial variant makes the frame itself part of the clock face. */
+app-widget-frame .plate[data-variant='dial'] {
+  border-radius: 50%;
+  clip-path: none;
+}
+
+app-widget-frame .plate[data-variant='dial'] .flourish {
+  opacity: 0.25;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
