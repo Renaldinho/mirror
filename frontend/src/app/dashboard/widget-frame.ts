@@ -9,6 +9,7 @@ import { CornerFlourish } from './corner-flourish';
 import { SpecimenArt } from './specimen-art';
 import { DashboardService, WidgetInstance } from './dashboard.service';
 import { WIDGET_META } from './widget-registry';
+import { SettingsService } from './settings.service';
 
 /**
  * A pressed-botanical "specimen plate": an arched frosted-glass sheet (so the
@@ -36,6 +37,7 @@ import { WIDGET_META } from './widget-registry';
       cdkDrag
       cdkDragBoundary=".board-surface"
       class="plate group absolute flex flex-col"
+      [attr.data-widget]="widget().type"
       [style.--accent]="meta().accent"
       [style.width.px]="meta().width"
       [style.height.px]="meta().height"
@@ -49,12 +51,17 @@ import { WIDGET_META } from './widget-registry';
       <app-corner-flourish class="flourish br" />
       <app-corner-flourish class="flourish bl" />
 
-      <!-- large faint pressed-botanical watermark -->
-      <app-specimen-art [art]="meta().art" class="watermark" />
+      @if (settings.theme() === 'mushroom') {
+        <app-specimen-art [art]="meta().art" class="watermark" />
+      }
 
       <!-- crown: emblem + drag handle + hover controls -->
       <div cdkDragHandle class="crown relative z-10" [class.cursor-move]="!widget().pinned">
-        <app-specimen-art [art]="meta().art" class="emblem" />
+        @if (settings.theme() === 'mushroom') {
+          <app-specimen-art [art]="meta().art" class="emblem" />
+        } @else {
+          <span class="theme-emblem" aria-hidden="true">{{ meta().icon }}</span>
+        }
         <div class="controls">
           <button
             [class.text-parchment-dim]="!widget().pinned"
@@ -95,15 +102,32 @@ import { WIDGET_META } from './widget-registry';
   styles: [
     `
       .plate {
-        /* arched top, frosted translucent glass so the backlight glows through */
-        border-radius: 48% 48% 5px 5px / 16% 16% 5px 5px;
-        background: color-mix(in srgb, var(--color-wine) 62%, transparent);
-        border: 1px solid color-mix(in srgb, var(--accent) 50%, transparent);
-        box-shadow:
-          0 0 0 1px color-mix(in srgb, var(--accent) 14%, transparent),
-          0 16px 46px rgba(0, 0, 0, 0.55),
-          inset 0 0 40px color-mix(in srgb, var(--accent) 6%, transparent);
-        backdrop-filter: blur(6px) saturate(1.1);
+        isolation: isolate;
+        border-radius: var(--frame-radius);
+        background: var(--frame-bg);
+        border: 1px solid var(--frame-border);
+        box-shadow: var(--frame-shadow);
+        backdrop-filter: var(--frame-backdrop);
+        color: var(--theme-text);
+        font-family: var(--theme-font-body);
+        transition: border-radius .35s ease, background .35s ease, border-color .25s ease, box-shadow .35s ease;
+      }
+      .plate::before,
+      .plate::after {
+        content: '';
+        position: absolute;
+        z-index: 1;
+        pointer-events: none;
+        transition: .35s ease;
+      }
+      .plate::before {
+        inset: 6px;
+        border: 1px solid color-mix(in srgb, var(--accent) 18%, transparent);
+        border-radius: inherit;
+      }
+      .plate::after {
+        inset: 18% 14% 18%;
+        opacity: .12;
       }
 
       .flourish {
@@ -142,6 +166,11 @@ import { WIDGET_META } from './widget-registry';
         color: var(--accent);
         opacity: 0.95;
       }
+      .theme-emblem {
+        display: grid; width: 31px; height: 31px; place-items: center;
+        color: var(--accent); font: 600 21px/1 var(--theme-font-display);
+        text-shadow: 0 0 14px color-mix(in srgb, var(--accent) 45%, transparent);
+      }
       .controls {
         position: absolute;
         top: 4px;
@@ -177,19 +206,22 @@ import { WIDGET_META } from './widget-registry';
         font-size: 11px;
         letter-spacing: 0.28em;
         text-transform: uppercase;
-        color: var(--color-parchment);
+        color: var(--theme-text);
+        font-family: var(--theme-font-display);
       }
       .latin {
         font-style: italic;
         font-size: 11px;
-        color: color-mix(in srgb, var(--accent) 70%, var(--color-parchment-dim));
+        color: color-mix(in srgb, var(--accent) 70%, var(--theme-text-muted));
       }
+
     `,
   ],
 })
 export class WidgetFrame {
   readonly widget = input.required<WidgetInstance>();
   readonly dash = inject(DashboardService);
+  readonly settings = inject(SettingsService);
   readonly meta = computed(() => WIDGET_META[this.widget().type]);
 
   onDragEnded(event: CdkDragEnd): void {

@@ -48,7 +48,7 @@ import { FACE_LABEL, FACE_SRC } from './faces';
       .placeholder {
         width: 100%; height: 100%;
         display: flex; flex-direction: column; align-items: center; justify-content: center;
-        gap: 4px; background: rgba(255, 255, 255, 0.06); color: #cbd5e1;
+        gap: 4px; background: var(--theme-surface-hover); color: var(--theme-text-muted);
       }
       .face-emoji { font-size: 2.2rem; line-height: 1; }
       .label { font-size: 11px; letter-spacing: 1px; text-transform: uppercase; opacity: 0.7; }

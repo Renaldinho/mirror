@@ -15,24 +15,24 @@ import { WIDGETS } from './widget-registry';
   template: `
     <div class="fixed left-4 top-4 z-20 flex flex-col items-start gap-2">
       <button
-        class="flex h-10 w-10 items-center justify-center rounded-full border border-gold/40
+        class="cabinet-trigger flex h-10 w-10 items-center justify-center rounded-full border border-gold/40
                bg-wine/80 text-lg text-gold shadow-lg backdrop-blur-sm transition
                hover:bg-gold/10"
         (click)="open.set(!open())"
         [title]="open() ? 'Collapse' : 'Widgets'"
       >
-        {{ open() ? '✕' : '❦' }}
+        {{ open() ? '×' : '◈' }}
       </button>
 
       @if (open()) {
         <div
-          class="grid w-56 grid-cols-2 gap-2 rounded-sm border border-gold/30 bg-wine/85 p-2
+          class="cabinet-panel grid w-56 grid-cols-2 gap-2 border border-gold/30 bg-wine/85 p-2
                  shadow-2xl shadow-black/60 backdrop-blur-sm"
         >
           @for (w of widgets; track w.type) {
             <button
               class="tile flex flex-col items-center gap-1 rounded-sm border px-2 py-3 transition"
-              [style.border-color]="dash.isActive(w.type) ? w.accent : 'rgba(173,165,147,0.18)'"
+              [style.border-color]="dash.isActive(w.type) ? w.accent : 'var(--theme-border)'"
               [style.background]="dash.isActive(w.type) ? tint(w.accent) : 'transparent'"
               (click)="dash.toggle(w.type)"
               [title]="dash.isActive(w.type) ? 'Remove ' + w.label : 'Add ' + w.label"
@@ -50,14 +50,14 @@ import { WIDGETS } from './widget-registry';
         </div>
 
         <!-- desktop pet picker -->
-        <div class="mt-2 w-56 rounded-sm border border-gold/30 bg-wine/85 p-2 backdrop-blur-sm shadow-2xl shadow-black/60">
+        <div class="cabinet-panel mt-2 w-56 border border-gold/30 bg-wine/85 p-2 backdrop-blur-sm shadow-2xl shadow-black/60">
           <div class="mb-1 px-1 text-[10px] uppercase tracking-[0.2em] text-parchment-dim">Companion</div>
           <div class="grid grid-cols-4 gap-1">
             @for (p of pets; track p.id) {
               <button
-                class="flex h-12 items-center justify-center overflow-hidden rounded-sm border text-lg transition hover:bg-white/5"
-                [style.border-color]="pet.petId() === p.id ? 'var(--color-gold)' : 'rgba(173,165,147,0.18)'"
-                [style.background]="pet.petId() === p.id ? 'rgba(169,138,79,0.18)' : 'transparent'"
+                class="companion flex h-12 items-center justify-center overflow-hidden rounded-sm border text-lg transition"
+                [style.border-color]="pet.petId() === p.id ? 'var(--theme-primary)' : 'var(--theme-border)'"
+                [style.background]="pet.petId() === p.id ? 'var(--theme-primary-soft)' : 'transparent'"
                 (click)="pet.select(p.id)"
                 [title]="(pet.petId() === p.id ? 'Dismiss ' : '') + p.label + ' — ' + p.description"
               >
@@ -74,7 +74,16 @@ import { WIDGETS } from './widget-registry';
   `,
   styles: [
     `
-      .tile:hover { background: rgba(255, 255, 255, 0.04); }
+      .cabinet-panel {
+        border-radius: var(--panel-radius);
+        background: var(--theme-panel);
+        border-color: var(--theme-border-strong);
+        box-shadow: var(--theme-shadow-strong);
+      }
+      .cabinet-trigger { border-radius: var(--control-radius); background: var(--theme-panel); box-shadow: var(--theme-shadow-soft); }
+      .tile, .companion { border-radius: var(--control-radius); }
+      .tile:hover { background: var(--theme-surface-hover); }
+      .companion:hover { background: var(--theme-surface-hover) !important; }
       .pet-preview {
         display: block;
         width: 38px;

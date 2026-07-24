@@ -32,18 +32,19 @@ import { WsService } from '../core/ws.service';
       }
       .note {
         pointer-events: auto;
-        background: rgba(238, 244, 255, 0.96); backdrop-filter: blur(6px);
-        border-left: 4px solid #4a80ff; border-radius: 8px; padding: 8px 10px;
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
+        background: var(--theme-panel-opaque); color: var(--theme-text); backdrop-filter: blur(10px);
+        border: 1px solid var(--theme-border); border-left: 4px solid var(--theme-info);
+        border-radius: var(--control-radius); padding: 8px 10px;
+        box-shadow: var(--theme-shadow-soft);
         animation: slidein 0.28s cubic-bezier(0.2, 0.9, 0.3, 1.2);
       }
-      .note.warn { background: rgba(255, 246, 230, 0.96); border-left-color: #ffab2e; }
-      .note.chaos { background: rgba(255, 233, 242, 0.96); border-left-color: #ff2e88; }
+      .note.warn { background: var(--theme-panel-opaque); border-left-color: var(--theme-warning); }
+      .note.chaos { background: var(--theme-panel-opaque); border-left-color: var(--theme-chaos); }
       .note-head { display: flex; align-items: center; gap: 8px; }
-      .note-head strong { font-size: 13px; color: #222; }
-      .sev { font-size: 10px; text-transform: uppercase; background: rgba(0, 0, 0, 0.08); padding: 1px 6px; border-radius: 10px; color: #333; }
-      .x { margin-left: auto; border: none; background: transparent; font-size: 18px; cursor: pointer; color: #666; line-height: 1; }
-      .body { font-size: 13px; color: #333; margin-top: 4px; }
+      .note-head strong { font-size: 13px; color: var(--theme-text); }
+      .sev { font-size: 10px; text-transform: uppercase; background: var(--theme-surface-hover); padding: 1px 6px; border-radius: var(--control-radius); color: var(--theme-text-muted); }
+      .x { margin-left: auto; border: none; background: transparent; font-size: 18px; cursor: pointer; color: var(--theme-text-muted); line-height: 1; }
+      .body { font-size: 13px; color: var(--theme-text-muted); margin-top: 4px; }
 
       @keyframes slidein { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
     `,

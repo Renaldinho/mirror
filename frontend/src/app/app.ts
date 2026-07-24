@@ -5,10 +5,11 @@ import { WidgetGrid } from './dashboard/widget-grid';
 import { WidgetFrame } from './dashboard/widget-frame';
 import { PetRenderer } from './dashboard/pet-renderer';
 import { DashboardService } from './dashboard/dashboard.service';
+import { ThemePicker } from './dashboard/theme-picker';
 
 @Component({
   selector: 'app-root',
-  imports: [Background, LightingControl, WidgetGrid, WidgetFrame, PetRenderer],
+  imports: [Background, LightingControl, WidgetGrid, WidgetFrame, PetRenderer, ThemePicker],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './app.html',
   styleUrl: './app.css',

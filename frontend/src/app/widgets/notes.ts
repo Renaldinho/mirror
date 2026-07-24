@@ -13,7 +13,7 @@ const STORAGE_KEY = 'dash.notes';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <textarea
-      class="h-full w-full resize-none bg-transparent font-serif text-base leading-relaxed
+      class="h-full w-full resize-none bg-transparent text-base leading-relaxed
              text-parchment placeholder:text-parchment-dim/50 outline-none"
       placeholder="Jot a thought…"
       [value]="text()"
