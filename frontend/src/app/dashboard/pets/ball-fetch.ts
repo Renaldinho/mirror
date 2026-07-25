@@ -9,12 +9,12 @@ export interface BallState {
   vy: number;
   rotation: number;
   phase: BallPhase;
-  hasBounced: boolean;
 }
 
 export interface FetchBounds {
   width: number;
   height: number;
+  topY: number;
   floorY: number;
 }
 
@@ -40,10 +40,9 @@ export const BALL_RADIUS = 12;
 export const THROW_SAMPLE_MS = 120;
 export const MAX_THROW_SPEED = 1000;
 export const THROW_DISTANCE_THRESHOLD = 6;
-export const GRAVITY = 1200;
-export const FLOOR_RESTITUTION = .52;
-export const WALL_RESTITUTION = .65;
-export const ROLLING_FRICTION = 420;
+export const WALL_RESTITUTION = .82;
+export const AIR_DAMPING = 1.35;
+export const STOP_SPEED = 12;
 export const PICKUP_DISTANCE = 36;
 export const DELIVERY_DISTANCE = 28;
 export const PICKUP_DURATION = 4 / 6;
@@ -91,7 +90,6 @@ export class BallFetchController {
       vy: 0,
       rotation: 0,
       phase: 'ready',
-      hasBounced: false,
     };
   }
 
@@ -103,7 +101,6 @@ export class BallFetchController {
     this.current.phase = 'held';
     this.current.vx = 0;
     this.current.vy = 0;
-    this.current.hasBounced = false;
     this.recordSample(x, y, time, bounds);
     return true;
   }
@@ -131,7 +128,6 @@ export class BallFetchController {
     this.current.phase = 'thrown';
     this.current.vx = velocity.x;
     this.current.vy = velocity.y;
-    this.current.hasBounced = false;
     this.phaseElapsed = 0;
     this.samples = [];
     return true;
@@ -152,13 +148,20 @@ export class BallFetchController {
     bounds: FetchBounds,
     pet: FetchPetSnapshot,
     pointer: FetchPointer,
+    fetchEnabled = true,
   ): FetchIntent | null {
     if (!this.current) return null;
     this.keepInBounds(bounds);
 
     if (this.current.phase === 'thrown') {
       this.updatePhysics(dt, bounds);
-      if (this.current.hasBounced && this.distanceFromPet(pet) <= PICKUP_DISTANCE) {
+      if (!fetchEnabled) {
+        if (this.current.vx === 0 && this.current.vy === 0) {
+          this.current.phase = 'ready';
+        }
+        return null;
+      }
+      if (this.distanceFromPet(pet) <= PICKUP_DISTANCE) {
         this.enterPhase('pickup');
       }
     } else if (this.current.phase === 'pickup') {
@@ -209,44 +212,51 @@ export class BallFetchController {
 
   private updatePhysics(dt: number, bounds: FetchBounds): void {
     const ball = this.current!;
-    const floor = Math.max(BALL_RADIUS, bounds.floorY - BALL_RADIUS);
-    const grounded = ball.y >= floor - .01 && ball.vy === 0;
+    const speed = Math.hypot(ball.vx, ball.vy);
+    const steps = Math.max(1, Math.min(24, Math.ceil(speed * dt / (BALL_RADIUS * .45))));
+    const subDt = dt / steps;
+    const minY = Math.min(bounds.floorY - BALL_RADIUS, bounds.topY + BALL_RADIUS);
+    const maxY = Math.max(minY, bounds.floorY - BALL_RADIUS);
 
-    if (grounded) {
-      ball.vx = approachZero(ball.vx, ROLLING_FRICTION * dt);
-    } else {
-      ball.vy += GRAVITY * dt;
+    for (let step = 0; step < steps; step++) {
+      ball.x += ball.vx * subDt;
+      ball.y += ball.vy * subDt;
+      ball.rotation += ball.vx * subDt * .3;
+
+      if (ball.x < BALL_RADIUS) {
+        ball.x = BALL_RADIUS;
+        ball.vx = Math.abs(ball.vx) * WALL_RESTITUTION;
+      } else if (ball.x > bounds.width - BALL_RADIUS) {
+        ball.x = Math.max(BALL_RADIUS, bounds.width - BALL_RADIUS);
+        ball.vx = -Math.abs(ball.vx) * WALL_RESTITUTION;
+      }
+
+      if (ball.y < minY) {
+        ball.y = minY;
+        ball.vy = Math.abs(ball.vy) * WALL_RESTITUTION;
+      } else if (ball.y > maxY) {
+        ball.y = maxY;
+        ball.vy = -Math.abs(ball.vy) * WALL_RESTITUTION;
+      }
+
+      const damping = Math.exp(-AIR_DAMPING * subDt);
+      ball.vx *= damping;
+      ball.vy *= damping;
     }
-
-    ball.x += ball.vx * dt;
-    ball.y += ball.vy * dt;
-    ball.rotation += ball.vx * dt * .3;
-
-    if (ball.x < BALL_RADIUS) {
-      ball.x = BALL_RADIUS;
-      ball.vx = Math.abs(ball.vx) * WALL_RESTITUTION;
-    } else if (ball.x > bounds.width - BALL_RADIUS) {
-      ball.x = Math.max(BALL_RADIUS, bounds.width - BALL_RADIUS);
-      ball.vx = -Math.abs(ball.vx) * WALL_RESTITUTION;
-    }
-
-    if (ball.y < BALL_RADIUS) {
-      ball.y = BALL_RADIUS;
-      ball.vy = Math.abs(ball.vy) * WALL_RESTITUTION;
-    }
-
-    if (ball.y >= floor && ball.vy >= 0) {
-      ball.y = floor;
-      ball.hasBounced = true;
-      ball.vx *= .86;
-      ball.vy = Math.abs(ball.vy) < 70 ? 0 : -ball.vy * FLOOR_RESTITUTION;
+    if (Math.hypot(ball.vx, ball.vy) < STOP_SPEED) {
+      ball.vx = 0;
+      ball.vy = 0;
     }
   }
 
   private keepInBounds(bounds: FetchBounds): void {
     if (!this.current) return;
     this.current.x = clamp(this.current.x, BALL_RADIUS, Math.max(BALL_RADIUS, bounds.width - BALL_RADIUS));
-    this.current.y = clamp(this.current.y, BALL_RADIUS, Math.max(BALL_RADIUS, bounds.floorY - BALL_RADIUS));
+    this.current.y = clamp(
+      this.current.y,
+      bounds.topY + BALL_RADIUS,
+      Math.max(bounds.topY + BALL_RADIUS, bounds.floorY - BALL_RADIUS),
+    );
   }
 
   private placeBesidePointer(
@@ -264,13 +274,12 @@ export class BallFetchController {
     );
     ball.y = clamp(
       pointer.y,
-      BALL_RADIUS,
+      bounds.topY + BALL_RADIUS,
       Math.max(BALL_RADIUS, bounds.floorY - BALL_RADIUS),
     );
     ball.vx = 0;
     ball.vy = 0;
     ball.phase = 'ready';
-    ball.hasBounced = false;
     this.phaseElapsed = 0;
   }
 
@@ -297,7 +306,11 @@ export class BallFetchController {
   private recordSample(x: number, y: number, time: number, bounds: FetchBounds): void {
     const ball = this.current!;
     ball.x = clamp(x, BALL_RADIUS, Math.max(BALL_RADIUS, bounds.width - BALL_RADIUS));
-    ball.y = clamp(y, BALL_RADIUS, Math.max(BALL_RADIUS, bounds.floorY - BALL_RADIUS));
+    ball.y = clamp(
+      y,
+      bounds.topY + BALL_RADIUS,
+      Math.max(bounds.topY + BALL_RADIUS, bounds.floorY - BALL_RADIUS),
+    );
     this.samples.push({ x: ball.x, y: ball.y, time });
     const cutoff = time - THROW_SAMPLE_MS;
     while (this.samples.length > 2 && this.samples[1].time < cutoff) this.samples.shift();
@@ -323,10 +336,4 @@ export class BallFetchController {
 
 function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value));
-}
-
-function approachZero(value: number, amount: number): number {
-  if (value > 0) return Math.max(0, value - amount);
-  if (value < 0) return Math.min(0, value + amount);
-  return 0;
 }

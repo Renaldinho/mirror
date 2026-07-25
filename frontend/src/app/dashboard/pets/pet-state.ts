@@ -1,4 +1,5 @@
 import type { Pet } from './pet';
+import { CozyActivityAnchor } from './cozy-types';
 import { PetContext, PetPose } from './pet-types';
 
 /** Vertical anchor from a pet's position to the bottom of its visual. */
@@ -7,6 +8,7 @@ export const PET_SIZE = 44;
 /** One state in the companion behaviour machine. */
 export abstract class PetState {
   abstract readonly name: string;
+  readonly activity: 'sleep' | 'watch' | null = null;
   protected elapsed = 0;
   protected duration = 0;
 
@@ -97,13 +99,39 @@ export class WalkState extends PetState {
 
 /** Use the dedicated curled-up sleep strip and remain asleep while dimmed. */
 export class SleepState extends PetState {
-  readonly name = 'sleep';
+  override readonly activity = 'sleep' as const;
+  private target: CozyActivityAnchor | null;
+  private settled: boolean;
 
-  override enter(): void {
+  constructor(target: CozyActivityAnchor | null = null, settled = false) {
+    super();
+    this.target = target;
+    this.settled = settled;
+  }
+
+  override get name(): string {
+    return this.settled ? 'sleep' : 'walk';
+  }
+
+  override enter(pet: Pet, ctx: PetContext): void {
     this.duration = 4 + Math.random() * 6;
+    this.target ??= nearestAnchor(pet, ctx.cozy?.sleepSpots ?? []);
+    if (!this.target) this.settled = true;
   }
 
   protected tick(pet: Pet, ctx: PetContext): PetState | null {
+    if (!this.settled && this.target) {
+      const arrived = movePet(
+        pet,
+        ctx,
+        this.target.x - pet.width / 2,
+        this.target.y,
+        pet.personality.speed * 1.15,
+      );
+      if (!arrived) return null;
+      this.settled = true;
+      this.elapsed = 0;
+    }
     pet.clampPosition(ctx);
     if (ctx.dim) return null;
     return this.elapsed > this.duration ? pet.newRest() : null;
@@ -112,6 +140,51 @@ export class SleepState extends PetState {
   pose(): PetPose {
     // The sleep atlas already contains its own small Z symbols.
     return { scaleY: 1 + Math.sin(this.elapsed * 1.3) * .025 };
+  }
+}
+
+/** Walk to an enabled television, face it, and linger for a short watch. */
+export class WatchState extends PetState {
+  override readonly activity = 'watch' as const;
+  private target: CozyActivityAnchor | null = null;
+  private settled = false;
+
+  override get name(): string {
+    return this.settled ? 'curious' : 'walk';
+  }
+
+  override enter(pet: Pet, ctx: PetContext): void {
+    this.duration = 4 + Math.random() * 4;
+    this.target = nearestAnchor(pet, ctx.cozy?.watchSpots ?? []);
+  }
+
+  protected tick(pet: Pet, ctx: PetContext): PetState | null {
+    if (!this.target || !ctx.cozy?.watchSpots.some((spot) => spot.itemId === this.target!.itemId)) {
+      return pet.newRest();
+    }
+    if (!this.settled) {
+      const arrived = movePet(
+        pet,
+        ctx,
+        this.target.x - pet.width / 2,
+        this.target.y,
+        pet.personality.speed,
+      );
+      if (!arrived) return null;
+      this.settled = true;
+      this.elapsed = 0;
+      pet.setMotionDirection(
+        (this.target.faceX ?? this.target.x) - (pet.x + pet.width / 2),
+        (this.target.faceY ?? this.target.y) - pet.y,
+      );
+    }
+    return this.elapsed > this.duration ? pet.newRest() : null;
+  }
+
+  pose(): PetPose {
+    return this.settled
+      ? { bubble: 'â—‹' }
+      : { dy: -Math.abs(Math.sin(this.elapsed * 8)) * 2 };
   }
 }
 
@@ -261,4 +334,15 @@ function movePet(
   pet.y += dy / distance * step;
   pet.clampPosition(ctx);
   return false;
+}
+
+function nearestAnchor(
+  pet: Pet,
+  anchors: readonly CozyActivityAnchor[],
+): CozyActivityAnchor | null {
+  const centerX = pet.x + pet.width / 2;
+  return [...anchors].sort((a, b) =>
+    Math.hypot(a.x - centerX, a.y - pet.y) -
+    Math.hypot(b.x - centerX, b.y - pet.y)
+  )[0] ?? null;
 }

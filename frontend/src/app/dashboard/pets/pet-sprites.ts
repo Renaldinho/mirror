@@ -55,3 +55,7 @@ export const CAPY_SPRITE = sheet('pet-sprite-capy');
 export const COLLIE_SPRITE = sheet('pet-sprite-collie');
 export const FROG_SPRITE = sheet('pet-sprite-frog');
 export const SHADOW_CAT_SPRITE = sheet('pet-sprite-shadow-cat');
+export const GINGER_SPRITE = sheet('pet-sprite-ginger');
+export const BLUE_KIT_SPRITE = sheet('pet-sprite-blue-kit');
+export const DIPLODOCUS_SPRITE = sheet('pet-sprite-diplodocus');
+export const PIGEON_SPRITE = sheet('pet-sprite-pigeon');

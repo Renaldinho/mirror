@@ -15,6 +15,7 @@ import { BallFetchController, FetchBounds } from './pets/ball-fetch';
 import { PetMoodService } from './pets/pet-mood.service';
 import { PET_SIZE } from './pets/pet-state';
 import { PetContext } from './pets/pet-types';
+import { PetCozyService } from './pets/pet-cozy.service';
 
 /**
  * Thin view layer for the pet domain: builds the current Pet from the selected
@@ -126,6 +127,7 @@ export class PetRenderer implements AfterViewInit {
   private readonly pets = inject(PetService);
   private readonly mood = inject(PetMoodService);
   private readonly settings = inject(SettingsService);
+  private readonly cozy = inject(PetCozyService);
   private readonly destroyRef = inject(DestroyRef);
 
   private readonly rootRef = viewChild.required<ElementRef<HTMLElement>>('root');
@@ -203,13 +205,15 @@ export class PetRenderer implements AfterViewInit {
       this.pet.x = e.clientX - this.dragOffset.x;
       this.pet.y = e.clientY - this.dragOffset.y + PET_SIZE;
     };
-    const onPointerUp = () => {
+    const onPointerUp = (event: PointerEvent) => {
       if (!this.dragArmed || !this.pet) return;
       const wasDragging = this.dragging;
       this.dragArmed = false;
       this.dragging = false;
       if (wasDragging) {
         this.pet.setHeld(false);
+        const spot = this.cozy.sleepSpotAt(event.clientX, event.clientY, this.bounds());
+        if (spot) this.pet.settleToSleep(spot);
         this.suppressClick = true;
         window.setTimeout(() => (this.suppressClick = false), 0);
       }
@@ -308,6 +312,8 @@ export class PetRenderer implements AfterViewInit {
     const dt = this.prev ? Math.min((t - this.prev) / 1000, 0.05) : 0;
     this.prev = t;
 
+    const bounds = this.bounds();
+    const cozy = this.cozy.snapshot(bounds);
     const ctx: PetContext = {
       now: t,
       dt,
@@ -322,13 +328,15 @@ export class PetRenderer implements AfterViewInit {
       fetch: null,
       energy: this.mood.energy() / 100,
       dim: !this.settings.bgOn() || this.settings.bgLight() < 25,
+      cozy,
     };
 
     ctx.fetch = this.fetch.step(
       dt,
-      this.bounds(),
+      bounds,
       this.pet,
       { x: this.pointer.x, y: this.pointer.y },
+      this.pet.canFetch,
     );
     this.pet.update(ctx);
     this.updateBall();
@@ -429,6 +437,7 @@ export class PetRenderer implements AfterViewInit {
     return {
       width: typeof window === 'undefined' ? 1280 : window.innerWidth,
       height,
+      topY: Math.min(height - 64, Math.max(84, height * .16)),
       floorY: height - 64,
     };
   }

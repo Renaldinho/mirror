@@ -49,3 +49,30 @@ per row, stable scale/baseline, correct directional views, and no grid lines,
 labels, scenery, shadows, blank cells, or cropped body parts. The generated
 foreground column/row bands were detected before each frame was chroma-keyed,
 nearest-neighbor packed into 128×128 cells, and appended to the v5 pixels.
+
+## New companions (v1)
+
+Ginger, Blue Kit, Diplo, and Pigeon use the same 4-by-20 atlas contract. Their
+approved four-direction identity sheets were expanded with the built-in
+ImageGen workflow into two source sheets per companion:
+
+1. A 4-by-11 core sheet containing idle, four-direction movement, sleep, eat,
+   happy, held, and two continuous play rows.
+2. A 4-by-6 fetch sheet containing pickup, four-direction carry, and delivery
+   with the shared stitched ball.
+
+Both sources used a flat `#ff00ff` chroma background. The production pass
+removed and despilled the key, detected each animation column and its ordered
+poses, nearest-neighbor fit each pose into a 128-by-128 cell, and assembled the
+final transparent 512-by-2560 atlas. Rows 9, 12, and 13 remain transparent.
+
+Identity constraints:
+
+- Ginger: chunky orange tabby, darker orange stripes, cream muzzle/chest/belly
+  and paws, amber eyes, upright striped tail.
+- Blue Kit: baby blue-gray mackerel tabby with green eyes; white only on the
+  belly, feet, and anatomical-left side of the face, with no white chest bib.
+- Diplo: four-legged baby diplodocus/longneck with bright green skin, cream
+  underside, darker spots, small friendly head, long neck, and tapering tail.
+- Pigeon: plump gray city pigeon with dark wing bars, green-purple neck
+  iridescence, ruby eyes, pink-red feet, ground waddles, and brief play flutters.

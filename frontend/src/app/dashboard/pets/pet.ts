@@ -10,6 +10,7 @@ import {
   PlayState,
   RestState,
   SleepState,
+  WatchState,
   WalkState,
 } from './pet-state';
 import {
@@ -21,6 +22,7 @@ import {
   PetSpriteSheet,
   PetView,
 } from './pet-types';
+import { CozyActivityAnchor } from './cozy-types';
 
 /**
  * Base companion: owns position/direction, runs the behaviour state machine,
@@ -30,6 +32,8 @@ export abstract class Pet {
   abstract readonly id: string;
   abstract readonly name: string;
   abstract readonly personality: Personality;
+  /** Species-level opt-out for companions that should ignore the fetch loop. */
+  readonly canFetch: boolean = true;
   protected abstract readonly spriteSheet: PetSpriteSheet;
 
   x = 120;
@@ -78,7 +82,10 @@ export abstract class Pet {
 
   newRest(): PetState { return new RestState(); }
   newWalk(): PetState { return new WalkState(); }
-  newSleep(): PetState { return new SleepState(); }
+  newSleep(anchor: CozyActivityAnchor | null = null, settled = false): PetState {
+    return new SleepState(anchor, settled);
+  }
+  newWatch(): PetState { return new WatchState(); }
   newEat(): PetState { return new EatState(); }
   newPlay(): PetState { return new PlayState(); }
   newCurious(): PetState { return new CuriousState(); }
@@ -100,7 +107,9 @@ export abstract class Pet {
   chooseNext(ctx: PetContext): PetState {
     const p = this.personality;
     const energy = ctx.energy;
-    if (Math.random() < .14) return this.newCurious();
+    const expression = Math.random();
+    if (expression < .14) return this.newCurious();
+    if (expression < .26 && ctx.cozy?.watchSpots.length) return this.newWatch();
     const roll = Math.random();
     const playChance = ctx.pointer.active ? p.playfulness * (.4 + energy) : 0;
     const sleepChance = p.sleepiness + (1 - energy) * .5;
@@ -137,7 +146,7 @@ export abstract class Pet {
     if (this.pendingFeed) {
       this.pendingFeed = false;
       this.setState(this.newEat(), ctx);
-    } else if (ctx.dim && this.state!.name !== 'sleep' && this.state!.name !== 'eat') {
+    } else if (ctx.dim && this.state!.activity !== 'sleep' && this.state!.name !== 'eat') {
       this.setState(this.newSleep(), ctx);
     }
 
@@ -161,6 +170,15 @@ export abstract class Pet {
     } else {
       this.pendingFeed = true;
     }
+  }
+
+  settleToSleep(anchor: CozyActivityAnchor): void {
+    if (!this.lastContext) return;
+    this.held = false;
+    this.x = anchor.x - this.width / 2;
+    this.y = anchor.y;
+    this.clampPosition(this.lastContext);
+    this.setState(this.newSleep(anchor, true), this.lastContext);
   }
 
   view(): PetView {

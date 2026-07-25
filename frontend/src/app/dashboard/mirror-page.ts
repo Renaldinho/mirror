@@ -4,6 +4,7 @@ import { LightingControl } from './lighting-control';
 import { WidgetGrid } from './widget-grid';
 import { WidgetFrame } from './widget-frame';
 import { PetRenderer } from './pet-renderer';
+import { PetHabitat } from './pet-habitat';
 import { DashboardService } from './dashboard.service';
 import { AmbienceService } from './ambience.service';
 import { ThemePicker } from './theme-picker';
@@ -21,6 +22,7 @@ import { SpotifyService } from '../widgets/spotify/spotify.service';
     WidgetGrid,
     WidgetFrame,
     PetRenderer,
+    PetHabitat,
     ThemePicker,
     RetroCursor,
     GamesLauncher,
@@ -38,6 +40,7 @@ import { SpotifyService } from '../widgets/spotify/spotify.service';
       <app-games-launcher />
 
       <!-- desktop pet -->
+      <app-pet-habitat />
       <app-pet />
 
       @for (w of dash.widgets(); track w.type) {

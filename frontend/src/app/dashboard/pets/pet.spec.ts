@@ -1,7 +1,12 @@
 import { vi } from 'vitest';
+import { BlueKitPet } from './blue-kit';
 import { CapyPet } from './capy';
 import { ColliePet } from './collie';
+import { DiplodocusPet } from './diplodocus';
 import { FrogPet } from './frog';
+import { GingerPet } from './ginger';
+import { createPet, PET_CATALOG } from './index';
+import { PigeonPet } from './pigeon';
 import { ShadowCatPet } from './shadow-cat';
 import { PetContext } from './pet-types';
 
@@ -21,6 +26,31 @@ function context(overrides: Partial<PetContext> = {}): PetContext {
 }
 
 describe('desktop pet actions', () => {
+  it('registers every companion in both the picker catalog and factory', () => {
+    expect(PET_CATALOG.map((pet) => pet.id)).toEqual([
+      'capy',
+      'lando',
+      'frog',
+      'shadow-kit',
+      'ginger',
+      'blue-kit',
+      'diplodocus',
+      'pigeon',
+    ]);
+
+    for (const info of PET_CATALOG) {
+      const pet = createPet(info.id);
+      expect(pet?.id).toBe(info.id);
+      expect(pet?.view().sprite.sheet).toBe(info.sprite);
+    }
+  });
+
+  it('makes only the chunky orange cat ignore fetch commands', () => {
+    expect(new GingerPet().canFetch).toBe(false);
+    expect(PET_CATALOG.filter((info) => createPet(info.id)?.canFetch).map((info) => info.id))
+      .toEqual(['capy', 'lando', 'frog', 'shadow-kit', 'blue-kit', 'diplodocus', 'pigeon']);
+  });
+
   it('maps each movement direction to its dedicated atlas row', () => {
     const pet = new CapyPet();
     const ctx = context();
@@ -114,6 +144,10 @@ describe('desktop pet actions', () => {
     ['Lando', () => new ColliePet()],
     ['Frog', () => new FrogPet()],
     ['Shadow Kit', () => new ShadowCatPet()],
+    ['Ginger', () => new GingerPet()],
+    ['Blue Kit', () => new BlueKitPet()],
+    ['Diplo', () => new DiplodocusPet()],
+    ['Pigeon', () => new PigeonPet()],
   ])('provides pickup, directional carry, and delivery art for %s', (_name, makePet) => {
     const pet = makePet();
     pet.update(context({ fetch: { mode: 'pickup' } }));
@@ -138,5 +172,60 @@ describe('desktop pet actions', () => {
 
     pet.update(context());
     expect(pet.stateName).toBe('eat');
+  });
+
+  it('walks to the nearest cozy sleep spot before sleeping', () => {
+    const pet = new CapyPet();
+    const ctx = context({
+      dt: .1,
+      cozy: {
+        items: [],
+        sleepSpots: [
+          { itemId: 'far', x: 800, y: 240 },
+          { itemId: 'near', x: 240, y: 520 },
+        ],
+        watchSpots: [],
+      },
+    });
+    pet.update(ctx);
+    pet.setState(pet.newSleep(), ctx);
+
+    expect(pet.stateName).toBe('walk');
+    for (let i = 0; i < 80 && pet.stateName === 'walk'; i++) pet.update(ctx);
+
+    expect(pet.stateName).toBe('sleep');
+    expect(pet.x + pet.width / 2).toBeCloseTo(240, 0);
+    expect(pet.y).toBeCloseTo(520, 0);
+  });
+
+  it('snaps directly into sleep when dropped onto a cozy anchor', () => {
+    const pet = new CapyPet();
+    pet.update(context());
+
+    pet.settleToSleep({ itemId: 'bed', x: 420, y: 360 });
+
+    expect(pet.stateName).toBe('sleep');
+    expect(pet.x + pet.width / 2).toBe(420);
+    expect(pet.y).toBe(360);
+  });
+
+  it('walks to an enabled TV and leaves when it is turned off', () => {
+    const pet = new CapyPet();
+    const watchSpot = { itemId: 'tv', x: 360, y: 420, faceX: 360, faceY: 260 };
+    const ctx = context({
+      dt: .1,
+      cozy: { items: [], sleepSpots: [], watchSpots: [watchSpot] },
+    });
+    pet.update(ctx);
+    pet.setState(pet.newWatch(), ctx);
+
+    for (let i = 0; i < 130 && pet.stateName === 'walk'; i++) pet.update(ctx);
+    expect(pet.stateName).toBe('curious');
+    expect(pet.direction).toBe('up');
+
+    pet.update(context({
+      cozy: { items: [], sleepSpots: [], watchSpots: [] },
+    }));
+    expect(pet.stateName).toBe('rest');
   });
 });

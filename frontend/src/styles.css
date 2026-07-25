@@ -657,6 +657,41 @@ body {
   background-image: url('./app/dashboard/pets/shadow-cat/shadow-cat-interactions-v6.png');
 }
 
+.pet-sprite-ginger {
+  background-image: url('./app/dashboard/pets/ginger/ginger-interactions-v1.png');
+}
+
+.pet-sprite-blue-kit {
+  background-image: url('./app/dashboard/pets/blue-kit/blue-kit-interactions-v1.png');
+}
+
+.pet-sprite-diplodocus {
+  background-image: url('./app/dashboard/pets/diplodocus/diplodocus-interactions-v1.png');
+}
+
+.pet-sprite-pigeon {
+  background-image: url('./app/dashboard/pets/pigeon/pigeon-interactions-v1.png');
+}
+
+.cozy-item.bed,
+.front-piece.bed {
+  background-image: url('./app/dashboard/pets/cozy/assets/cozy-bed.png');
+}
+
+.cozy-item.house,
+.front-piece.house {
+  background-image: url('./app/dashboard/pets/cozy/assets/cozy-house.png');
+}
+
+.cozy-item.cushion,
+.front-piece.cushion {
+  background-image: url('./app/dashboard/pets/cozy/assets/cozy-cushion.png');
+}
+
+.cozy-item.tv {
+  background-image: url('./app/dashboard/pets/cozy/assets/cozy-tv.png');
+}
+
 .fetch-ball-sprite {
   background-image: url('./app/dashboard/pets/fetch-ball-v1.png');
   background-position: center;

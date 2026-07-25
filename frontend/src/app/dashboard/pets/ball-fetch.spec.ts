@@ -1,6 +1,12 @@
-import { BallFetchController, BALL_RADIUS, MAX_THROW_SPEED } from './ball-fetch';
+import {
+  AIR_DAMPING,
+  BallFetchController,
+  BALL_RADIUS,
+  MAX_THROW_SPEED,
+  STOP_SPEED,
+} from './ball-fetch';
 
-const bounds = { width: 800, height: 600, floorY: 536 };
+const bounds = { width: 800, height: 600, topY: 96, floorY: 536 };
 const pet = {
   x: 120,
   y: 536,
@@ -35,49 +41,76 @@ describe('BallFetchController', () => {
     expect(Math.hypot(controller.ball!.vx, controller.ball!.vy)).toBeCloseTo(MAX_THROW_SPEED);
   });
 
-  it('rebounds from screen bounds and never escapes the play area', () => {
+  it('has no gravity and damps both velocity axes evenly', () => {
     const controller = new BallFetchController();
-    controller.reset(pet, bounds);
-    controller.beginDrag(1, 300, 200, 0, bounds);
-    controller.drag(1, 760, 190, 100, bounds);
-    controller.release(1, 790, 190, 120, bounds);
+    thrown(controller);
+    const before = { vx: controller.ball!.vx, vy: controller.ball!.vy };
+    const ratio = before.vy / before.vx;
 
-    for (let i = 0; i < 90; i++) controller.step(1 / 60, bounds, pet, pointer);
+    controller.step(.1, bounds, { ...pet, x: 0, y: bounds.floorY }, pointer);
 
-    expect(controller.ball!.x).toBeGreaterThanOrEqual(BALL_RADIUS);
-    expect(controller.ball!.x).toBeLessThanOrEqual(bounds.width - BALL_RADIUS);
-    expect(controller.ball!.y).toBeLessThanOrEqual(bounds.floorY - BALL_RADIUS);
-    expect(controller.ball!.hasBounced).toBe(true);
+    expect(controller.ball!.vy / controller.ball!.vx).toBeCloseTo(ratio, 4);
+    expect(Math.hypot(controller.ball!.vx, controller.ball!.vy))
+      .toBeCloseTo(Math.hypot(before.vx, before.vy) * Math.exp(-AIR_DAMPING * .1), 3);
   });
 
-  it('chases immediately but cannot pick up before the first bounce', () => {
+  it('rebounds from every edge of the reachable pet area', () => {
+    const cases = [
+      { start: [20, 300], end: [0, 300], axis: 'vx', sign: 1 },
+      { start: [780, 300], end: [800, 300], axis: 'vx', sign: -1 },
+      { start: [400, 120], end: [400, 80], axis: 'vy', sign: 1 },
+      { start: [400, 510], end: [400, 550], axis: 'vy', sign: -1 },
+    ] as const;
+
+    for (const test of cases) {
+      const controller = new BallFetchController();
+      controller.reset({ ...pet, x: 700 }, bounds);
+      controller.beginDrag(1, test.start[0], test.start[1], 0, bounds);
+      controller.release(1, test.end[0], test.end[1], 50, bounds);
+      controller.step(.08, bounds, { ...pet, x: 700 }, pointer);
+      expect(Math.sign(controller.ball![test.axis])).toBe(test.sign);
+      expect(controller.ball!.y).toBeGreaterThanOrEqual(bounds.topY + BALL_RADIUS);
+      expect(controller.ball!.y).toBeLessThanOrEqual(bounds.floorY - BALL_RADIUS);
+    }
+  });
+
+  it('slows to a complete stop at an arbitrary two-dimensional position', () => {
+    const controller = new BallFetchController();
+    thrown(controller);
+    const distantPet = { ...pet, x: 0, y: bounds.floorY };
+
+    for (let i = 0; i < 360; i++) controller.step(1 / 60, bounds, distantPet, pointer);
+
+    expect(Math.hypot(controller.ball!.vx, controller.ball!.vy)).toBeLessThanOrEqual(STOP_SPEED);
+    expect(controller.ball!.vx).toBe(0);
+    expect(controller.ball!.vy).toBe(0);
+    expect(controller.ball!.y).toBeGreaterThan(bounds.topY + BALL_RADIUS);
+    expect(controller.ball!.y).toBeLessThan(bounds.floorY - BALL_RADIUS);
+  });
+
+  it('allows a pet to catch the ball before any wall contact', () => {
     const controller = new BallFetchController();
     controller.reset(pet, bounds);
-    controller.beginDrag(1, 160, 500, 0, bounds);
-    controller.release(1, 166, 490, 30, bounds);
+    controller.beginDrag(1, 300, 300, 0, bounds);
+    controller.release(1, 310, 300, 80, bounds);
+    const nearbyPet = { ...pet, x: 270, y: 322 };
 
-    const intent = controller.step(1 / 60, bounds, pet, pointer);
+    controller.step(1 / 60, bounds, nearbyPet, pointer);
 
-    expect(intent?.mode).toBe('chase');
-    expect(controller.ball?.phase).toBe('thrown');
+    expect(controller.ball?.phase).toBe('pickup');
   });
 
   it('runs pickup, carry, delivery, and returns the ball beside the cursor', () => {
     const controller = new BallFetchController();
-    const nearbyPet = { ...pet, x: 120, y: bounds.floorY };
-    controller.reset(nearbyPet, bounds);
-    controller.beginDrag(1, 160, 480, 0, bounds);
-    controller.release(1, 170, bounds.floorY - BALL_RADIUS, 100, bounds);
-
-    for (let i = 0; i < 90 && controller.ball?.phase === 'thrown'; i++) {
-      controller.step(1 / 60, bounds, nearbyPet, pointer);
-    }
+    controller.reset(pet, bounds);
+    controller.beginDrag(1, 160, 400, 0, bounds);
+    controller.release(1, 170, 400, 100, bounds);
+    const nearbyPet = { ...pet, x: 130, y: 422 };
+    controller.step(1 / 60, bounds, nearbyPet, pointer);
     expect(controller.ball?.phase).toBe('pickup');
-    expect(controller.visible).toBe(false);
 
     for (let i = 0; i < 50; i++) controller.step(1 / 60, bounds, nearbyPet, pointer);
     expect(controller.ball?.phase).toBe('carried');
-    expect(controller.step(0, bounds, nearbyPet, pointer)?.mode).toBe('carry');
 
     const atPointer = { ...nearbyPet, x: pointer.x - nearbyPet.width / 2, y: pointer.y + 22 };
     controller.step(1 / 60, bounds, atPointer, pointer);
@@ -85,7 +118,6 @@ describe('BallFetchController', () => {
 
     for (let i = 0; i < 50; i++) controller.step(1 / 60, bounds, atPointer, pointer);
     expect(controller.ball?.phase).toBe('ready');
-    expect(controller.visible).toBe(true);
     expect(Math.abs(controller.ball!.x - pointer.x)).toBe(BALL_RADIUS + 16);
     expect(controller.ball!.y).toBe(pointer.y);
   });
@@ -97,6 +129,23 @@ describe('BallFetchController', () => {
     controller.cancelDrag(7);
 
     expect(controller.ball?.phase).toBe('ready');
+    expect(controller.active).toBe(false);
+  });
+
+  it('lets non-fetching companions ignore a throw and leaves the stopped ball reusable', () => {
+    const controller = new BallFetchController();
+    controller.reset(pet, bounds);
+    controller.beginDrag(1, 160, 400, 0, bounds);
+    controller.release(1, 170, 400, 100, bounds);
+
+    const intents = [];
+    for (let i = 0; i < 360 && controller.ball?.phase !== 'ready'; i++) {
+      intents.push(controller.step(1 / 60, bounds, pet, pointer, false));
+    }
+
+    expect(intents.every((intent) => intent === null)).toBe(true);
+    expect(controller.ball?.phase).toBe('ready');
+    expect(controller.visible).toBe(true);
     expect(controller.active).toBe(false);
   });
 });

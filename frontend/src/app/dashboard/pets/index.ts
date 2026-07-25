@@ -1,14 +1,22 @@
+import { BlueKitPet } from './blue-kit';
 import { CapyPet } from './capy';
 import { ColliePet } from './collie';
+import { DiplodocusPet } from './diplodocus';
 import { FrogPet } from './frog';
+import { GingerPet } from './ginger';
 import { Pet } from './pet';
 import {
+  BLUE_KIT_SPRITE,
   CAPY_SPRITE,
   COLLIE_SPRITE,
+  DIPLODOCUS_SPRITE,
   FROG_SPRITE,
+  GINGER_SPRITE,
+  PIGEON_SPRITE,
   SHADOW_CAT_SPRITE,
 } from './pet-sprites';
 import { PetSpriteSheet } from './pet-types';
+import { PigeonPet } from './pigeon';
 import { ShadowCatPet } from './shadow-cat';
 
 /** Picker metadata shared with the selection service. */
@@ -24,9 +32,13 @@ const REGISTRY: Record<string, () => Pet> = {
   lando: () => new ColliePet(),
   frog: () => new FrogPet(),
   'shadow-kit': () => new ShadowCatPet(),
+  ginger: () => new GingerPet(),
+  'blue-kit': () => new BlueKitPet(),
+  diplodocus: () => new DiplodocusPet(),
+  pigeon: () => new PigeonPet(),
 };
 
-/** Only companions backed by a supplied pet folder belong in this catalog. */
+/** Companions shown by the mirror's four-column picker. */
 export const PET_CATALOG: PetInfo[] = [
   {
     id: 'capy',
@@ -51,6 +63,30 @@ export const PET_CATALOG: PetInfo[] = [
     label: 'Shadow Kit',
     description: 'A black kitten with amber eyes and a purple collar.',
     sprite: SHADOW_CAT_SPRITE,
+  },
+  {
+    id: 'ginger',
+    label: 'Ginger',
+    description: 'A mellow, chunky orange tabby.',
+    sprite: GINGER_SPRITE,
+  },
+  {
+    id: 'blue-kit',
+    label: 'Blue Kit',
+    description: 'A tiny blue mackerel tabby who loves to play.',
+    sprite: BLUE_KIT_SPRITE,
+  },
+  {
+    id: 'diplodocus',
+    label: 'Diplo',
+    description: 'A gentle green baby longneck.',
+    sprite: DIPLODOCUS_SPRITE,
+  },
+  {
+    id: 'pigeon',
+    label: 'Pigeon',
+    description: 'A plump city pigeon with a proud little waddle.',
+    sprite: PIGEON_SPRITE,
   },
 ];
 

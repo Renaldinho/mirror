@@ -1,3 +1,5 @@
+import type { CozySnapshot } from './cozy-types';
+
 /** Everything a pet needs to know about the world on a given tick. */
 export interface PetContext {
   /** requestAnimationFrame timestamp (ms). */
@@ -15,6 +17,8 @@ export interface PetContext {
   energy: number;
   /** True when the mirror is dark/dimmed — the pet should curl up and sleep. */
   dim: boolean;
+  /** Optional cozy furniture and its activity anchors. */
+  cozy?: CozySnapshot;
 }
 
 export type FetchIntent =
