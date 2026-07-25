@@ -642,19 +642,19 @@ body {
  * both dev and production. Runtime code only chooses a class and sheet cell.
  */
 .pet-sprite-capy {
-  background-image: url('./app/dashboard/pets/capy/capy-interactions-v3.png');
+  background-image: url('./app/dashboard/pets/capy/capy-interactions-v4.png');
 }
 
 .pet-sprite-collie {
-  background-image: url('./app/dashboard/pets/collie/collie-interactions-v3.png');
+  background-image: url('./app/dashboard/pets/collie/collie-interactions-v4.png');
 }
 
 .pet-sprite-frog {
-  background-image: url('./app/dashboard/pets/frog/frog-interactions-v3.png');
+  background-image: url('./app/dashboard/pets/frog/frog-interactions-v4.png');
 }
 
 .pet-sprite-shadow-cat {
-  background-image: url('./app/dashboard/pets/shadow-cat/shadow-cat-interactions-v3.png');
+  background-image: url('./app/dashboard/pets/shadow-cat/shadow-cat-interactions-v4.png');
 }
 
 /* Slim, in-theme scrollbars for widget bodies. */

@@ -119,6 +119,7 @@ export abstract class Pet {
       this.y = this.homeY(ctx);
       this.setState(this.newRest(), ctx);
     }
+    if (this.held && this.stateName !== 'held') this.setState(this.newHeld(), ctx);
     if (this.held) {
       this.clampPosition(ctx);
       return;

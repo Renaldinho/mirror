@@ -110,7 +110,8 @@ export class SleepState extends PetState {
   }
 
   pose(): PetPose {
-    return { scaleY: 1 + Math.sin(this.elapsed * 1.3) * .025, bubble: '💤' };
+    // The sleep atlas already contains its own small Z symbols.
+    return { scaleY: 1 + Math.sin(this.elapsed * 1.3) * .025 };
   }
 }
 
