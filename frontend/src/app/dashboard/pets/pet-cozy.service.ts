@@ -18,7 +18,8 @@ export const COZY_CATALOG: Readonly<Record<CozyItemType, CozyItemDefinition>> = 
     glyph: 'Zz',
     width: 184,
     height: 152,
-    sleepAnchor: { x: 92, y: 106 },
+    // The pet position is its sprite's top edge; place it over the open cushion.
+    sleepAnchor: { x: 92, y: 46 },
   },
   house: {
     type: 'house',
@@ -34,7 +35,7 @@ export const COZY_CATALOG: Readonly<Record<CozyItemType, CozyItemDefinition>> = 
     glyph: 'o',
     width: 160,
     height: 100,
-    sleepAnchor: { x: 80, y: 58 },
+    sleepAnchor: { x: 80, y: 28 },
   },
   tv: {
     type: 'tv',
@@ -43,6 +44,10 @@ export const COZY_CATALOG: Readonly<Record<CozyItemType, CozyItemDefinition>> = 
     width: 126,
     height: 127,
     watchAnchor: { x: 63, y: 154 },
+  },
+  bowl: {
+    type: 'bowl', label: 'Food bowl', glyph: '♡', width: 120, height: 74,
+    foodAnchor: { x: 60, y: 64 },
   },
 };
 
@@ -108,6 +113,7 @@ export class PetCozyService {
     if (this.cachedSnapshot && this.cachedItems === items) return this.cachedSnapshot;
     const sleepSpots: CozyActivityAnchor[] = [];
     const watchSpots: CozyActivityAnchor[] = [];
+    const foodSpots: CozyActivityAnchor[] = [];
     for (const item of items) {
       const definition = COZY_CATALOG[item.type];
       if (definition.sleepAnchor) {
@@ -126,9 +132,10 @@ export class PetCozyService {
           faceY: item.y + definition.height / 2,
         });
       }
+      if (definition.foodAnchor) foodSpots.push({ itemId: item.id, x: item.x + definition.foodAnchor.x, y: item.y + definition.foodAnchor.y });
     }
     this.cachedItems = items;
-    this.cachedSnapshot = { items, sleepSpots, watchSpots };
+    this.cachedSnapshot = { items, sleepSpots, watchSpots, foodSpots };
     return this.cachedSnapshot;
   }
 

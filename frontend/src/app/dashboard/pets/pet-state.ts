@@ -206,6 +206,29 @@ export class EatState extends PetState {
   }
 }
 
+/** Walk to the food bowl when hungry, then play the species eating strip. */
+export class BowlState extends PetState {
+  private target: CozyActivityAnchor | null = null;
+  private settled = false;
+  override get name(): string { return this.settled ? 'eat' : 'walk'; }
+  override enter(pet: Pet, ctx: PetContext): void {
+    this.duration = 1.8;
+    this.target = nearestAnchor(pet, ctx.cozy?.foodSpots ?? []);
+    if (!this.target) this.settled = true;
+  }
+  protected tick(pet: Pet, ctx: PetContext): PetState | null {
+    if (!this.settled && this.target) {
+      const arrived = movePet(pet, ctx, this.target.x - pet.width / 2, this.target.y, pet.personality.speed * 1.1);
+      if (!arrived) return null;
+      this.settled = true;
+      this.elapsed = 0;
+    }
+    pet.clampPosition(ctx);
+    return this.elapsed > this.duration ? pet.newRest() : null;
+  }
+  pose(): PetPose { return this.settled ? { bubble: '♥' } : {}; }
+}
+
 /** A short, calm picked-up pose while the user is carrying the pet. */
 export class HeldState extends PetState {
   readonly name = 'held';

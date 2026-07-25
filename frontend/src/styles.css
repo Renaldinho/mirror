@@ -642,35 +642,35 @@ body {
  * both dev and production. Runtime code only chooses a class and sheet cell.
  */
 .pet-sprite-capy {
-  background-image: url('./app/dashboard/pets/capy/capy-interactions-v6.png');
+  background-image: url('./app/dashboard/pets/capy/capy-interactions-v7.png');
 }
 
 .pet-sprite-collie {
-  background-image: url('./app/dashboard/pets/collie/collie-interactions-v6.png');
+  background-image: url('./app/dashboard/pets/collie/collie-interactions-v7.png');
 }
 
 .pet-sprite-frog {
-  background-image: url('./app/dashboard/pets/frog/frog-interactions-v6.png');
+  background-image: url('./app/dashboard/pets/frog/frog-interactions-v7.png');
 }
 
 .pet-sprite-shadow-cat {
-  background-image: url('./app/dashboard/pets/shadow-cat/shadow-cat-interactions-v6.png');
+  background-image: url('./app/dashboard/pets/shadow-cat/shadow-cat-interactions-v7.png');
 }
 
 .pet-sprite-ginger {
-  background-image: url('./app/dashboard/pets/ginger/ginger-interactions-v1.png');
+  background-image: url('./app/dashboard/pets/ginger/ginger-interactions-v2.png');
 }
 
 .pet-sprite-blue-kit {
-  background-image: url('./app/dashboard/pets/blue-kit/blue-kit-interactions-v1.png');
+  background-image: url('./app/dashboard/pets/blue-kit/blue-kit-interactions-v2.png');
 }
 
 .pet-sprite-diplodocus {
-  background-image: url('./app/dashboard/pets/diplodocus/diplodocus-interactions-v1.png');
+  background-image: url('./app/dashboard/pets/diplodocus/diplodocus-interactions-v2.png');
 }
 
 .pet-sprite-pigeon {
-  background-image: url('./app/dashboard/pets/pigeon/pigeon-interactions-v1.png');
+  background-image: url('./app/dashboard/pets/pigeon/pigeon-interactions-v2.png');
 }
 
 .cozy-item.bed,
@@ -690,6 +690,10 @@ body {
 
 .cozy-item.tv {
   background-image: url('./app/dashboard/pets/cozy/assets/cozy-tv.png');
+}
+
+.cozy-item.bowl {
+  background-image: url('./app/dashboard/pets/cozy/assets/cozy-bowl.png');
 }
 
 .fetch-ball-sprite {

@@ -11,6 +11,7 @@ import {
   RestState,
   SleepState,
   WatchState,
+  BowlState,
   WalkState,
 } from './pet-state';
 import {
@@ -87,6 +88,7 @@ export abstract class Pet {
   }
   newWatch(): PetState { return new WatchState(); }
   newEat(): PetState { return new EatState(); }
+  newBowl(): PetState { return new BowlState(); }
   newPlay(): PetState { return new PlayState(); }
   newCurious(): PetState { return new CuriousState(); }
   newHeld(): PetState { return new HeldState(); }
@@ -110,6 +112,7 @@ export abstract class Pet {
     const expression = Math.random();
     if (expression < .14) return this.newCurious();
     if (expression < .26 && ctx.cozy?.watchSpots.length) return this.newWatch();
+    if (ctx.cozy?.foodSpots.length && energy < .48 && expression < .72) return this.newBowl();
     const roll = Math.random();
     const playChance = ctx.pointer.active ? p.playfulness * (.4 + energy) : 0;
     const sleepChance = p.sleepiness + (1 - energy) * .5;

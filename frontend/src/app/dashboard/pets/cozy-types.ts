@@ -1,4 +1,4 @@
-export type CozyItemType = 'bed' | 'house' | 'cushion' | 'tv';
+export type CozyItemType = 'bed' | 'house' | 'cushion' | 'tv' | 'bowl';
 
 export interface CozyItem {
   id: string;
@@ -16,6 +16,7 @@ export interface CozyItemDefinition {
   height: number;
   sleepAnchor?: { x: number; y: number };
   watchAnchor?: { x: number; y: number };
+  foodAnchor?: { x: number; y: number };
 }
 
 export interface CozyBounds {
@@ -37,5 +38,5 @@ export interface CozySnapshot {
   items: readonly CozyItem[];
   sleepSpots: readonly CozyActivityAnchor[];
   watchSpots: readonly CozyActivityAnchor[];
+  foodSpots: readonly CozyActivityAnchor[];
 }
-

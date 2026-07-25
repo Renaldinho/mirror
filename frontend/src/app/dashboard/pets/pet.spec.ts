@@ -185,6 +185,7 @@ describe('desktop pet actions', () => {
           { itemId: 'near', x: 240, y: 520 },
         ],
         watchSpots: [],
+        foodSpots: [],
       },
     });
     pet.update(ctx);
@@ -214,7 +215,7 @@ describe('desktop pet actions', () => {
     const watchSpot = { itemId: 'tv', x: 360, y: 420, faceX: 360, faceY: 260 };
     const ctx = context({
       dt: .1,
-      cozy: { items: [], sleepSpots: [], watchSpots: [watchSpot] },
+      cozy: { items: [], sleepSpots: [], watchSpots: [watchSpot], foodSpots: [] },
     });
     pet.update(ctx);
     pet.setState(pet.newWatch(), ctx);
@@ -224,7 +225,7 @@ describe('desktop pet actions', () => {
     expect(pet.direction).toBe('up');
 
     pet.update(context({
-      cozy: { items: [], sleepSpots: [], watchSpots: [] },
+      cozy: { items: [], sleepSpots: [], watchSpots: [], foodSpots: [] },
     }));
     expect(pet.stateName).toBe('rest');
   });

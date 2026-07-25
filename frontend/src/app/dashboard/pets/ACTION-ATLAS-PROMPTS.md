@@ -76,3 +76,22 @@ Identity constraints:
   underside, darker spots, small friendly head, long neck, and tapering tail.
 - Pigeon: plump gray city pigeon with dark wing bars, green-purple neck
   iridescence, ruby eyes, pink-red feet, ground waddles, and brief play flutters.
+
+## Continuity refinement (v7 / v2)
+
+The production atlases were audited at their actual 80 CSS-pixel display size.
+Strong core frames remain unchanged. The four original companions now use v7
+atlases; Ginger, Blue Kit, Diplo, and Pigeon use v2.
+
+- Capy, Lando, Frog, and Shadow Kit play rows 10–11 were uniformly enlarged
+  per species and recentered on their shared ground baseline. A single scale
+  is used across each full eight-frame sequence so pose changes do not cause
+  additional frame-by-frame zooming.
+- Shadow Kit's accidentally undersized idle frame 2 and walk-right frame 2
+  were restored to the scale of their surrounding frames.
+- Delivery row 19 is the exact reverse of pickup row 14 for every companion.
+  This removes missing or miniature subjects and makes pickup/delivery a
+  matched, continuous interaction without introducing identity drift.
+- All atlases retain the 4-by-20, 128-by-128-cell contract. Existing timing,
+  state mappings, directional carry rows, and transparent reserved rows are
+  unchanged.

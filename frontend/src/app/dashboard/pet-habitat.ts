@@ -2,10 +2,13 @@ import {
   ChangeDetectionStrategy,
   Component,
   HostListener,
+  computed,
   inject,
   signal,
 } from '@angular/core';
 import { CozyItem, CozyItemType } from './pets/cozy-types';
+import { PetMoodService } from './pets/pet-mood.service';
+import { PetService } from './pet.service';
 import {
   COZY_CATALOG,
   COZY_ITEMS,
@@ -19,7 +22,7 @@ import {
     <div class="cozy-back" aria-hidden="true">
       @for (item of cozy.items(); track item.id) {
         <span class="cozy-item" [class]="item.type" [class.off]="item.type === 'tv' && !item.enabled" [style]="itemStyle(item)">
-          <i class="body"></i><i class="detail"></i>
+          <i class="body"></i><i class="detail"></i>@if (item.type === 'bowl') { <b class="bowl-name">{{ bowlName() }}</b> }
         </span>
       }
       @if (preview(); as item) {
@@ -31,7 +34,7 @@ import {
 
     <div class="cozy-front" aria-hidden="true">
       @for (item of cozy.items(); track item.id) {
-        @if (item.type !== 'tv') {
+        @if (item.type === 'house') {
           <span class="front-piece" [class]="item.type" [style]="itemStyle(item)"></span>
         }
       }
@@ -117,9 +120,8 @@ import {
       .body { display: none; }
       .detail { position: absolute; display: none; }
       .tv .detail { display: block; left: 20px; top: 39px; width: 70px; height: 49px; border-radius: 8px; opacity: .72; background: repeating-linear-gradient(0deg,var(--theme-primary) 0 5px,var(--theme-primary-bright) 5px 9px); animation: tv-flicker .8s steps(2) infinite; mix-blend-mode: screen; }
+      .bowl-name { position: absolute; left: 50%; top: 47px; max-width: 104px; transform: translateX(-50%); overflow: hidden; color: #fff4d6; font: 700 8px/10px var(--theme-font-display); text-shadow: 1px 1px 0 #3b193e, -1px 0 #3b193e, 0 -1px #3b193e; white-space: nowrap; text-overflow: ellipsis; text-align: center; }
       .tv.off .detail { display: none; }
-      .front-piece.bed { clip-path: inset(75% 0 0); }
-      .front-piece.cushion { clip-path: inset(68% 0 0); }
       .preview { opacity: .58; filter: drop-shadow(0 0 5px var(--theme-primary-bright)); }
       .cozy-trigger { position: fixed; left: 112px; top: 16px; z-index: 48; display: grid; width: 40px; height: 40px; place-items: center; pointer-events: auto; border: 1px solid var(--theme-border-strong); border-radius: var(--control-radius); background: var(--theme-panel); color: var(--theme-primary); box-shadow: var(--theme-shadow-soft); font-size: 20px; cursor: pointer; }
       .cozy-trigger:hover,.cozy-trigger.active { color: var(--theme-primary-bright); border-color: var(--theme-primary); }
@@ -149,6 +151,9 @@ import {
 })
 export class PetHabitat {
   readonly cozy = inject(PetCozyService);
+  private readonly mood = inject(PetMoodService);
+  private readonly pets = inject(PetService);
+  readonly bowlName = computed(() => this.mood.name() || this.pets.kind()?.label || 'Pet');
   readonly catalog = COZY_ITEMS;
   readonly activeType = signal<CozyItemType>('bed');
   readonly preview = signal<CozyItem | null>(null);
