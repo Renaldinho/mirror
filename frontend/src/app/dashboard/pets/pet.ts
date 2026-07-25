@@ -1,6 +1,8 @@
 import {
   CuriousState,
   EatState,
+  HeldState,
+  KickState,
   PetState,
   PlayState,
   RestState,
@@ -37,6 +39,7 @@ export abstract class Pet {
   private reaction: PetSpriteAnimation | null = null;
   private lastContext: PetContext | null = null;
   private pendingFeed = false;
+  private held = false;
 
   get width(): number {
     return this.spriteSheet.displayWidth;
@@ -76,6 +79,21 @@ export abstract class Pet {
   newEat(): PetState { return new EatState(); }
   newPlay(): PetState { return new PlayState(); }
   newCurious(): PetState { return new CuriousState(); }
+  newHeld(): PetState { return new HeldState(); }
+  newKick(): PetState { return new KickState(); }
+
+  setHeld(value: boolean): void {
+    this.held = value;
+    if (value && this.lastContext && this.stateName !== 'held') {
+      this.setState(this.newHeld(), this.lastContext);
+    } else if (!value && this.lastContext && this.stateName === 'held') {
+      this.setState(this.newRest(), this.lastContext);
+    }
+  }
+
+  kick(): void {
+    if (!this.held && this.lastContext) this.setState(this.newKick(), this.lastContext);
+  }
 
   chooseNext(ctx: PetContext): PetState {
     const p = this.personality;
@@ -100,6 +118,10 @@ export abstract class Pet {
     if (!this.state) {
       this.y = this.homeY(ctx);
       this.setState(this.newRest(), ctx);
+    }
+    if (this.held) {
+      this.clampPosition(ctx);
+      return;
     }
     if (this.pendingFeed) {
       this.pendingFeed = false;

@@ -4,6 +4,7 @@ import { ClockWidget } from '../widgets/clock';
 import { NotesWidget } from '../widgets/notes';
 import { QuoteWidget } from '../widgets/quote';
 import { SpotifyWidget } from '../widgets/spotify.widget';
+import { LyricsWidget } from '../widgets/lyrics.widget';
 import { WeatherWidget } from '../widgets/weather';
 import { CornerFlourish } from './corner-flourish';
 import { SpecimenArt } from './specimen-art';
@@ -30,6 +31,7 @@ import { SettingsService } from './settings.service';
     QuoteWidget,
     NotesWidget,
     SpotifyWidget,
+    LyricsWidget,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -96,6 +98,7 @@ import { SettingsService } from './settings.service';
           @case ('quote') { <app-quote /> }
           @case ('notes') { <app-notes /> }
           @case ('spotify') { <app-spotify /> }
+          @case ('lyrics') { <app-lyrics /> }
         }
       </div>
 

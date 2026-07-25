@@ -10,6 +10,8 @@ const WALK: PetSpriteAnimation = {
 const SLEEP: PetSpriteAnimation = { row: 5, frames: 4, fps: 1.8, loop: false };
 const EAT: PetSpriteAnimation = { row: 6, frames: 4, fps: 3.2, loop: false };
 const HAPPY: PetSpriteAnimation = { row: 7, frames: 4, fps: 4.5, loop: false };
+const HELD: PetSpriteAnimation = { row: 8, frames: 4, fps: 3.2 };
+const KICK: PetSpriteAnimation = { row: 9, frames: 4, fps: 5.5, loop: false };
 
 const COMMON_ANIMATIONS: Readonly<Record<string, PetSpriteAnimation>> = {
   rest: IDLE,
@@ -20,13 +22,15 @@ const COMMON_ANIMATIONS: Readonly<Record<string, PetSpriteAnimation>> = {
   hop: WALK,
   curious: HAPPY,
   wave: HAPPY,
+  held: HELD,
+  kick: KICK,
 };
 
 function sheet(cssClass: string): PetSpriteSheet {
   return {
     cssClass,
     columns: 4,
-    rows: 8,
+    rows: 10,
     frameWidth: 128,
     frameHeight: 128,
     displayWidth: 80,

@@ -10,6 +10,7 @@ import { ThemePicker } from './dashboard/theme-picker';
 import { RetroCursor } from './dashboard/retro-cursor';
 import { GamesLauncher } from './minigames/games-launcher';
 import { GameOverlay } from './minigames/game-overlay';
+import { SpotifyService } from './widgets/spotify/spotify.service';
 
 @Component({
   selector: 'app-root',
@@ -22,4 +23,6 @@ export class App {
   readonly dash = inject(DashboardService);
   // Constructed so the auto-dim scheduler starts with the app.
   private readonly ambience = inject(AmbienceService);
+  // Constructed so the Spotify OAuth redirect is handled on load.
+  private readonly spotify = inject(SpotifyService);
 }

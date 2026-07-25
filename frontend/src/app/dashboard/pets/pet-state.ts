@@ -132,6 +132,38 @@ export class EatState extends PetState {
   }
 }
 
+/** A short, calm picked-up pose while the user is carrying the pet. */
+export class HeldState extends PetState {
+  readonly name = 'held';
+
+  protected tick(pet: Pet, ctx: PetContext): PetState | null {
+    pet.clampPosition(ctx);
+    return null;
+  }
+
+  pose(): PetPose {
+    return { dy: -8, rotate: -2, scaleY: .98 };
+  }
+}
+
+/** A single playful kick after a ball reaches the pet. */
+export class KickState extends PetState {
+  readonly name = 'kick';
+
+  override enter(): void {
+    this.duration = 1.15;
+  }
+
+  protected tick(pet: Pet, ctx: PetContext): PetState | null {
+    pet.clampPosition(ctx);
+    return this.elapsed > this.duration ? pet.newRest() : null;
+  }
+
+  pose(): PetPose {
+    return { dy: -Math.abs(Math.sin(this.elapsed * 8)) * 3, rotate: Math.sin(this.elapsed * 12) * 2, bubble: '⚽' };
+  }
+}
+
 /** Chase the live pointer in both axes, then tire back to rest. */
 export class PlayState extends PetState {
   readonly name = 'play';

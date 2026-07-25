@@ -1,7 +1,7 @@
 import { ArtKey } from './specimen-art';
 
 /** The widget kinds available on the board. */
-export type WidgetType = 'weather' | 'clock' | 'quote' | 'notes' | 'spotify';
+export type WidgetType = 'weather' | 'clock' | 'quote' | 'notes' | 'spotify' | 'lyrics';
 
 export type WidgetVariantId =
   | 'default'
@@ -78,6 +78,15 @@ export const WIDGETS: WidgetMeta[] = [
     art: 'mushroom',
     accent: 'var(--widget-spotify-accent)',
     layouts: [{ id: 'default', label: 'Default', width: 320, height: 320 }],
+  },
+  {
+    type: 'lyrics',
+    label: 'Lyrics',
+    latin: 'Carmen synchronum',
+    icon: '♫',
+    art: 'bloom',
+    accent: 'var(--widget-spotify-accent)',
+    layouts: [{ id: 'default', label: 'Default', width: 300, height: 360 }],
   },
 ];
 
