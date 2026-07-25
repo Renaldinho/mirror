@@ -62,12 +62,12 @@ import { SpotifyService } from './spotify/spotify.service';
           />
         </div>
 
-        @if (sp.onThisDevice()) {
-          <div class="badge on">● streaming on this mirror</div>
-        } @else if (sp.premiumError()) {
-          <div class="badge warn">Premium needed to stream here — showing other devices</div>
-        } @else if (sp.insecure()) {
-          <div class="badge warn">Open on 127.0.0.1 / HTTPS to stream here</div>
+        @if (sp.premiumError()) {
+          <div class="badge warn">Spotify Premium required to control playback</div>
+        } @else if (sp.hasDevice()) {
+          <div class="badge on">▷ {{ sp.deviceName() }}</div>
+        } @else {
+          <div class="badge warn">Start playing on any Spotify device</div>
         }
 
         <button class="logout" (click)="sp.logout()">disconnect</button>
