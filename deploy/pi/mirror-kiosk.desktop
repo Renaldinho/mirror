@@ -1,0 +1,6 @@
+[Desktop Entry]
+Type=Application
+Name=Mirror kiosk
+Exec=/opt/mirror/bin/mirror-kiosk
+Terminal=false
+X-GNOME-Autostart-enabled=true

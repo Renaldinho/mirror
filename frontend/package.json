@@ -6,8 +6,7 @@
     "start": "ng serve --host 127.0.0.1 --proxy-config proxy.conf.json",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test --watch=false --progress=false",
-    "gen:types": "json2ts -i ../backend/schema/ws-events.schema.json -o src/app/generated/model.ts"
+    "test": "ng test --watch=false --progress=false"
   },
   "private": true,
   "packageManager": "npm@11.10.1",
@@ -34,7 +33,6 @@
     "@angular/compiler-cli": "^21.2.0",
     "@tailwindcss/postcss": "^4.3.3",
     "jsdom": "^29.1.1",
-    "json-schema-to-typescript": "^15.0.4",
     "prettier": "^3.8.1",
     "tailwindcss": "^4.3.3",
     "typescript": "~5.9.2",

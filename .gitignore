@@ -1,18 +1,16 @@
-# Python
-backend/.venv/
-__pycache__/
-*.pyc
-.pytest_cache/
-backend/.env
-
 # Node / Angular
 node_modules/
 frontend/dist/
 frontend/.angular/
 
-# Generated (regenerate via scripts; safe to ignore or commit — see README)
-backend/schema/*.json
-frontend/src/app/generated/*.ts
+# Local build output
+.publish/
+**/bin/
+**/obj/
+**/TestResults/
+*.db
+*.db-shm
+*.db-wal
 
 # Editor / OS
 .DS_Store

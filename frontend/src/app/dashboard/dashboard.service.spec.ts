@@ -29,7 +29,15 @@ describe('DashboardService widget layouts', () => {
     const dashboard = TestBed.inject(DashboardService);
 
     expect(dashboard.widgets()).toEqual([
-      { type: 'weather', x: 25, y: 40, pinned: true, variant: 'stacked' },
+      {
+        type: 'weather',
+        x: 25,
+        y: 40,
+        pinned: true,
+        variant: 'stacked',
+        scale: 1,
+        collapsed: false,
+      },
     ]);
   });
 });

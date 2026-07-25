@@ -1,10 +1,9 @@
-import { Injectable, computed, effect, inject, signal } from '@angular/core';
+import { DestroyRef, Injectable, computed, effect, inject, signal } from '@angular/core';
 import { PetService } from '../pet.service';
 
 interface MoodRecord {
   /** energy value captured at `ts` (decays with elapsed time). */
   energy: number;
-  name: string;
   ts: number;
 }
 
@@ -15,20 +14,23 @@ const FEED_AMOUNT = 34;
 const DECAY_PER_MS = 100 / (8 * 3600 * 1000);
 
 /**
- * Per-pet energy + name, persisted and decayed over real time. Energy re-weights
+ * Per-pet energy, persisted and decayed over real time. PetService persists names
+ * through the backend. Energy re-weights
  * which *existing* sprite states run (see Pet.chooseNext) — no new animation.
  * The active pet is whichever PetService has selected.
  */
 @Injectable({ providedIn: 'root' })
 export class PetMoodService {
   private readonly pets = inject(PetService);
+  private readonly destroyRef = inject(DestroyRef);
   private readonly records = signal<Record<string, MoodRecord>>(this.load());
   /** ticks so `energy` recomputes as time passes. */
   private readonly clock = signal(Date.now());
 
   constructor() {
     effect(() => localStorage.setItem(STORAGE_KEY, JSON.stringify(this.records())));
-    setInterval(() => this.clock.set(Date.now()), 60_000);
+    const timer = setInterval(() => this.clock.set(Date.now()), 60_000);
+    this.destroyRef.onDestroy(() => clearInterval(timer));
   }
 
   /** Live energy (0..100) of the active pet, decayed to now. */
@@ -39,10 +41,7 @@ export class PetMoodService {
     return this.decay(this.records()[id], Date.now());
   });
 
-  readonly name = computed(() => {
-    const id = this.pets.petId();
-    return id ? (this.records()[id]?.name ?? '') : '';
-  });
+  readonly name = this.pets.activeName;
 
   /** Feed the active pet: bake in decay so far, then top up energy. */
   feed(): void {
@@ -50,15 +49,13 @@ export class PetMoodService {
     if (!id) return;
     const now = Date.now();
     const current = this.decay(this.records()[id], now);
-    this.write(id, { energy: Math.min(100, current + FEED_AMOUNT), name: this.name(), ts: now });
+    this.write(id, { energy: Math.min(100, current + FEED_AMOUNT), ts: now });
   }
 
   setName(name: string): void {
     const id = this.pets.petId();
     if (!id) return;
-    const now = Date.now();
-    const current = this.decay(this.records()[id], now);
-    this.write(id, { energy: current, name: name.slice(0, 24), ts: now });
+    this.pets.setName(id, name);
   }
 
   private write(id: string, record: MoodRecord): void {

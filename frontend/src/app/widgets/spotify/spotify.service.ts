@@ -1,4 +1,4 @@
-import { Injectable, signal } from '@angular/core';
+import { DestroyRef, Injectable, inject, signal } from '@angular/core';
 import { codeChallenge, randomState, randomVerifier } from './pkce';
 import {
   API_BASE,
@@ -47,13 +47,19 @@ export class SpotifyService {
   readonly deviceName = signal<string | null>(null);
   readonly hasDevice = signal(false);
 
+  private readonly destroyRef = inject(DestroyRef);
   private tokens: Tokens | null = this.loadTokens();
   private pollTimer?: ReturnType<typeof setInterval>;
+  private tickTimer?: ReturnType<typeof setInterval>;
   private backoffUntil = 0;
   private lastTick = 0;
 
   constructor() {
-    setInterval(() => this.tickPosition(), 250);
+    this.tickTimer = setInterval(() => this.tickPosition(), 250);
+    this.destroyRef.onDestroy(() => {
+      if (this.tickTimer) clearInterval(this.tickTimer);
+      if (this.pollTimer) clearInterval(this.pollTimer);
+    });
     void this.handleRedirect().then(() => {
       if (this.tokens) {
         this.authed.set(true);

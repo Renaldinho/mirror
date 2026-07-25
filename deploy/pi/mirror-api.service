@@ -1,0 +1,24 @@
+[Unit]
+Description=Mirror settings API
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=mirror-api
+Group=mirror-api
+WorkingDirectory=/opt/mirror/api
+ExecStart=/usr/bin/env dotnet /opt/mirror/api/Mirror.Server.dll
+Environment=ASPNETCORE_URLS=http://127.0.0.1:5000
+Environment=Database__Path=/var/lib/mirror/mirror.db
+Restart=on-failure
+RestartSec=3
+
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+ReadWritePaths=/var/lib/mirror
+
+[Install]
+WantedBy=multi-user.target

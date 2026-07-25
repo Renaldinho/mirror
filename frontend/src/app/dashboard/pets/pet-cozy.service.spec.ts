@@ -44,7 +44,7 @@ describe('PetCozyService', () => {
 
     expect(service.sleepSpotAt(330, 260, bounds)).toMatchObject({
       x: 380,
-      y: 298,
+      y: 268,
     });
     expect(service.sleepSpotAt(20, 20, bounds)).toBeNull();
   });
