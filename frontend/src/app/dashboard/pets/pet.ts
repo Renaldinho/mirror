@@ -1,8 +1,11 @@
 import {
   CuriousState,
   EatState,
+  FetchCarryState,
+  FetchDeliverState,
+  FetchPickupState,
+  FetchState,
   HeldState,
-  KickState,
   PetState,
   PlayState,
   RestState,
@@ -80,7 +83,10 @@ export abstract class Pet {
   newPlay(): PetState { return new PlayState(); }
   newCurious(): PetState { return new CuriousState(); }
   newHeld(): PetState { return new HeldState(); }
-  newKick(): PetState { return new KickState(); }
+  newFetch(): PetState { return new FetchState(); }
+  newFetchPickup(): PetState { return new FetchPickupState(); }
+  newFetchCarry(): PetState { return new FetchCarryState(); }
+  newFetchDeliver(): PetState { return new FetchDeliverState(); }
 
   setHeld(value: boolean): void {
     this.held = value;
@@ -89,10 +95,6 @@ export abstract class Pet {
     } else if (!value && this.lastContext && this.stateName === 'held') {
       this.setState(this.newRest(), this.lastContext);
     }
-  }
-
-  kick(): void {
-    if (!this.held && this.lastContext) this.setState(this.newKick(), this.lastContext);
   }
 
   chooseNext(ctx: PetContext): PetState {
@@ -119,6 +121,14 @@ export abstract class Pet {
       this.y = this.homeY(ctx);
       this.setState(this.newRest(), ctx);
     }
+    if (ctx.fetch) {
+      this.held = false;
+      const fetchState = this.stateForFetch(ctx.fetch.mode);
+      if (this.stateName !== fetchState.name) this.setState(fetchState, ctx);
+      this.state!.update(this, ctx);
+      return;
+    }
+    if (this.isFetchState(this.stateName)) this.setState(this.newRest(), ctx);
     if (this.held && this.stateName !== 'held') this.setState(this.newHeld(), ctx);
     if (this.held) {
       this.clampPosition(ctx);
@@ -144,7 +154,9 @@ export abstract class Pet {
 
   /** Feeding is a real stationary state, not an overlay on a moving pet. */
   feed(): void {
-    if (this.lastContext) {
+    if (this.lastContext?.fetch) {
+      this.pendingFeed = true;
+    } else if (this.lastContext) {
       this.setState(this.newEat(), this.lastContext);
     } else {
       this.pendingFeed = true;
@@ -195,13 +207,30 @@ export abstract class Pet {
     return this.spriteSheet.animations[this.stateName] ?? this.spriteSheet.animations['rest'];
   }
 
+  private stateForFetch(mode: NonNullable<PetContext['fetch']>['mode']): PetState {
+    switch (mode) {
+      case 'chase': return this.newFetch();
+      case 'pickup': return this.newFetchPickup();
+      case 'carry': return this.newFetchCarry();
+      case 'deliver': return this.newFetchDeliver();
+    }
+  }
+
+  private isFetchState(name: string): boolean {
+    return name === 'fetch' || name === 'pickup' || name === 'carry' || name === 'deliver';
+  }
+
   private spriteFrame(animation: PetSpriteAnimation, pokeTime: number | null): PetSpriteFrame {
     const time = pokeTime ?? this.state?.animationTime ?? 0;
     const rawFrame = Math.floor(time * animation.fps);
-    const column = animation.loop === false
+    const frame = animation.loop === false
       ? Math.min(rawFrame, animation.frames - 1)
       : rawFrame % animation.frames;
-    const row = animation.directionRows?.[this.direction] ??
+    const column = frame % this.spriteSheet.columns;
+    const sequencedRow = animation.rowSequence?.[
+      Math.min(animation.rowSequence.length - 1, Math.floor(frame / this.spriteSheet.columns))
+    ];
+    const row = sequencedRow ?? animation.directionRows?.[this.direction] ??
       (this.facing === -1 && animation.reverseRow !== undefined
         ? animation.reverseRow
         : animation.row);

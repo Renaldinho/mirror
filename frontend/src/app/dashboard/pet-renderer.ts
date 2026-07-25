@@ -11,6 +11,7 @@ import {
 import { PetService } from './pet.service';
 import { SettingsService } from './settings.service';
 import { createPet, Pet } from './pets';
+import { BallFetchController, FetchBounds } from './pets/ball-fetch';
 import { PetMoodService } from './pets/pet-mood.service';
 import { PET_SIZE } from './pets/pet-state';
 import { PetContext } from './pets/pet-types';
@@ -28,7 +29,7 @@ import { PetContext } from './pets/pet-types';
     <div #root class="pet-root">
       <span #bubble class="bubble"></span>
       <span #name class="pet-name"></span>
-      <button #ballButton class="ball-button" type="button" aria-label="Drag ball to pet" title="Drag the ball onto the pet">⚽</button>
+      <button #ballButton class="ball-button fetch-ball-sprite" type="button" aria-label="Drag and throw ball" title="Drag and throw for your companion to fetch"></button>
       <button #foodButton class="pet-item food-button" type="button" aria-label="Drag food to pet" title="Drag food onto the pet">🍖</button>
       <button #brushButton class="pet-item brush-button" type="button" aria-label="Drag brush to pet" title="Groom the pet">🪮</button>
       <span #visual class="visual" (click)="onClick()"></span>
@@ -66,19 +67,18 @@ import { PetContext } from './pets/pet-types';
         top: -25px;
         width: 24px;
         height: 24px;
-        border: 1px solid rgba(120, 60, 30, .8);
-        border-radius: 50%;
-        background: radial-gradient(circle at 32% 28%, #fff 0 15%, #ffcf4a 16% 48%, #e44b3a 49% 100%);
-        color: #55301d;
-        font-size: 13px;
-        box-shadow: 0 2px 5px rgba(0,0,0,.45);
-        cursor: pointer;
+        padding: 0;
+        border: 0;
+        background-color: transparent;
+        filter: drop-shadow(0 2px 2px rgba(0, 0, 0, .55));
+        image-rendering: pixelated;
+        cursor: grab;
         opacity: 0;
         pointer-events: auto;
-        transition: opacity .15s ease, transform .15s ease;
+        touch-action: none;
+        user-select: none;
       }
-      .pet-root:hover .ball-button { opacity: 1; }
-      .ball-button:hover { transform: scale(1.12); }
+      .ball-button:active { cursor: grabbing; }
       .pet-item {
         position: absolute;
         width: 24px;
@@ -143,14 +143,11 @@ export class PetRenderer implements AfterViewInit {
   private lastSprite = '';
   private lastSpriteClass = '';
   private lastBubble = '';
+  private readonly fetch = new BallFetchController();
   private dragging = false;
   private dragArmed = false;
-  private movedDuringDrag = false;
   private dragStart = { x: 0, y: 0 };
   private dragOffset = { x: 0, y: 0 };
-  private ball: { x: number; y: number; phase: 'idle' | 'held' | 'kick'; elapsed: number; vx: number; vy: number } | null = null;
-  private ballOrbitTime = 0;
-  private draggingBall = false;
   private draggedItem: { kind: 'food' | 'brush'; x: number; y: number } | null = null;
 
   constructor() {
@@ -158,16 +155,23 @@ export class PetRenderer implements AfterViewInit {
     effect(() => {
       const id = this.pets.petId();
       this.pet = id ? createPet(id) : null;
+      this.fetch.reset(this.pet, this.bounds());
     });
   }
 
   ngAfterViewInit(): void {
-    const onMove = (e: MouseEvent) => {
+    const rememberPointer = (e: PointerEvent) => {
+      if (e.clientX < 0 || e.clientX > window.innerWidth ||
+          e.clientY < 0 || e.clientY > window.innerHeight) return;
       this.pointer.x = e.clientX;
       this.pointer.y = e.clientY;
       this.pointer.last = performance.now();
     };
-    window.addEventListener('mousemove', onMove);
+    const onMove = (e: PointerEvent) => {
+      rememberPointer(e);
+      this.fetch.drag(e.pointerId, e.clientX, e.clientY, e.timeStamp, this.bounds());
+    };
+    window.addEventListener('pointermove', onMove);
 
     // Reveal the pet's name on hover.
     const visual = this.visualRef().nativeElement;
@@ -181,11 +185,10 @@ export class PetRenderer implements AfterViewInit {
     visual.addEventListener('mouseenter', showName);
     visual.addEventListener('mouseleave', hideName);
     const onPointerDown = (e: PointerEvent) => {
-      if (e.button !== 0 || !this.pet) return;
+      if (e.button !== 0 || !this.pet || this.fetch.active) return;
       const rect = visual.getBoundingClientRect();
       this.dragArmed = true;
       this.dragging = false;
-      this.movedDuringDrag = false;
       this.dragStart = { x: e.clientX, y: e.clientY };
       this.dragOffset = { x: e.clientX - rect.left, y: e.clientY - rect.top };
       visual.setPointerCapture?.(e.pointerId);
@@ -194,7 +197,6 @@ export class PetRenderer implements AfterViewInit {
       if (!this.dragArmed || !this.pet) return;
       if (!this.dragging && Math.hypot(e.clientX - this.dragStart.x, e.clientY - this.dragStart.y) > 6) {
         this.dragging = true;
-        this.movedDuringDrag = true;
         this.pet.setHeld(true);
       }
       if (!this.dragging) return;
@@ -217,40 +219,23 @@ export class PetRenderer implements AfterViewInit {
     window.addEventListener('pointerup', onPointerUp);
     const ballButton = this.ballButtonRef().nativeElement;
     const onBallDown = (e: PointerEvent) => {
-      if (e.button !== 0 || !this.ball) return;
-      this.draggingBall = true;
-      this.ball.phase = 'held';
+      if (e.button !== 0) return;
+      rememberPointer(e);
+      if (!this.fetch.beginDrag(e.pointerId, e.clientX, e.clientY, e.timeStamp, this.bounds())) return;
+      ballButton.setPointerCapture?.(e.pointerId);
       e.preventDefault();
       e.stopPropagation();
     };
-    const onBallMove = (e: PointerEvent) => {
-      if (!this.draggingBall || !this.ball) return;
-      this.ball.x = e.clientX;
-      this.ball.y = e.clientY;
+    const onBallUp = (e: PointerEvent) => {
+      rememberPointer(e);
+      this.fetch.release(e.pointerId, e.clientX, e.clientY, e.timeStamp, this.bounds());
+      if (ballButton.hasPointerCapture?.(e.pointerId)) ballButton.releasePointerCapture(e.pointerId);
     };
-    const onBallUp = () => {
-      if (!this.draggingBall || !this.ball) return;
-      this.draggingBall = false;
-      const petCenter = { x: (this.pet?.x ?? 0) + (this.pet?.width ?? 0) / 2, y: (this.pet?.y ?? 0) - 22 };
-      const hit = Math.hypot(this.ball.x - petCenter.x, this.ball.y - petCenter.y) < 70;
-      if (hit && this.pet) {
-        this.ball.x = petCenter.x;
-        this.ball.y = petCenter.y;
-        this.ball.phase = 'kick';
-        this.ball.elapsed = 0;
-        const dx = this.ball.x - petCenter.x;
-        const dy = this.ball.y - petCenter.y;
-        const length = Math.max(1, Math.hypot(dx, dy));
-        this.ball.vx = dx / length * 190;
-        this.ball.vy = dy / length * 190 - 35;
-        this.pet.kick();
-      } else {
-        this.ball.phase = 'idle';
-      }
-    };
+    const onBallCancel = (e: PointerEvent) => this.fetch.cancelDrag(e.pointerId);
     ballButton.addEventListener('pointerdown', onBallDown);
-    window.addEventListener('pointermove', onBallMove);
     window.addEventListener('pointerup', onBallUp);
+    ballButton.addEventListener('pointercancel', onBallCancel);
+    ballButton.addEventListener('lostpointercapture', onBallCancel);
     const itemButtons = [
       { kind: 'food' as const, element: this.foodButtonRef().nativeElement },
       { kind: 'brush' as const, element: this.brushButtonRef().nativeElement },
@@ -287,15 +272,16 @@ export class PetRenderer implements AfterViewInit {
 
     this.destroyRef.onDestroy(() => {
       cancelAnimationFrame(this.raf);
-      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('pointermove', onMove);
       visual.removeEventListener('mouseenter', showName);
       visual.removeEventListener('mouseleave', hideName);
       visual.removeEventListener('pointerdown', onPointerDown);
       window.removeEventListener('pointermove', onPointerMove);
       window.removeEventListener('pointerup', onPointerUp);
       ballButton.removeEventListener('pointerdown', onBallDown);
-      window.removeEventListener('pointermove', onBallMove);
       window.removeEventListener('pointerup', onBallUp);
+      ballButton.removeEventListener('pointercancel', onBallCancel);
+      ballButton.removeEventListener('lostpointercapture', onBallCancel);
       window.removeEventListener('pointermove', itemMove);
       window.removeEventListener('pointerup', itemUp);
     });
@@ -303,7 +289,7 @@ export class PetRenderer implements AfterViewInit {
 
   /** Clicking the pet feeds it: refill energy + play a happy reaction. */
   onClick(): void {
-    if (this.suppressClick) return;
+    if (this.suppressClick || this.fetch.active) return;
     this.mood.feed();
     this.pet?.feed();
   }
@@ -333,12 +319,19 @@ export class PetRenderer implements AfterViewInit {
         y: this.pointer.y,
         active: performance.now() - this.pointer.last < 4000,
       },
+      fetch: null,
       energy: this.mood.energy() / 100,
       dim: !this.settings.bgOn() || this.settings.bgLight() < 25,
     };
 
+    ctx.fetch = this.fetch.step(
+      dt,
+      this.bounds(),
+      this.pet,
+      { x: this.pointer.x, y: this.pointer.y },
+    );
     this.pet.update(ctx);
-    this.updateBall(dt);
+    this.updateBall();
     this.updateFloatingItems(t);
     const v = this.pet.view();
 
@@ -377,29 +370,37 @@ export class PetRenderer implements AfterViewInit {
     bubble.style.top = `${PET_SIZE - v.visualHeight - 18}px`;
   }
 
-  private updateBall(dt: number): void {
+  private updateBall(): void {
     const ballEl = this.ballButtonRef().nativeElement;
-    if (!this.pet) { ballEl.style.opacity = '0'; return; }
-    if (!this.ball) this.ball = { x: 0, y: 0, phase: 'idle', elapsed: 0, vx: 0, vy: 0 };
-    const b = this.ball;
-    this.ballOrbitTime += dt;
-    if (b.phase === 'kick') {
-      b.elapsed += dt;
-      b.x += b.vx * dt;
-      b.y += b.vy * dt;
-      b.vy += 180 * dt;
-      if (b.elapsed > .7) b.phase = 'idle';
-    } else if (b.phase === 'idle' && !this.draggingBall) {
-      const angle = this.ballOrbitTime * .85 + .6;
-      b.x = this.pet.x + this.pet.width / 2 + Math.cos(angle) * 76;
-      b.y = this.pet.y - 22 + Math.sin(angle) * 34;
+    const ball = this.fetch.ball;
+    if (!this.pet || !ball || !this.fetch.visible) {
+      ballEl.style.opacity = '0';
+      ballEl.style.pointerEvents = 'none';
+      return;
     }
     ballEl.style.opacity = '1';
-    ballEl.style.left = `${b.x - this.pet.x - 12}px`;
-    ballEl.style.top = `${b.y - this.pet.y - 12}px`;
+    ballEl.style.pointerEvents = ball.phase === 'ready' ? 'auto' : 'none';
+    ballEl.style.left = `${ball.x - this.pet.x - 12}px`;
+    ballEl.style.top = `${ball.y - this.pet.y - 12}px`;
+    ballEl.style.transform = `rotate(${ball.rotation}deg) scale(${ball.phase === 'held' ? 1.12 : 1})`;
   }
 
   private updateFloatingItems(now: number): void {
+    const itemElements = [
+      this.foodButtonRef().nativeElement,
+      this.brushButtonRef().nativeElement,
+    ];
+    if (this.fetch.active) {
+      for (const element of itemElements) {
+        element.style.opacity = '0';
+        element.style.pointerEvents = 'none';
+      }
+      return;
+    }
+    for (const element of itemElements) {
+      element.style.opacity = '.9';
+      element.style.pointerEvents = 'auto';
+    }
     if (!this.pet || this.draggedItem) {
       if (this.draggedItem) {
         const localX = this.draggedItem.x - this.pet!.x - 12;
@@ -421,5 +422,14 @@ export class PetRenderer implements AfterViewInit {
       item.element.style.left = `${this.pet.width / 2 + Math.cos(item.angle) * item.radius - 12}px`;
       item.element.style.top = `${-22 + Math.sin(item.angle) * item.radius * .5 - 12}px`;
     }
+  }
+
+  private bounds(): FetchBounds {
+    const height = typeof window === 'undefined' ? 720 : window.innerHeight;
+    return {
+      width: typeof window === 'undefined' ? 1280 : window.innerWidth,
+      height,
+      floorY: height - 64,
+    };
   }
 }

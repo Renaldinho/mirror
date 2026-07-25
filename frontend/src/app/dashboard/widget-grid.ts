@@ -50,6 +50,17 @@ import { WIDGETS } from './widget-registry';
           }
         </div>
 
+        @if (dash.widgets().length) {
+          <button
+            class="reset-btn w-56 border border-gold/30 bg-wine/85 px-2 py-1.5 text-[10px] uppercase
+                   tracking-[0.2em] text-parchment-dim backdrop-blur-sm transition hover:text-parchment"
+            (click)="dash.clearAll()"
+            title="Remove every widget from the board"
+          >
+            ↺ Clear board
+          </button>
+        }
+
         <!-- desktop pet picker -->
         <div class="cabinet-panel mt-2 w-56 border border-gold/30 bg-wine/85 p-2 backdrop-blur-sm shadow-2xl shadow-black/60">
           <div class="mb-1 px-1 text-[10px] uppercase tracking-[0.2em] text-parchment-dim">Companion</div>
@@ -105,6 +116,14 @@ import { WIDGETS } from './widget-registry';
         box-shadow: var(--theme-shadow-strong);
       }
       .cabinet-trigger { border-radius: var(--control-radius); background: var(--theme-panel); box-shadow: var(--theme-shadow-soft); }
+      .reset-btn {
+        border-radius: var(--control-radius);
+        background: var(--theme-panel);
+        border-color: var(--theme-border-strong);
+        box-shadow: var(--theme-shadow-soft);
+        cursor: pointer;
+      }
+      .reset-btn:hover { background: var(--theme-surface-hover); }
       .tile, .companion { border-radius: var(--control-radius); }
       .tile:hover { background: var(--theme-surface-hover); }
       .companion:hover { background: var(--theme-surface-hover) !important; }

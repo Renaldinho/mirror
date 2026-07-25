@@ -9,11 +9,19 @@ export interface PetContext {
   /** y of the floor where floor-walkers stand. */
   floorY: number;
   pointer: { x: number; y: number; active: boolean };
+  /** High-priority fetch action supplied by the ball interaction coordinator. */
+  fetch: FetchIntent | null;
   /** Companion energy 0..1 — biases which existing states run (tired vs lively). */
   energy: number;
   /** True when the mirror is dark/dimmed — the pet should curl up and sleep. */
   dim: boolean;
 }
+
+export type FetchIntent =
+  | { mode: 'chase'; targetX: number; targetY: number; speed: number }
+  | { mode: 'pickup' }
+  | { mode: 'carry'; targetX: number; targetY: number; speed: number }
+  | { mode: 'deliver' };
 
 /** Behaviour weights that give each species its temperament. */
 export interface Personality {
@@ -40,6 +48,8 @@ export interface PetSpriteAnimation {
   reverseRow?: number;
   /** Optional rows for true four-direction locomotion. */
   directionRows?: Readonly<Partial<Record<PetDirection, number>>>;
+  /** Ordered rows used when an animation spans more than one atlas row. */
+  rowSequence?: readonly number[];
   /** Defaults to true. */
   loop?: boolean;
 }

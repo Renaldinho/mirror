@@ -106,17 +106,9 @@ export class DashboardService {
     );
   }
 
-  /** Restore default positions, scale, and expanded/unpinned state for all active widgets. */
-  resetLayout(): void {
-    this.widgets.update((list) =>
-      list.map((widget, index) => ({
-        ...widget,
-        ...this.slotForIndex(index),
-        pinned: false,
-        scale: DEFAULT_SCALE,
-        collapsed: false,
-      })),
-    );
+  /** Clear the board entirely — remove every placed widget. */
+  clearAll(): void {
+    this.widgets.set([]);
   }
 
   move(type: WidgetType, x: number, y: number): void {
@@ -126,11 +118,8 @@ export class DashboardService {
   }
 
   private nextSlot(): { x: number; y: number } {
-    return this.slotForIndex(this.widgets().length);
-  }
-
-  private slotForIndex(index: number): { x: number; y: number } {
-    return { x: 140 + (index % 4) * 60, y: 120 + (index % 4) * 60 };
+    const count = this.widgets().length;
+    return { x: 140 + (count % 4) * 60, y: 120 + (count % 4) * 60 };
   }
 
   private load(): WidgetInstance[] {

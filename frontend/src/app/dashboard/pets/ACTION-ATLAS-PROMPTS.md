@@ -28,3 +28,24 @@ repacked into square cells, and saved as transparent 4×8 PNG atlases.
   no lily pad, directional movement reads as springy hops, tiny fly while eating.
 - Shadow Kit: charcoal-black kitten with amber eyes, pink inner ears, tiny
   fangs, curled tail, and purple collar with violet tag; fish treat while eating.
+
+## Fetch extension (v6)
+
+The fetch interaction uses one shared red-and-cream stitched pixel-art ball
+(`fetch-ball-v1.png`). Each `interactions-v6.png` preserves rows 0–13 from v5
+unchanged and appends six four-frame rows:
+
+1. Row 14 — front-facing pickup sequence.
+2. Row 15 — carry right.
+3. Row 16 — carry left.
+4. Row 17 — carry away/up-screen.
+5. Row 18 — carry toward/down-screen.
+6. Row 19 — front-facing delivery sequence.
+
+Each species extension was generated separately with its v5 atlas as the
+identity/style reference and the shared ball as the toy reference. The shared
+prompt requested an exact 4×6 grid on flat `#ff00ff`, four sequential frames
+per row, stable scale/baseline, correct directional views, and no grid lines,
+labels, scenery, shadows, blank cells, or cropped body parts. The generated
+foreground column/row bands were detected before each frame was chroma-keyed,
+nearest-neighbor packed into 128×128 cells, and appended to the v5 pixels.

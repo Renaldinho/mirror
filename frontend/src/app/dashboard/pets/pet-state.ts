@@ -147,21 +147,65 @@ export class HeldState extends PetState {
   }
 }
 
-/** A single playful kick after a ball reaches the pet. */
-export class KickState extends PetState {
-  readonly name = 'kick';
+/** Pursue the live ball target supplied by the fetch controller. */
+export class FetchState extends PetState {
+  readonly name = 'fetch';
 
-  override enter(): void {
-    this.duration = 1.15;
+  protected tick(pet: Pet, ctx: PetContext): PetState | null {
+    if (ctx.fetch?.mode !== 'chase') return null;
+    movePet(pet, ctx, ctx.fetch.targetX, ctx.fetch.targetY, ctx.fetch.speed);
+    return null;
   }
+
+  pose(pet: Pet): PetPose {
+    return {
+      dy: -Math.abs(Math.sin(this.elapsed * 13)) * (pet.id === 'frog' ? 7 : 3),
+    };
+  }
+}
+
+/** Dedicated stationary pickup strip; its timing is owned by the controller. */
+export class FetchPickupState extends PetState {
+  readonly name = 'pickup';
 
   protected tick(pet: Pet, ctx: PetContext): PetState | null {
     pet.clampPosition(ctx);
-    return this.elapsed > this.duration ? pet.newRest() : null;
+    return null;
   }
 
   pose(): PetPose {
-    return { dy: -Math.abs(Math.sin(this.elapsed * 8)) * 3, rotate: Math.sin(this.elapsed * 12) * 2, bubble: '⚽' };
+    return {};
+  }
+}
+
+/** Carry the fetched ball toward the current pointer position. */
+export class FetchCarryState extends PetState {
+  readonly name = 'carry';
+
+  protected tick(pet: Pet, ctx: PetContext): PetState | null {
+    if (ctx.fetch?.mode !== 'carry') return null;
+    movePet(pet, ctx, ctx.fetch.targetX, ctx.fetch.targetY, ctx.fetch.speed);
+    return null;
+  }
+
+  pose(pet: Pet): PetPose {
+    return {
+      dy: -Math.abs(Math.sin(this.elapsed * 10)) * (pet.id === 'frog' ? 5 : 2),
+    };
+  }
+}
+
+/** Stationary handoff strip before the world ball reappears beside the cursor. */
+export class FetchDeliverState extends PetState {
+  readonly name = 'deliver';
+
+  protected tick(pet: Pet, ctx: PetContext): PetState | null {
+    pet.clampPosition(ctx);
+    return null;
+  }
+
+  pose(): PetPose {
+    return { bubble: '♡' };
   }
 }
 

@@ -8,7 +8,7 @@ import { LyricsWidget } from '../widgets/lyrics.widget';
 import { WeatherWidget } from '../widgets/weather';
 import { CornerFlourish } from './corner-flourish';
 import { SpecimenArt } from './specimen-art';
-import { DashboardService, WidgetInstance } from './dashboard.service';
+import { DashboardService, SCALE_STEPS, WidgetInstance } from './dashboard.service';
 import { WIDGET_META } from './widget-registry';
 import { SettingsService } from './settings.service';
 
@@ -35,87 +35,140 @@ import { SettingsService } from './settings.service';
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
+    <!-- anchor carries only CDK's drag translate; the plate carries scale + visuals -->
     <div
       cdkDrag
       cdkDragBoundary=".board-surface"
-      class="plate group absolute flex flex-col"
-      [attr.data-widget]="widget().type"
-      [attr.data-variant]="layout().id"
-      [style.--accent]="meta().accent"
-      [style.width.px]="layout().width"
-      [style.height.px]="layout().height"
+      class="anchor absolute"
       [cdkDragFreeDragPosition]="{ x: widget().x, y: widget().y }"
       [cdkDragDisabled]="widget().pinned"
       (cdkDragEnded)="onDragEnded($event)"
     >
-      <!-- winding-flower corners -->
-      <app-corner-flourish class="flourish tl" />
-      <app-corner-flourish class="flourish tr" />
-      <app-corner-flourish class="flourish br" />
-      <app-corner-flourish class="flourish bl" />
+      <div
+        class="plate group flex flex-col"
+        [class.is-collapsed]="widget().collapsed"
+        [attr.data-widget]="widget().type"
+        [attr.data-variant]="layout().id"
+        [style.--accent]="meta().accent"
+        [style.width.px]="layout().width"
+        [style.height.px]="widget().collapsed ? null : layout().height"
+        [style.transform]="'scale(' + widget().scale + ')'"
+      >
+        <!-- winding-flower corners -->
+        <app-corner-flourish class="flourish tl" />
+        <app-corner-flourish class="flourish tr" />
+        <app-corner-flourish class="flourish br" />
+        <app-corner-flourish class="flourish bl" />
 
-      @if (settings.theme() === 'mushroom') {
-        <app-specimen-art [art]="meta().art" class="watermark" />
-      }
-
-      <!-- crown: emblem + drag handle + hover controls -->
-      <div cdkDragHandle class="crown relative z-10" [class.cursor-move]="!widget().pinned">
         @if (settings.theme() === 'mushroom') {
-          <app-specimen-art [art]="meta().art" class="emblem" />
-        } @else {
-          <span class="theme-emblem" aria-hidden="true">{{ meta().icon }}</span>
+          <app-specimen-art [art]="meta().art" class="watermark" />
         }
-        <div class="controls">
-          @if (meta().layouts.length > 1) {
+
+        <!-- crown: emblem + drag handle + hover controls; double-click to collapse -->
+        <div
+          cdkDragHandle
+          class="crown relative z-10"
+          [class.cursor-move]="!widget().pinned"
+          (dblclick)="dash.toggleCollapse(widget().type)"
+        >
+          @if (!widget().pinned) {
+            <span class="grip" aria-hidden="true" title="Drag to move">⠿</span>
+          }
+          @if (settings.theme() === 'mushroom') {
+            <app-specimen-art [art]="meta().art" class="emblem" />
+          } @else {
+            <span class="theme-emblem" aria-hidden="true">{{ meta().icon }}</span>
+          }
+          @if (widget().collapsed) {
+            <span class="crown-name">{{ meta().label }}</span>
+          }
+          <div class="controls" (dblclick)="$event.stopPropagation()">
+            <span class="scaler">
+              <button
+                class="text-parchment-dim hover:text-cap"
+                title="Scale down"
+                [attr.aria-label]="'Scale ' + meta().label + ' down'"
+                [disabled]="atMinScale()"
+                (click)="dash.setScale(widget().type, -1)"
+              >
+                −
+              </button>
+              <span class="pct">{{ scalePercent() }}%</span>
+              <button
+                class="text-parchment-dim hover:text-cap"
+                title="Scale up"
+                [attr.aria-label]="'Scale ' + meta().label + ' up'"
+                [disabled]="atMaxScale()"
+                (click)="dash.setScale(widget().type, 1)"
+              >
+                +
+              </button>
+            </span>
             <button
               class="text-parchment-dim hover:text-cap"
-              [title]="'Change layout · ' + layout().label"
-              [attr.aria-label]="'Change ' + meta().label + ' layout. Current: ' + layout().label"
-              (click)="dash.cycleVariant(widget().type)"
+              [title]="widget().collapsed ? 'Expand' : 'Collapse'"
+              [attr.aria-label]="(widget().collapsed ? 'Expand ' : 'Collapse ') + meta().label"
+              (click)="dash.toggleCollapse(widget().type)"
             >
-              ◫
+              {{ widget().collapsed ? '▸' : '▾' }}
             </button>
+            @if (meta().layouts.length > 1) {
+              <button
+                class="text-parchment-dim hover:text-cap"
+                [title]="'Change layout · ' + layout().label"
+                [attr.aria-label]="'Change ' + meta().label + ' layout. Current: ' + layout().label"
+                (click)="dash.cycleVariant(widget().type)"
+              >
+                ◫
+              </button>
+            }
+            <button
+              [class.text-parchment-dim]="!widget().pinned"
+              [style.color]="widget().pinned ? meta().accent : null"
+              [title]="widget().pinned ? 'Unpin' : 'Pin in place'"
+              (click)="dash.togglePin(widget().type)"
+            >
+              {{ widget().pinned ? '❁' : '❋' }}
+            </button>
+            <button class="text-parchment-dim hover:text-cap" title="Remove" (click)="dash.remove(widget().type)">
+              ×
+            </button>
+          </div>
+        </div>
+
+        <!-- specimen body -->
+        <div class="widget-body relative z-10 min-h-0 flex-1 overflow-hidden px-4">
+          @switch (widget().type) {
+            @case ('clock') { <app-clock [variant]="layout().id" /> }
+            @case ('weather') { <app-weather [variant]="layout().id" /> }
+            @case ('quote') { <app-quote /> }
+            @case ('notes') { <app-notes /> }
+            @case ('spotify') { <app-spotify /> }
+            @case ('lyrics') { <app-lyrics /> }
           }
-          <button
-            [class.text-parchment-dim]="!widget().pinned"
-            [style.color]="widget().pinned ? meta().accent : null"
-            [title]="widget().pinned ? 'Unpin' : 'Pin in place'"
-            (click)="dash.togglePin(widget().type)"
-          >
-            {{ widget().pinned ? '❁' : '❋' }}
-          </button>
-          <button class="text-parchment-dim hover:text-cap" title="Remove" (click)="dash.remove(widget().type)">
-            ×
-          </button>
         </div>
-      </div>
 
-      <!-- specimen body -->
-      <div class="widget-body relative z-10 min-h-0 flex-1 overflow-hidden px-4">
-        @switch (widget().type) {
-          @case ('clock') { <app-clock [variant]="layout().id" /> }
-          @case ('weather') { <app-weather [variant]="layout().id" /> }
-          @case ('quote') { <app-quote /> }
-          @case ('notes') { <app-notes /> }
-          @case ('spotify') { <app-spotify /> }
-          @case ('lyrics') { <app-lyrics /> }
-        }
-      </div>
-
-      <!-- herbarium label -->
-      <div class="label relative z-10">
-        <span class="rule"></span>
-        <div class="names">
-          <span class="common">{{ meta().label }}</span>
-          <span class="latin">{{ meta().latin }}</span>
+        <!-- herbarium label -->
+        <div class="label relative z-10">
+          <span class="rule"></span>
+          <div class="names">
+            <span class="common">{{ meta().label }}</span>
+            <span class="latin">{{ meta().latin }}</span>
+          </div>
+          <span class="rule"></span>
         </div>
-        <span class="rule"></span>
       </div>
     </div>
   `,
   styles: [
     `
+      .anchor {
+        /* sizes to the plate so CDK's drag boundary tracks the widget box */
+        width: max-content;
+      }
       .plate {
+        position: relative;
+        transform-origin: top left;
         isolation: isolate;
         border-radius: var(--frame-radius);
         background: var(--frame-bg);
@@ -124,7 +177,17 @@ import { SettingsService } from './settings.service';
         backdrop-filter: var(--frame-backdrop);
         color: var(--theme-text);
         font-family: var(--theme-font-body);
-        transition: border-radius .35s ease, background .35s ease, border-color .25s ease, box-shadow .35s ease;
+        transition: border-radius .35s ease, background .35s ease, border-color .25s ease,
+          box-shadow .35s ease, height .3s ease;
+      }
+      .plate.is-collapsed .widget-body,
+      .plate.is-collapsed .label,
+      .plate.is-collapsed .watermark {
+        display: none;
+      }
+      .plate.is-collapsed .crown {
+        height: auto;
+        padding-bottom: 8px;
       }
       .plate::before,
       .plate::after {
@@ -185,19 +248,58 @@ import { SettingsService } from './settings.service';
         color: var(--accent); font: 600 21px/1 var(--theme-font-display);
         text-shadow: 0 0 14px color-mix(in srgb, var(--accent) 45%, transparent);
       }
+      .grip {
+        position: absolute;
+        top: 50%;
+        left: 8px;
+        transform: translateY(-50%);
+        color: var(--theme-text-muted);
+        opacity: 0.5;
+        font-size: 13px;
+        line-height: 1;
+        letter-spacing: -1px;
+        pointer-events: none;
+      }
+      .crown-name {
+        margin-left: 8px;
+        font-family: var(--theme-font-display);
+        font-size: 11px;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+        color: var(--theme-text);
+      }
       .controls {
         position: absolute;
         top: 4px;
         right: 8px;
         display: flex;
+        align-items: center;
         gap: 8px;
         opacity: 0;
         transition: opacity 0.2s ease;
         font-size: 14px;
         line-height: 1;
       }
-      .group:hover .controls { opacity: 1; }
+      .group:hover .controls,
+      .is-collapsed .controls { opacity: 1; }
       .controls button { cursor: pointer; }
+      .controls button:disabled {
+        opacity: 0.3;
+        cursor: default;
+      }
+      .scaler {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+      }
+      .scaler .pct {
+        min-width: 30px;
+        text-align: center;
+        font-size: 10px;
+        letter-spacing: 0.04em;
+        color: var(--theme-text-muted);
+        font-variant-numeric: tabular-nums;
+      }
 
       .label {
         display: flex;
@@ -242,6 +344,9 @@ export class WidgetFrame {
       this.meta().layouts.find((layout) => layout.id === this.widget().variant) ??
       this.meta().layouts[0],
   );
+  readonly scalePercent = computed(() => Math.round(this.widget().scale * 100));
+  readonly atMinScale = computed(() => this.widget().scale <= SCALE_STEPS[0]);
+  readonly atMaxScale = computed(() => this.widget().scale >= SCALE_STEPS[SCALE_STEPS.length - 1]);
 
   onDragEnded(event: CdkDragEnd): void {
     const p = event.source.getFreeDragPosition();
