@@ -1,78 +1,42 @@
-# Raspberry Pi mirror
+# Mirror
 
-An Angular smart-mirror interface designed to run full-screen on a Raspberry Pi.
-Nginx serves the UI, and a deliberately small .NET API persists the shared note
-and pet preferences to one SQLite file.
+A full-screen smart-mirror dashboard that runs on a Raspberry Pi. It shows a
+dark-academia board of draggable widgets — clock, weather, notes, Spotify
+now-playing, a desktop pet, and mini-games — that you scale, collapse, and
+arrange. A small local .NET + SQLite API stores the shared note and pet choices.
+Everything runs on the Pi; nothing is in the cloud.
 
-There is no AI agent, remote-management page, application account, or database
-server. Spotify uses Authorization Code with PKCE directly in the Pi's Chromium
-browser.
+## Set up on a Raspberry Pi
 
-## Architecture
+Needs **64-bit Raspberry Pi OS (Desktop)**. From a terminal on the Pi:
 
-```text
-Chromium kiosk
-    |
-    v
-Nginx (127.0.0.1:80)
-    |-- Angular static files
-    `-- /api/* --> .NET (127.0.0.1:5000) --> /var/lib/mirror/mirror.db
-
-Chromium -- HTTPS --> Spotify Web API
+```bash
+git clone https://github.com/Renaldinho/mirror-agent.git
+cd mirror-agent
+sudo bash deploy/pi/bootstrap.sh   # installs Nginx, Chromium, Node 22, .NET 10
+sudo bash deploy/pi/install.sh     # builds the app and enables it on boot
+sudo reboot                        # comes back up full-screen in kiosk mode
 ```
 
-SQLite is embedded in the .NET process. `mirror.db` is an ordinary file on the
-Pi, not a separate service.
+That's the whole install. After the reboot the mirror runs full-screen, and the
+API and web server start automatically every boot.
 
-Spotify's access token, refresh token, and expiry are stored in the persistent
-Chromium profile under the `spotify.tokens` local-storage key. Clearing that
-profile disconnects Spotify and requires authorization again.
+## Update to the latest version
 
-## Local development
-
-Requirements:
-
-- Node.js 22
-- .NET 10 SDK
-
-Run the API (onion-layered solution; the runnable project is `Mirror.Server`):
-
-```powershell
-dotnet run --project backend/src/Mirror.Server
+```bash
+cd ~/mirror-agent
+bash deploy/pi/update.sh
 ```
 
-Run Angular in a second terminal:
+Pulls the newest version, rebuilds, and restarts the service. See
+[`deploy/pi/UPDATING.md`](deploy/pi/UPDATING.md) for options (`--reboot`,
+`--force`), health checks, logs, and backups.
 
-```powershell
-cd frontend
-npm install
-npm start
-```
+## Spotify (optional)
 
-The Angular development server runs at `http://127.0.0.1:4200` and proxies
-`/api` to `http://127.0.0.1:5000`.
-
-Run checks:
-
-```powershell
-cd backend.Tests
-dotnet test
-
-cd ../frontend
-npm test
-npm run build
-```
-
-## Spotify configuration
-
-1. Create an application in the Spotify developer dashboard.
-2. For the installed Pi, register this redirect URI exactly:
-
-   ```text
-   http://127.0.0.1/
-   ```
-
-3. Put the public client ID in `/etc/mirror/config.js`:
+1. Create an app in the [Spotify developer dashboard](https://developer.spotify.com/dashboard).
+2. Register this redirect URI **exactly**: `http://127.0.0.1/`
+3. Put the (public) client ID in `/etc/mirror/config.js` on the Pi:
 
    ```js
    window.__MIRROR_CONFIG__ = {
@@ -81,82 +45,55 @@ npm run build
    };
    ```
 
-4. Reload the kiosk and choose **Connect Spotify** using the Rii keyboard.
+4. Reload the kiosk (Ctrl+R) and choose **Connect Spotify**.
 
-PKCE does not use a Spotify client secret. Do not add one to the UI or backend.
-Spotify playback control requires a Premium account and an active Spotify
-device.
+It uses PKCE, so there's no client secret — never add one. Controlling playback
+needs a Spotify Premium account with an active device.
 
-For local Angular development, register `http://127.0.0.1:4200/` as an
-additional redirect and temporarily use that value in `frontend/public/config.js`.
+## Check it's running / troubleshooting
 
-## Raspberry Pi installation
-
-Use 64-bit Raspberry Pi OS with the desktop. Install:
-
-- Nginx
-- Chromium
-- Node.js 22 and npm
-- .NET 10 SDK and ASP.NET Core runtime
-
-After cloning this repository, run:
+> These commands only work **after** `install.sh` has run — that's what creates
+> the `mirror-api` service. If you see *"Unit mirror-api.service could not be
+> found,"* the install hasn't completed (usually a missing prerequisite — re-run
+> `bootstrap.sh`, then `install.sh`).
 
 ```bash
-sudo bash ./deploy/pi/install.sh
+systemctl status mirror-api nginx     # both should be "active (running)"
+curl http://127.0.0.1/api/health      # -> {"status":"ok"}
+sudo journalctl -u mirror-api -f      # live API log (Ctrl+C to stop)
 ```
 
-The installer:
+## Develop on your PC (optional)
 
-- builds Angular and publishes .NET;
-- installs the UI under `/opt/mirror/ui`;
-- installs the API under `/opt/mirror/api`;
-- creates the `mirror-api` system user and `/var/lib/mirror`;
-- enables Nginx and the API systemd unit;
-- adds Chromium kiosk startup to the current desktop user;
-- preserves an existing `/etc/mirror/config.js` during updates.
+Needs Node.js 22 and the .NET 10 SDK.
 
-Edit `/etc/mirror/config.js` with the Spotify client ID, then log out and back
-in or restart Chromium. The kiosk always uses a persistent profile at:
+```bash
+# API (the runnable project of the layered solution)
+dotnet run --project backend/src/Mirror.Server
+
+# UI, in a second terminal — serves http://127.0.0.1:4200, proxies /api to :5000
+cd frontend
+npm install
+npm start
+
+# tests
+dotnet test backend.Tests
+cd frontend && npm test
+```
+
+## How it fits together
 
 ```text
-~/.local/state/mirror/chromium
+Chromium kiosk
+    |
+    v
+Nginx (127.0.0.1:80)
+    |-- Angular static files (the dashboard UI)
+    `-- /api/* --> .NET API (127.0.0.1:5000) --> /var/lib/mirror/mirror.db
 ```
 
-### Operations
-
-```bash
-sudo systemctl status mirror-api nginx
-sudo journalctl -u mirror-api -f
-curl http://127.0.0.1/api/health
-```
-
-To update, pull the repository and run the installer again.
-
-To back up persistent data:
-
-```bash
-sudo systemctl stop mirror-api
-sudo cp /var/lib/mirror/mirror.db /path/to/backup/mirror.db
-sudo systemctl start mirror-api
-```
-
-Back up `~/.local/state/mirror/chromium` as well if retaining the Spotify login
-is important. Treat that browser-profile backup as sensitive because it contains
-the Spotify refresh token.
-
-## Persisted state
-
-Stored in SQLite:
-
-- the shared note;
-- the active pet;
-- per-pet names.
-
-Stored only in the Chromium profile:
-
-- Spotify PKCE tokens;
-- themes, lighting, widget layout, habitat, pet energy, and other display-local
-  preferences.
-
-The API database path is configurable with `Database__Path`; development
-defaults to `mirror.db` under the API project (`backend/src/Mirror.Server/`).
+The .NET API is a small onion-layered solution under `backend/` (Domain /
+Application / Infrastructure / `Mirror.Server`) with SQLite embedded in the
+process — `mirror.db` is just a file, not a separate database service. The
+Angular app lives in `frontend/`. Spotify talks to its Web API directly from
+Chromium; its tokens live in the browser profile, not on the server.
