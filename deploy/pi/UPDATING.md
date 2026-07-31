@@ -9,6 +9,15 @@ below from inside that folder.
 
 ---
 
+The repo is public, so the Pi pulls over HTTPS with no credentials needed. If
+you ever cloned it with a token in the URL, reset the remote to the clean URL:
+
+```bash
+git -C ~/mirror-agent remote set-url origin https://github.com/Renaldinho/mirror-agent.git
+```
+
+---
+
 ## Update to the latest version
 
 Run as your normal desktop user — **not** with sudo (the script uses sudo itself):
