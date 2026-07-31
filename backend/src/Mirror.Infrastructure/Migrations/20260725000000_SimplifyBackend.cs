@@ -1,10 +1,10 @@
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
-using Mirror.Server.Data;
+using Mirror.Infrastructure.Persistence;
 
 #nullable disable
 
-namespace Mirror.Server.Migrations;
+namespace Mirror.Infrastructure.Migrations;
 
 [DbContext(typeof(AppDbContext))]
 [Migration("20260725000000_SimplifyBackend")]

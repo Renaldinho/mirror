@@ -60,6 +60,13 @@ export class SpotifyService {
       if (this.tickTimer) clearInterval(this.tickTimer);
       if (this.pollTimer) clearInterval(this.pollTimer);
     });
+    // No client ID configured: stay dormant and drop any stale tokens left in this
+    // browser profile, so an old/expired token can't spam failed refreshes.
+    if (!this.configured()) {
+      if (this.tokens) this.disconnect();
+      return;
+    }
+
     void this.handleRedirect().then(() => {
       if (this.tokens) {
         this.authed.set(true);
@@ -87,6 +94,11 @@ export class SpotifyService {
   }
 
   logout(): void {
+    this.disconnect();
+  }
+
+  /** Drop tokens and stop polling — on sign-out, or when Spotify rejects the token. */
+  private disconnect(): void {
     this.tokens = null;
     localStorage.removeItem(TOKENS_KEY);
     if (this.pollTimer) clearInterval(this.pollTimer);
@@ -149,14 +161,14 @@ export class SpotifyService {
     sessionStorage.removeItem(STATE_KEY);
   }
 
-  private async exchange(body: URLSearchParams): Promise<void> {
+  private async exchange(body: URLSearchParams): Promise<boolean> {
     try {
       const res = await fetch(TOKEN_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body,
       });
-      if (!res.ok) return;
+      if (!res.ok) return false;
       const json = (await res.json()) as {
         access_token: string;
         refresh_token?: string;
@@ -168,21 +180,30 @@ export class SpotifyService {
         expiresAt: Date.now() + json.expires_in * 1000,
       };
       localStorage.setItem(TOKENS_KEY, JSON.stringify(this.tokens));
+      return true;
     } catch {
-      /* ignore */
+      return false;
     }
   }
 
   private async token(): Promise<string | null> {
     if (!this.tokens) return null;
-    if (this.tokens.expiresAt - Date.now() < 60_000 && this.tokens.refresh) {
-      await this.exchange(
-        new URLSearchParams({
-          grant_type: 'refresh_token',
-          refresh_token: this.tokens.refresh,
-          client_id: CLIENT_ID,
-        }),
-      );
+    if (this.tokens.expiresAt - Date.now() < 60_000) {
+      const refreshed =
+        this.tokens.refresh &&
+        (await this.exchange(
+          new URLSearchParams({
+            grant_type: 'refresh_token',
+            refresh_token: this.tokens.refresh,
+            client_id: CLIENT_ID,
+          }),
+        ));
+      if (!refreshed) {
+        // No refresh token, or Spotify rejected it (e.g. issued for a different
+        // client): give up instead of polling with a dead token forever.
+        this.disconnect();
+        return null;
+      }
     }
     return this.tokens?.access ?? null;
   }
@@ -210,6 +231,10 @@ export class SpotifyService {
         this.hasDevice.set(false);
         this.deviceName.set(null);
         this.paused.set(true);
+        return;
+      }
+      if (res.status === 401) {
+        this.disconnect();
         return;
       }
       if (res.status === 429) {
@@ -258,7 +283,8 @@ export class SpotifyService {
         method,
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (res.status === 403) this.premiumError.set(true);
+      if (res.status === 401) this.disconnect();
+      else if (res.status === 403) this.premiumError.set(true);
       else if (res.ok || res.status === 204) this.premiumError.set(false);
     } catch {
       /* ignore */

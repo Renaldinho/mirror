@@ -1,10 +1,11 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
-using Mirror.Server.Data;
+using Mirror.Domain.Entities;
+using Mirror.Infrastructure.Persistence;
 
 #nullable disable
 
-namespace Mirror.Server.Migrations;
+namespace Mirror.Infrastructure.Migrations;
 
 [DbContext(typeof(AppDbContext))]
 public sealed class AppDbContextModelSnapshot : ModelSnapshot

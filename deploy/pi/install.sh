@@ -23,7 +23,7 @@ done
 sudo -u "$kiosk_user" npm ci --prefix "$repo_root/frontend"
 sudo -u "$kiosk_user" npm run build --prefix "$repo_root/frontend"
 sudo -u "$kiosk_user" dotnet publish \
-  "$repo_root/backend/Mirror.Server.csproj" \
+  "$repo_root/backend/src/Mirror.Server/Mirror.Server.csproj" \
   --configuration Release \
   --output "$repo_root/.publish/api"
 

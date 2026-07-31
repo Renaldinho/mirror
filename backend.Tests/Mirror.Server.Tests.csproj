@@ -19,7 +19,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\backend\Mirror.Server.csproj" />
+    <ProjectReference Include="..\backend\src\Mirror.Server\Mirror.Server.csproj" />
   </ItemGroup>
 
 </Project>

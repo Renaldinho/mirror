@@ -35,11 +35,10 @@ Requirements:
 - Node.js 22
 - .NET 10 SDK
 
-Run the API:
+Run the API (onion-layered solution; the runnable project is `Mirror.Server`):
 
 ```powershell
-cd backend
-dotnet run
+dotnet run --project backend/src/Mirror.Server
 ```
 
 Run Angular in a second terminal:
@@ -160,4 +159,4 @@ Stored only in the Chromium profile:
   preferences.
 
 The API database path is configurable with `Database__Path`; development
-defaults to `backend/mirror.db`.
+defaults to `mirror.db` under the API project (`backend/src/Mirror.Server/`).

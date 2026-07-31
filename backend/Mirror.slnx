@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Mirror.Application/Mirror.Application.csproj" />
+    <Project Path="src/Mirror.Domain/Mirror.Domain.csproj" />
+    <Project Path="src/Mirror.Infrastructure/Mirror.Infrastructure.csproj" />
+    <Project Path="src/Mirror.Server/Mirror.Server.csproj" />
+  </Folder>
+  <Project Path="../backend.Tests/Mirror.Server.Tests.csproj" />
+</Solution>

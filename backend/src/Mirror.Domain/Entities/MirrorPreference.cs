@@ -1,4 +1,4 @@
-namespace Mirror.Server.Data;
+namespace Mirror.Domain.Entities;
 
 /// <summary>Singleton row for mirror-wide persisted preferences.</summary>
 public class MirrorPreference
