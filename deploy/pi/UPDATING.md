@@ -64,6 +64,20 @@ systemctl status mirror-api nginx      # both should be "active (running)"
 curl http://127.0.0.1/api/health       # -> {"status":"ok"}
 ```
 
+If the browser shows the default Nginx page or that health request fails, repair
+the installed copy with:
+
+```bash
+cd ~/mirror-agent                    # use the folder where you cloned it
+git pull --ff-only
+sudo bash deploy/pi/install.sh
+```
+
+The installer replaces the default Nginx site and verifies the UI, backend, and
+API proxy before it reports success. It preserves `/etc/mirror/config.js` and
+`/var/lib/mirror/mirror.db`. When verification fails it prints the backend
+status and recent service logs for diagnosis.
+
 ## Watch logs / see errors
 
 ```bash

@@ -63,6 +63,21 @@ curl http://127.0.0.1/api/health      # -> {"status":"ok"}
 sudo journalctl -u mirror-api -f      # live API log (Ctrl+C to stop)
 ```
 
+If `http://127.0.0.1/` shows the default Nginx page, or the health request
+fails, update the checkout and rerun the installer:
+
+```bash
+cd ~/mirror-agent                    # use the folder where you cloned it
+git pull --ff-only
+sudo bash deploy/pi/install.sh
+```
+
+The installer now removes Raspberry Pi OS's default Nginx site, restarts both
+services, and verifies the UI plus the direct and proxied API before reporting
+success. Reinstalling preserves `/etc/mirror/config.js` and
+`/var/lib/mirror/mirror.db`. If it fails, the command prints the API status and
+recent logs instead of leaving a silently broken installation.
+
 ## Develop on your PC (optional)
 
 Needs Node.js 22 and the .NET 10 SDK.

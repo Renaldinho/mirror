@@ -8,8 +8,8 @@ Type=simple
 User=mirror-api
 Group=mirror-api
 WorkingDirectory=/opt/mirror/api
-ExecStart=/usr/local/bin/dotnet /opt/mirror/api/Mirror.Server.dll
-Environment=DOTNET_ROOT=/usr/lib/dotnet
+ExecStart=/usr/bin/env dotnet /opt/mirror/api/Mirror.Server.dll
+Environment="PATH=/usr/local/bin:/usr/bin:/bin"
 Environment=ASPNETCORE_URLS=http://127.0.0.1:5000
 Environment=Database__Path=/var/lib/mirror/mirror.db
 Restart=on-failure
