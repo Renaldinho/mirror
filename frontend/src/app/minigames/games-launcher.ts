@@ -1,10 +1,12 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { GamesService } from './games.service';
 import { GameId, GAMES } from './games-registry';
+import { UiIcon } from '../shared/ui-icon';
 
 /** Bottom-left arcade cabinet: opens a small menu of minigames. */
 @Component({
   selector: 'app-games-launcher',
+  imports: [UiIcon],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="fixed bottom-4 left-4 z-20 flex flex-col items-start gap-2">
@@ -16,7 +18,7 @@ import { GameId, GAMES } from './games-registry';
               @if (g.thumbnail) {
                 <img class="game-thumb" [src]="g.thumbnail" alt="" aria-hidden="true" />
               } @else {
-                <span class="glyph">{{ g.glyph }}</span>
+                <app-ui-icon class="glyph" [name]="g.icon" />
               }
               <span class="labels">
                 <span class="name">{{ g.label }}</span>
@@ -34,7 +36,7 @@ import { GameId, GAMES } from './games-registry';
         [attr.aria-label]="open() ? 'Close arcade' : 'Open arcade'"
         title="Arcade"
       >
-        {{ open() ? '×' : '🎮' }}
+        <app-ui-icon [name]="open() ? 'close' : 'gamepad'" />
       </button>
     </div>
   `,
@@ -49,7 +51,7 @@ import { GameId, GAMES } from './games-registry';
         border: 1px solid var(--theme-border-strong);
         background: var(--theme-panel);
         box-shadow: var(--theme-shadow-soft);
-        backdrop-filter: blur(12px);
+        backdrop-filter: none;
         color: var(--theme-text);
         font-size: 18px;
         cursor: pointer;
@@ -64,7 +66,7 @@ import { GameId, GAMES } from './games-registry';
         border: 1px solid var(--theme-border-strong);
         background: var(--theme-panel);
         box-shadow: var(--theme-shadow-strong);
-        backdrop-filter: blur(14px);
+        backdrop-filter: none;
       }
       .menu-head {
         padding: 0 4px 4px;

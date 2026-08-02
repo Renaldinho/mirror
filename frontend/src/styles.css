@@ -598,6 +598,20 @@ body {
   transition: background-color 0.35s ease, color 0.25s ease;
 }
 
+/* Native 4K mirror displays are fill-rate constrained. Keep persistent
+ * surfaces cheap to composite; interaction remains crisp without live blur or
+ * full-screen filter animations. */
+app-background *,
+app-corner-flourish svg {
+  animation: none !important;
+  filter: none !important;
+}
+
+app-pet-habitat .tv .detail {
+  animation: none !important;
+  filter: none !important;
+}
+
 :where(button, input, textarea, select) {
   font: inherit;
 }

@@ -1,16 +1,17 @@
 import { DOCUMENT } from '@angular/common';
 import { Injectable, effect, inject, signal } from '@angular/core';
 import { isThemeId, ThemeId } from './theme-registry';
+import { IconName } from '../shared/ui-icon';
 
 export type LightingPreset = 'off' | 'soft' | 'bright';
 
 export const CURSOR_FX_MODES = [
-  { id: 'laser', label: 'Laser', glyph: '✦' },
-  { id: 'glitter', label: 'Glitter', glyph: '❈' },
-  { id: 'matrix', label: 'Matrix', glyph: '01' },
-  { id: 'flame', label: 'Flame', glyph: '♨' },
-  { id: 'bubbles', label: 'Bubbles', glyph: '○' },
-] as const;
+  { id: 'laser', label: 'Laser', icon: 'sparkle' },
+  { id: 'glitter', label: 'Glitter', icon: 'glitter' },
+  { id: 'matrix', label: 'Matrix', icon: 'matrix' },
+  { id: 'flame', label: 'Flame', icon: 'flame' },
+  { id: 'bubbles', label: 'Bubbles', icon: 'bubbles' },
+] as const satisfies readonly { id: string; label: string; icon: IconName }[];
 
 export type CursorFxMode = (typeof CURSOR_FX_MODES)[number]['id'];
 
@@ -34,7 +35,7 @@ export class SettingsService {
   /** Active visual system. Layout and widget state remain theme-independent. */
   readonly theme = signal<ThemeId>(this.loadTheme());
   /** Nostalgic custom pointer and particle trail for mouse-like input. */
-  readonly cursorFx = signal(this.loadBool('dash.cursor.fx', true));
+  readonly cursorFx = signal(this.loadBool('dash.cursor.fx.v2', false));
   /** Selected pointer particle system. */
   readonly cursorFxMode = signal<CursorFxMode>(this.loadCursorFxMode());
 
@@ -49,7 +50,7 @@ export class SettingsService {
     effect(() => {
       const enabled = this.cursorFx();
       const mode = this.cursorFxMode();
-      localStorage.setItem('dash.cursor.fx', JSON.stringify(enabled));
+      localStorage.setItem('dash.cursor.fx.v2', JSON.stringify(enabled));
       localStorage.setItem('dash.cursor.fx.mode', mode);
       this.document.documentElement.dataset['cursorFx'] = enabled ? 'on' : 'off';
       this.document.documentElement.dataset['cursorFxMode'] = mode;

@@ -89,8 +89,7 @@ interface Spark {
         border-top-color: #ff68d8;
         border-right-color: transparent;
         border-radius: 50%;
-        filter: drop-shadow(0 0 4px var(--theme-primary));
-        animation: orbit-spin 1.35s linear infinite;
+        filter: none;
       }
       .reticle::before,
       .reticle::after {
@@ -138,7 +137,6 @@ interface Spark {
       .satellite.one {
         right: 0;
         top: 3px;
-        animation: satellite-pulse 850ms ease-in-out infinite alternate;
       }
       .mode-icon {
         display: none;
@@ -163,7 +161,6 @@ interface Spark {
           0 0 9px #ff7df3,
           0 0 16px #7df9ff,
           0 0 23px #ff7df3;
-        animation: glitter-wand 780ms ease-in-out infinite alternate;
       }
       .retro-pointer[data-mode='glitter'] .mode-icon::before {
         content: '✦';
@@ -175,14 +172,13 @@ interface Spark {
         top: 0;
         color: #ffe36e;
         font-size: 13px;
-        animation: satellite-pulse 560ms ease-in-out infinite alternate-reverse;
       }
       .retro-pointer[data-mode='matrix'] .orbit {
         inset: 5px;
         border-color: #65ff73;
         border-right-color: transparent;
         border-radius: 2px;
-        filter: drop-shadow(0 0 5px #00ff41);
+        filter: none;
       }
       .retro-pointer[data-mode='matrix'] .reticle::before,
       .retro-pointer[data-mode='matrix'] .reticle::after {
@@ -197,7 +193,7 @@ interface Spark {
       }
       .retro-pointer[data-mode='flame'] .orbit {
         border-color: #ffdb4d #ff4d00 transparent #ff8a00;
-        filter: drop-shadow(0 0 6px #ff4d00);
+        filter: none;
         animation-duration: .75s;
       }
       .retro-pointer[data-mode='flame'] .reticle::before,
@@ -213,7 +209,7 @@ interface Spark {
         inset: 2px;
         border: 2px solid rgba(128, 238, 255, .82);
         border-right-color: rgba(255, 139, 231, .7);
-        filter: drop-shadow(0 0 5px #77eaff);
+        filter: none;
         animation-direction: reverse;
         animation-duration: 2.2s;
       }
@@ -294,6 +290,7 @@ export class RetroCursor implements AfterViewInit {
       this.window!.addEventListener('pointercancel', this.onPointerUp, { passive: true });
       this.window!.addEventListener('pointerout', this.onPointerOut, { passive: true });
       this.window!.addEventListener('resize', this.resize, { passive: true });
+      this.document.addEventListener('visibilitychange', this.refresh);
       this.finePointer?.addEventListener('change', this.refresh);
       this.reducedMotion?.addEventListener('change', this.refresh);
       this.refresh();
@@ -308,6 +305,7 @@ export class RetroCursor implements AfterViewInit {
     const shouldRun =
       this.settings.cursorFx() &&
       !this.games.gameCursorSuppressed() &&
+      !this.document.hidden &&
       (this.finePointer?.matches ?? false) &&
       !(this.reducedMotion?.matches ?? false);
 
@@ -316,8 +314,6 @@ export class RetroCursor implements AfterViewInit {
 
     if (this.active) {
       this.resize();
-      this.lastFrame = performance.now();
-      this.frame = this.window.requestAnimationFrame(this.animate);
     } else {
       this.cursor().nativeElement.classList.remove('visible', 'pressed');
       this.sparks.length = 0;
@@ -338,7 +334,7 @@ export class RetroCursor implements AfterViewInit {
       const dx = event.clientX - this.lastX;
       const dy = event.clientY - this.lastY;
       const distance = Math.hypot(dx, dy);
-      const count = Math.min(4, Math.max(1, Math.floor(distance / 9)));
+      const count = Math.min(2, Math.max(1, Math.floor(distance / 16)));
 
       for (let index = 0; index < count; index += 1) {
         const progress = (index + 1) / count;
@@ -349,6 +345,7 @@ export class RetroCursor implements AfterViewInit {
     this.lastX = event.clientX;
     this.lastY = event.clientY;
     this.hasPosition = true;
+    if (this.sparks.length) this.ensureAnimation();
   };
 
   private readonly onPointerDown = (event: PointerEvent): void => {
@@ -373,6 +370,7 @@ export class RetroCursor implements AfterViewInit {
         glyph: this.sparkGlyph(mode, index),
       });
     }
+    this.ensureAnimation();
   };
 
   private readonly onPointerUp = (): void => {
@@ -391,7 +389,7 @@ export class RetroCursor implements AfterViewInit {
     const palette = this.palette();
     const drift = Math.atan2(dy, dx) + Math.PI + (Math.random() - .5) * 1.6;
     const speed = .25 + Math.random() * 1.15;
-    const density = mode === 'glitter' || mode === 'flame' ? 2 : 1;
+    const density = 1;
 
     for (let index = 0; index < density; index += 1) {
       let vx = Math.cos(drift) * speed;
@@ -424,8 +422,8 @@ export class RetroCursor implements AfterViewInit {
       });
     }
 
-    if (this.sparks.length > 180) {
-      this.sparks.splice(0, this.sparks.length - 180);
+    if (this.sparks.length > 80) {
+      this.sparks.splice(0, this.sparks.length - 80);
     }
   }
 
@@ -489,7 +487,7 @@ export class RetroCursor implements AfterViewInit {
     this.lastFrame = time;
     const context = this.context;
     const canvas = this.trail().nativeElement;
-    const scale = Math.min(this.window.devicePixelRatio || 1, 2);
+    const scale = 1;
 
     context.setTransform(scale, 0, 0, scale, 0, 0);
     context.clearRect(0, 0, canvas.width / scale, canvas.height / scale);
@@ -512,8 +510,6 @@ export class RetroCursor implements AfterViewInit {
       const size = spark.size * (.55 + spark.life / spark.ttl);
       context.globalAlpha = alpha;
       context.fillStyle = spark.color;
-      context.shadowColor = spark.color;
-      context.shadowBlur = size * 3.5;
 
       switch (spark.kind) {
         case 'diamond':
@@ -544,8 +540,12 @@ export class RetroCursor implements AfterViewInit {
 
     context.globalAlpha = 1;
     context.globalCompositeOperation = 'source-over';
-    context.shadowBlur = 0;
-    this.frame = this.window.requestAnimationFrame(this.animate);
+    if (this.sparks.length) {
+      this.frame = this.window.requestAnimationFrame(this.animate);
+    } else {
+      context.clearRect(0, 0, canvas.width, canvas.height);
+      this.frame = 0;
+    }
   };
 
   private drawDiamond(context: CanvasRenderingContext2D, x: number, y: number, size: number): void {
@@ -584,7 +584,7 @@ export class RetroCursor implements AfterViewInit {
   private readonly resize = (): void => {
     if (!this.window || !this.context) return;
     const canvas = this.trail().nativeElement;
-    const scale = Math.min(this.window.devicePixelRatio || 1, 2);
+    const scale = 1;
     canvas.width = Math.round(this.window.innerWidth * scale);
     canvas.height = Math.round(this.window.innerHeight * scale);
     canvas.style.width = `${this.window.innerWidth}px`;
@@ -595,6 +595,12 @@ export class RetroCursor implements AfterViewInit {
     if (!this.context) return;
     const canvas = this.trail().nativeElement;
     this.context.clearRect(0, 0, canvas.width, canvas.height);
+  }
+
+  private ensureAnimation(): void {
+    if (!this.active || !this.window || this.frame) return;
+    this.lastFrame = performance.now();
+    this.frame = this.window.requestAnimationFrame(this.animate);
   }
 
   private stopAnimation(): void {
@@ -612,6 +618,7 @@ export class RetroCursor implements AfterViewInit {
     this.window.removeEventListener('pointercancel', this.onPointerUp);
     this.window.removeEventListener('pointerout', this.onPointerOut);
     this.window.removeEventListener('resize', this.resize);
+    this.document.removeEventListener('visibilitychange', this.refresh);
     this.finePointer?.removeEventListener('change', this.refresh);
     this.reducedMotion?.removeEventListener('change', this.refresh);
   }

@@ -21,7 +21,7 @@ describe('theme registry', () => {
     for (const theme of THEMES) {
       expect(theme.label.length).toBeGreaterThan(0);
       expect(theme.description.length).toBeGreaterThan(0);
-      expect(theme.glyph.length).toBeGreaterThan(0);
+      expect(theme.icon.length).toBeGreaterThan(0);
       expect(theme.swatches).toHaveLength(3);
     }
   });

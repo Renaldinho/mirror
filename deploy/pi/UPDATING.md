@@ -64,6 +64,12 @@ systemctl status mirror-api nginx      # both should be "active (running)"
 curl http://127.0.0.1/api/health       # -> {"status":"ok"}
 ```
 
+Collect hardware, display, throttling, Chromium, memory, and service details:
+
+```bash
+/opt/mirror/bin/mirror-diagnose
+```
+
 If the browser shows the default Nginx page or that health request fails, repair
 the installed copy with:
 

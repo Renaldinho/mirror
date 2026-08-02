@@ -1,4 +1,5 @@
 import { ArtKey } from './specimen-art';
+import { IconName } from '../shared/ui-icon';
 
 /** The widget kinds available on the board. */
 export type WidgetType = 'weather' | 'clock' | 'quote' | 'notes' | 'spotify' | 'lyrics';
@@ -21,7 +22,7 @@ export interface WidgetMeta {
   type: WidgetType;
   label: string;
   latin: string;
-  icon: string;
+  icon: IconName;
   art: ArtKey;
   accent: string;
   layouts: readonly WidgetLayout[];
@@ -32,7 +33,7 @@ export const WIDGETS: WidgetMeta[] = [
     type: 'clock',
     label: 'Hours',
     latin: 'Hora nocturna',
-    icon: '⏳',
+    icon: 'clock',
     art: 'moth',
     accent: 'var(--widget-clock-accent)',
     layouts: [
@@ -44,7 +45,7 @@ export const WIDGETS: WidgetMeta[] = [
     type: 'weather',
     label: 'Weather',
     latin: 'Nimbus vagus',
-    icon: '☁',
+    icon: 'cloud',
     art: 'fern',
     accent: 'var(--widget-weather-accent)',
     layouts: [
@@ -56,7 +57,7 @@ export const WIDGETS: WidgetMeta[] = [
     type: 'quote',
     label: 'Aphorism',
     latin: 'Flora poetica',
-    icon: '❝',
+    icon: 'quote',
     art: 'bloom',
     accent: 'var(--widget-quote-accent)',
     layouts: [{ id: 'default', label: 'Default', width: 340, height: 240 }],
@@ -65,7 +66,7 @@ export const WIDGETS: WidgetMeta[] = [
     type: 'notes',
     label: 'Marginalia',
     latin: 'Hedera scripta',
-    icon: '✒',
+    icon: 'note',
     art: 'ivy',
     accent: 'var(--widget-notes-accent)',
     layouts: [{ id: 'default', label: 'Default', width: 300, height: 280 }],
@@ -74,7 +75,7 @@ export const WIDGETS: WidgetMeta[] = [
     type: 'spotify',
     label: 'Now Playing',
     latin: 'Fungus sonorus',
-    icon: '♪',
+    icon: 'music',
     art: 'mushroom',
     accent: 'var(--widget-spotify-accent)',
     layouts: [{ id: 'default', label: 'Default', width: 320, height: 320 }],
@@ -83,7 +84,7 @@ export const WIDGETS: WidgetMeta[] = [
     type: 'lyrics',
     label: 'Lyrics',
     latin: 'Carmen synchronum',
-    icon: '♫',
+    icon: 'lyrics',
     art: 'bloom',
     accent: 'var(--widget-spotify-accent)',
     layouts: [{ id: 'default', label: 'Default', width: 300, height: 360 }],

@@ -3,19 +3,20 @@ import { DuckHunt } from './duck-hunt/duck-hunt';
 import { GamesService } from './games.service';
 import { GameId, GAMES } from './games-registry';
 import { Whack } from './whack/whack';
+import { UiIcon } from '../shared/ui-icon';
 
 /** Fullscreen modal that hosts the active game. Provides shared chrome
  *  (title, mute, close); each game renders its own play area + stats. */
 @Component({
   selector: 'app-game-overlay',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DuckHunt, Whack],
+  imports: [DuckHunt, Whack, UiIcon],
   template: `
     @if (games.activeGame(); as id) {
       <button class="backdrop" (click)="games.close()" aria-label="Close game"></button>
       <section class="frame" role="dialog" aria-modal="true" [attr.aria-label]="meta(id).label">
         <header class="chrome">
-          <span class="title">{{ meta(id).glyph }} {{ meta(id).label }}</span>
+          <span class="title"><app-ui-icon [name]="meta(id).icon" /> {{ meta(id).label }}</span>
           <span class="spacer"></span>
           <button
             class="chrome-btn"
@@ -23,9 +24,9 @@ import { Whack } from './whack/whack';
             [attr.aria-pressed]="!games.muted()"
             [attr.aria-label]="games.muted() ? 'Unmute' : 'Mute'"
           >
-            {{ games.muted() ? '🔇' : '🔊' }}
+            <app-ui-icon [name]="games.muted() ? 'volume-off' : 'volume'" />
           </button>
-          <button class="chrome-btn" (click)="games.close()" aria-label="Close game">×</button>
+          <button class="chrome-btn" (click)="games.close()" aria-label="Close game"><app-ui-icon name="close" /></button>
         </header>
         <div class="stage">
           @switch (id) {
@@ -49,7 +50,7 @@ import { Whack } from './whack/whack';
         inset: 0;
         border: 0;
         background: rgba(0, 0, 0, 0.55);
-        backdrop-filter: blur(4px);
+        backdrop-filter: none;
         pointer-events: auto;
       }
       .frame {
@@ -73,6 +74,9 @@ import { Whack } from './whack/whack';
         border-bottom: 1px solid var(--theme-border);
       }
       .title {
+        display: flex;
+        align-items: center;
+        gap: 6px;
         font: 600 14px/1 var(--theme-font-display);
         letter-spacing: 0.08em;
       }

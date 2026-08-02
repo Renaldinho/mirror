@@ -7,10 +7,12 @@ import {
   SettingsService,
 } from './settings.service';
 import { THEMES } from './theme-registry';
+import { IconName, UiIcon } from '../shared/ui-icon';
 
 /** Warm mirror-light presets plus continuous manual adjustment. */
 @Component({
   selector: 'app-lighting-control',
+  imports: [UiIcon],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="lighting-shell fixed right-4 top-4 z-20 flex items-center gap-2" role="group" aria-label="Mirror lighting">
@@ -23,7 +25,7 @@ import { THEMES } from './theme-registry';
         [attr.aria-label]="settings.bgOn() ? 'Turn mirror lighting off' : 'Turn mirror lighting on'"
         [title]="settings.bgOn() ? 'Turn lighting off' : 'Turn lighting on'"
       >
-        {{ settings.bgOn() ? themeGlyph() : '◑' }}
+        <app-ui-icon [name]="settings.bgOn() ? themeIcon() : 'half'" />
       </button>
 
       <button
@@ -35,7 +37,7 @@ import { THEMES } from './theme-registry';
         [attr.aria-label]="ambience.autoLight() ? 'Auto lighting on (dims by time of day)' : 'Auto lighting off'"
         title="Auto-dim by time of day"
       >
-        <span aria-hidden="true">☾</span><small>AUTO</small>
+        <app-ui-icon aria-hidden="true" name="moon" /><small>AUTO</small>
       </button>
 
       <div class="presets" role="group" aria-label="Lighting presets">
@@ -78,7 +80,7 @@ import { THEMES } from './theme-registry';
         [title]="settings.cursorFx() ? 'Retro pointer FX on' : 'Retro pointer FX off'"
         (click)="settings.toggleCursorFx()"
       >
-        <span aria-hidden="true">✦</span>
+        <app-ui-icon aria-hidden="true" name="sparkle" />
         <small>FX</small>
       </button>
       <button
@@ -88,7 +90,7 @@ import { THEMES } from './theme-registry';
         [title]="'Pointer style: ' + cursorMode().label + ' · click to change'"
         (click)="settings.cycleCursorFxMode()"
       >
-        <span aria-hidden="true">{{ cursorMode().glyph }}</span>
+        <app-ui-icon aria-hidden="true" [name]="cursorMode().icon" />
         <small>{{ cursorMode().label }}</small>
       </button>
     </div>
@@ -101,7 +103,7 @@ import { THEMES } from './theme-registry';
         border-radius: var(--control-radius);
         background: var(--theme-panel);
         box-shadow: var(--theme-shadow-soft);
-        backdrop-filter: blur(12px);
+        backdrop-filter: none;
         color: var(--theme-text);
       }
       button { cursor: pointer; }
@@ -232,8 +234,8 @@ export class LightingControl {
     { id: 'soft', label: 'Soft' },
     { id: 'bright', label: 'Bright' },
   ];
-  readonly themeGlyph = computed(
-    () => THEMES.find((theme) => theme.id === this.settings.theme())?.glyph ?? '◉',
+  readonly themeIcon = computed<IconName>(
+    () => THEMES.find((theme) => theme.id === this.settings.theme())?.icon ?? 'circle',
   );
   readonly cursorMode = computed(
     () =>

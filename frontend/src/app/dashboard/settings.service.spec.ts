@@ -58,15 +58,15 @@ describe('SettingsService', () => {
 
   it('persists the retro pointer effects preference', () => {
     const settings = TestBed.inject(SettingsService);
-    expect(settings.cursorFx()).toBe(true);
+    expect(settings.cursorFx()).toBe(false);
     expect(settings.cursorFxMode()).toBe('laser');
 
     settings.toggleCursorFx();
     TestBed.flushEffects();
 
-    expect(settings.cursorFx()).toBe(false);
-    expect(localStorage.getItem('dash.cursor.fx')).toBe('false');
-    expect(document.documentElement.dataset['cursorFx']).toBe('off');
+    expect(settings.cursorFx()).toBe(true);
+    expect(localStorage.getItem('dash.cursor.fx.v2')).toBe('true');
+    expect(document.documentElement.dataset['cursorFx']).toBe('on');
 
     settings.cycleCursorFxMode();
     TestBed.flushEffects();
@@ -75,5 +75,11 @@ describe('SettingsService', () => {
     expect(settings.cursorFxMode()).toBe('glitter');
     expect(localStorage.getItem('dash.cursor.fx.mode')).toBe('glitter');
     expect(document.documentElement.dataset['cursorFxMode']).toBe('glitter');
+  });
+
+  it('does not carry the old always-on cursor preference into the 4K-safe default', () => {
+    localStorage.setItem('dash.cursor.fx', 'true');
+
+    expect(TestBed.inject(SettingsService).cursorFx()).toBe(false);
   });
 });

@@ -4,6 +4,7 @@ import { PetService, PETS } from './pet.service';
 import { PetMoodService } from './pets/pet-mood.service';
 import { PetSpriteSheet } from './pets/pet-types';
 import { WIDGETS } from './widget-registry';
+import { UiIcon } from '../shared/ui-icon';
 
 /**
  * The widget picker: a small botanical opener that expands into a grid of tiles,
@@ -12,23 +13,24 @@ import { WIDGETS } from './widget-registry';
  */
 @Component({
   selector: 'app-widget-grid',
+  imports: [UiIcon],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="fixed left-4 top-4 z-20 flex flex-col items-start gap-2">
       <button
         class="cabinet-trigger flex h-10 w-10 items-center justify-center rounded-full border border-gold/40
-               bg-wine/80 text-lg text-gold shadow-lg backdrop-blur-sm transition
+               bg-wine/90 text-lg text-gold shadow-lg transition
                hover:bg-gold/10"
         (click)="open.set(!open())"
         [title]="open() ? 'Collapse' : 'Widgets'"
       >
-        {{ open() ? '×' : '◈' }}
+        <app-ui-icon [name]="open() ? 'close' : 'layout'" />
       </button>
 
       @if (open()) {
         <div
           class="cabinet-panel grid w-56 grid-cols-2 gap-2 border border-gold/30 bg-wine/85 p-2
-                 shadow-2xl shadow-black/60 backdrop-blur-sm"
+                 shadow-2xl shadow-black/60"
         >
           @for (w of widgets; track w.type) {
             <button
@@ -38,7 +40,7 @@ import { WIDGETS } from './widget-registry';
               (click)="dash.toggle(w.type)"
               [title]="dash.isActive(w.type) ? 'Remove ' + w.label : 'Add ' + w.label"
             >
-              <span class="text-xl" [style.color]="w.accent">{{ w.icon }}</span>
+              <app-ui-icon class="text-xl" [style.color]="w.accent" [name]="w.icon" />
               <span
                 class="text-[11px] uppercase tracking-[0.15em]"
                 [class.text-parchment]="dash.isActive(w.type)"
@@ -53,16 +55,16 @@ import { WIDGETS } from './widget-registry';
         @if (dash.widgets().length) {
           <button
             class="reset-btn w-56 border border-gold/30 bg-wine/85 px-2 py-1.5 text-[10px] uppercase
-                   tracking-[0.2em] text-parchment-dim backdrop-blur-sm transition hover:text-parchment"
+                   tracking-[0.2em] text-parchment-dim transition hover:text-parchment"
             (click)="dash.clearAll()"
             title="Remove every widget from the board"
           >
-            ↺ Clear board
+            <app-ui-icon name="reset" /> Clear board
           </button>
         }
 
         <!-- desktop pet picker -->
-        <div class="cabinet-panel mt-2 w-56 border border-gold/30 bg-wine/85 p-2 backdrop-blur-sm shadow-2xl shadow-black/60">
+        <div class="cabinet-panel mt-2 w-56 border border-gold/30 bg-wine/90 p-2 shadow-2xl shadow-black/60">
           <div class="mb-1 px-1 text-[10px] uppercase tracking-[0.2em] text-parchment-dim">Companion</div>
           <div class="grid grid-cols-4 gap-1">
             @for (p of pets; track p.id) {

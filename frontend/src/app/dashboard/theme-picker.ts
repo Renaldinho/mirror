@@ -1,9 +1,11 @@
 import { ChangeDetectionStrategy, Component, HostListener, inject, signal } from '@angular/core';
 import { SettingsService } from './settings.service';
 import { ThemeDefinition, THEMES } from './theme-registry';
+import { UiIcon } from '../shared/ui-icon';
 
 @Component({
   selector: 'app-theme-picker',
+  imports: [UiIcon],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <button
@@ -14,7 +16,7 @@ import { ThemeDefinition, THEMES } from './theme-registry';
       title="Change theme"
       (click)="open.update((value) => !value)"
     >
-      {{ active().glyph }}
+      <app-ui-icon [name]="active().icon" />
     </button>
 
     @if (open()) {
@@ -25,7 +27,7 @@ import { ThemeDefinition, THEMES } from './theme-registry';
             <span class="eyebrow">Mirror appearance</span>
             <h2>Choose a theme</h2>
           </div>
-          <button class="close" type="button" aria-label="Close theme gallery" (click)="open.set(false)">×</button>
+          <button class="close" type="button" aria-label="Close theme gallery" (click)="open.set(false)"><app-ui-icon name="close" /></button>
         </header>
 
         <div class="theme-grid">
@@ -41,13 +43,13 @@ import { ThemeDefinition, THEMES } from './theme-registry';
                 @for (swatch of theme.swatches; track $index) {
                   <span [style.background]="swatch"></span>
                 }
-                <b>{{ theme.glyph }}</b>
+                <b><app-ui-icon [name]="theme.icon" /></b>
               </span>
               <span class="copy">
                 <strong>{{ theme.label }}</strong>
                 <small>{{ theme.description }}</small>
               </span>
-              <span class="check" aria-hidden="true">{{ settings.theme() === theme.id ? '✓' : '' }}</span>
+              <span class="check" aria-hidden="true">@if (settings.theme() === theme.id) { <app-ui-icon name="check" /> }</span>
             </button>
           }
         </div>
@@ -61,7 +63,7 @@ import { ThemeDefinition, THEMES } from './theme-registry';
         display: grid; width: 40px; height: 40px; place-items: center;
         border: 1px solid var(--theme-border-strong); border-radius: var(--control-radius);
         background: var(--theme-panel); color: var(--theme-primary);
-        box-shadow: var(--theme-shadow-soft); backdrop-filter: blur(12px);
+        box-shadow: var(--theme-shadow-soft); backdrop-filter: none;
         font-size: 19px; cursor: pointer; transition: 180ms ease;
       }
       .theme-trigger:hover { color: var(--theme-primary-bright); border-color: var(--theme-primary); transform: translateY(-1px); }
@@ -72,7 +74,7 @@ import { ThemeDefinition, THEMES } from './theme-registry';
         padding: 14px; border: 1px solid var(--theme-border-strong);
         border-radius: var(--panel-radius); background: var(--theme-panel-opaque);
         color: var(--theme-text); box-shadow: var(--theme-shadow-strong);
-        backdrop-filter: blur(18px) saturate(1.15);
+        backdrop-filter: none;
       }
       header { display: flex; align-items: start; justify-content: space-between; gap: 16px; padding: 2px 2px 12px; }
       .eyebrow { color: var(--theme-text-muted); font: 600 9px/1 var(--theme-font-body); letter-spacing: 0.2em; text-transform: uppercase; }

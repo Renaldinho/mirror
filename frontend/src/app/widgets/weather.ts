@@ -2,6 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, inject, input, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { WidgetVariantId } from '../dashboard/widget-registry';
+import { IconName, UiIcon } from '../shared/ui-icon';
 
 interface Forecast {
   current: {
@@ -25,29 +26,29 @@ const FORECAST_URL = 'https://api.open-meteo.com/v1/forecast';
 const GEOCODE_URL = 'https://geocoding-api.open-meteo.com/v1/search';
 
 /** WMO weather_code → glyph + label. */
-function describe(code: number, isDay: boolean): { icon: string; text: string } {
-  if (code === 0) return { icon: isDay ? '☀' : '☽', text: 'Clear' };
-  if (code <= 2) return { icon: isDay ? '🌤' : '☁', text: 'Fair' };
-  if (code === 3) return { icon: '☁', text: 'Overcast' };
-  if (code <= 48) return { icon: '🌫', text: 'Fog' };
-  if (code <= 57) return { icon: '🌦', text: 'Drizzle' };
-  if (code <= 67) return { icon: '🌧', text: 'Rain' };
-  if (code <= 77) return { icon: '🌨', text: 'Snow' };
-  if (code <= 82) return { icon: '🌧', text: 'Showers' };
-  if (code <= 86) return { icon: '🌨', text: 'Snow showers' };
-  return { icon: '⛈', text: 'Thunderstorm' };
+function describe(code: number, isDay: boolean): { icon: IconName; text: string } {
+  if (code === 0) return { icon: isDay ? 'sun' : 'moon', text: 'Clear' };
+  if (code <= 2) return { icon: isDay ? 'partly-cloudy' : 'cloud', text: 'Fair' };
+  if (code === 3) return { icon: 'cloud', text: 'Overcast' };
+  if (code <= 48) return { icon: 'fog', text: 'Fog' };
+  if (code <= 57) return { icon: 'drizzle', text: 'Drizzle' };
+  if (code <= 67) return { icon: 'rain', text: 'Rain' };
+  if (code <= 77) return { icon: 'snow', text: 'Snow' };
+  if (code <= 82) return { icon: 'rain', text: 'Showers' };
+  if (code <= 86) return { icon: 'snow', text: 'Snow showers' };
+  return { icon: 'storm', text: 'Thunderstorm' };
 }
 
 @Component({
   selector: 'app-weather',
-  imports: [FormsModule],
+  imports: [FormsModule, UiIcon],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="flex h-full flex-col">
       @if (state() === 'ready') {
         @if (variant() === 'compact') {
           <div class="compact-weather">
-            <div class="compact-icon">{{ cond().icon }}</div>
+            <app-ui-icon class="compact-icon" [name]="cond().icon" />
             <div class="compact-reading">
               <div class="compact-temp">{{ temp() }}°</div>
               <div class="condition">{{ cond().text }}</div>
@@ -60,7 +61,7 @@ function describe(code: number, isDay: boolean): { icon: string; text: string } 
           </div>
         } @else {
           <div class="flex flex-1 flex-col items-center justify-center gap-1 text-center">
-            <div class="text-5xl leading-none">{{ cond().icon }}</div>
+            <app-ui-icon class="text-5xl leading-none" [name]="cond().icon" />
             <div class="text-4xl font-medium text-parchment tabular-nums">{{ temp() }}°</div>
             <div class="text-sm uppercase tracking-[0.2em] text-gold">{{ cond().text }}</div>
             <div class="mt-1 text-xs text-parchment-dim">{{ place() }} · wind {{ wind() }} km/h</div>
@@ -97,7 +98,7 @@ function describe(code: number, isDay: boolean): { icon: string; text: string } 
               name="q"
               autocomplete="off"
             />
-            <button class="text-sm text-gold hover:text-gold-bright" type="submit">↵</button>
+            <button class="text-sm text-gold hover:text-gold-bright" type="submit" aria-label="Search"><app-ui-icon name="enter" /></button>
           </form>
         </div>
       }
@@ -117,7 +118,7 @@ function describe(code: number, isDay: boolean): { icon: string; text: string } 
         font-size: 3.3rem;
         line-height: 1;
         text-align: center;
-        filter: drop-shadow(0 0 12px color-mix(in srgb, var(--accent) 28%, transparent));
+        filter: none;
       }
       .compact-reading {
         min-width: 0;

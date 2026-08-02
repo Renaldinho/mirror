@@ -11,6 +11,7 @@ import { SpecimenArt } from './specimen-art';
 import { DashboardService, SCALE_STEPS, WidgetInstance } from './dashboard.service';
 import { WIDGET_META } from './widget-registry';
 import { SettingsService } from './settings.service';
+import { UiIcon } from '../shared/ui-icon';
 
 /**
  * A pressed-botanical "specimen plate": an arched frosted-glass sheet (so the
@@ -32,6 +33,7 @@ import { SettingsService } from './settings.service';
     NotesWidget,
     SpotifyWidget,
     LyricsWidget,
+    UiIcon,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -72,12 +74,12 @@ import { SettingsService } from './settings.service';
           (dblclick)="dash.toggleCollapse(widget().type)"
         >
           @if (!widget().pinned) {
-            <span class="grip" aria-hidden="true" title="Drag to move">⠿</span>
+            <span class="grip" aria-hidden="true" title="Drag to move"><app-ui-icon name="grip" /></span>
           }
           @if (settings.theme() === 'mushroom') {
             <app-specimen-art [art]="meta().art" class="emblem" />
           } @else {
-            <span class="theme-emblem" aria-hidden="true">{{ meta().icon }}</span>
+            <span class="theme-emblem" aria-hidden="true"><app-ui-icon [name]="meta().icon" /></span>
           }
           @if (widget().collapsed) {
             <span class="crown-name">{{ meta().label }}</span>
@@ -110,7 +112,7 @@ import { SettingsService } from './settings.service';
               [attr.aria-label]="(widget().collapsed ? 'Expand ' : 'Collapse ') + meta().label"
               (click)="dash.toggleCollapse(widget().type)"
             >
-              {{ widget().collapsed ? '▸' : '▾' }}
+              <app-ui-icon [name]="widget().collapsed ? 'chevron-right' : 'chevron-down'" />
             </button>
             @if (meta().layouts.length > 1) {
               <button
@@ -119,7 +121,7 @@ import { SettingsService } from './settings.service';
                 [attr.aria-label]="'Change ' + meta().label + ' layout. Current: ' + layout().label"
                 (click)="dash.cycleVariant(widget().type)"
               >
-                ◫
+                <app-ui-icon name="layout" />
               </button>
             }
             <button
@@ -128,10 +130,10 @@ import { SettingsService } from './settings.service';
               [title]="widget().pinned ? 'Unpin' : 'Pin in place'"
               (click)="dash.togglePin(widget().type)"
             >
-              {{ widget().pinned ? '❁' : '❋' }}
+              <app-ui-icon [name]="widget().pinned ? 'pin' : 'pin-off'" />
             </button>
             <button class="text-parchment-dim hover:text-cap" title="Remove" (click)="dash.remove(widget().type)">
-              ×
+              <app-ui-icon name="close" />
             </button>
           </div>
         </div>
@@ -174,7 +176,7 @@ import { SettingsService } from './settings.service';
         background: var(--frame-bg);
         border: 1px solid var(--frame-border);
         box-shadow: var(--frame-shadow);
-        backdrop-filter: var(--frame-backdrop);
+        backdrop-filter: none;
         color: var(--theme-text);
         font-family: var(--theme-font-body);
         transition: border-radius .35s ease, background .35s ease, border-color .25s ease,

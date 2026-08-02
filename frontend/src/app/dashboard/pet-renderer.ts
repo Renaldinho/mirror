@@ -16,6 +16,7 @@ import { PetMoodService } from './pets/pet-mood.service';
 import { PET_SIZE } from './pets/pet-state';
 import { PetContext } from './pets/pet-types';
 import { PetCozyService } from './pets/pet-cozy.service';
+import { UiIcon } from '../shared/ui-icon';
 
 /**
  * Thin view layer for the pet domain: builds the current Pet from the selected
@@ -25,14 +26,15 @@ import { PetCozyService } from './pets/pet-cozy.service';
  */
 @Component({
   selector: 'app-pet',
+  imports: [UiIcon],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div #root class="pet-root">
       <span #bubble class="bubble"></span>
       <span #name class="pet-name"></span>
       <button #ballButton class="ball-button fetch-ball-sprite" type="button" aria-label="Drag and throw ball" title="Drag and throw for your companion to fetch"></button>
-      <button #foodButton class="pet-item food-button" type="button" aria-label="Drag food to pet" title="Drag food onto the pet">🍖</button>
-      <button #brushButton class="pet-item brush-button" type="button" aria-label="Drag brush to pet" title="Groom the pet">🪮</button>
+      <button #foodButton class="pet-item food-button" type="button" aria-label="Drag food to pet" title="Drag food onto the pet"><app-ui-icon name="food" /></button>
+      <button #brushButton class="pet-item brush-button" type="button" aria-label="Drag brush to pet" title="Groom the pet"><app-ui-icon name="brush" /></button>
       <span #visual class="visual" (click)="onClick()"></span>
     </div>
   `,
@@ -141,10 +143,14 @@ export class PetRenderer implements AfterViewInit {
   private pet: Pet | null = null;
   private raf = 0;
   private prev = 0;
+  private viewReady = false;
+  private cachedBounds = this.calculateBounds();
   private readonly pointer = { x: 0, y: 0, last: -1e9 };
   private lastSprite = '';
   private lastSpriteClass = '';
   private lastBubble = '';
+  private lastRootTransform = '';
+  private lastVisualGeometry = '';
   private readonly fetch = new BallFetchController();
   private dragging = false;
   private dragArmed = false;
@@ -157,11 +163,22 @@ export class PetRenderer implements AfterViewInit {
     effect(() => {
       const id = this.pets.petId();
       this.pet = id ? createPet(id) : null;
+      this.lastRootTransform = '';
+      this.lastVisualGeometry = '';
       this.fetch.reset(this.pet, this.bounds());
+      if (!this.viewReady) return;
+      if (this.pet) {
+        this.startAnimation();
+      } else {
+        this.rootRef().nativeElement.style.display = 'none';
+        this.stopAnimation();
+      }
     });
   }
 
   ngAfterViewInit(): void {
+    this.viewReady = true;
+    this.updateBounds();
     const rememberPointer = (e: PointerEvent) => {
       if (e.clientX < 0 || e.clientX > window.innerWidth ||
           e.clientY < 0 || e.clientY > window.innerHeight) return;
@@ -268,14 +285,17 @@ export class PetRenderer implements AfterViewInit {
     window.addEventListener('pointermove', itemMove);
     window.addEventListener('pointerup', itemUp);
 
-    const loop = (t: number) => {
-      this.frame(t);
-      this.raf = requestAnimationFrame(loop);
+    const onVisibilityChange = () => {
+      if (document.hidden) this.stopAnimation();
+      else this.startAnimation();
     };
-    this.raf = requestAnimationFrame(loop);
+    window.addEventListener('resize', this.updateBounds);
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    if (this.pet) this.startAnimation();
+    else this.rootRef().nativeElement.style.display = 'none';
 
     this.destroyRef.onDestroy(() => {
-      cancelAnimationFrame(this.raf);
+      this.stopAnimation();
       window.removeEventListener('pointermove', onMove);
       visual.removeEventListener('mouseenter', showName);
       visual.removeEventListener('mouseleave', hideName);
@@ -288,7 +308,28 @@ export class PetRenderer implements AfterViewInit {
       ballButton.removeEventListener('lostpointercapture', onBallCancel);
       window.removeEventListener('pointermove', itemMove);
       window.removeEventListener('pointerup', itemUp);
+      window.removeEventListener('resize', this.updateBounds);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
     });
+  }
+
+  private readonly loop = (time: number): void => {
+    this.raf = 0;
+    if (!this.pet || document.hidden) return;
+    if (!this.prev || time - this.prev >= 1000 / 30) this.frame(time);
+    this.raf = requestAnimationFrame(this.loop);
+  };
+
+  private startAnimation(): void {
+    if (!this.viewReady || !this.pet || document.hidden || this.raf) return;
+    this.prev = 0;
+    this.raf = requestAnimationFrame(this.loop);
+  }
+
+  private stopAnimation(): void {
+    if (this.raf) cancelAnimationFrame(this.raf);
+    this.raf = 0;
+    this.prev = 0;
   }
 
   /** Clicking the pet feeds it: refill energy + play a happy reaction. */
@@ -343,13 +384,21 @@ export class PetRenderer implements AfterViewInit {
     this.updateFloatingItems(t);
     const v = this.pet.view();
 
-    root.style.transform = `translate(${v.x}px, ${v.y}px)`;
+    const rootTransform = `translate(${v.x}px, ${v.y}px)`;
+    if (rootTransform !== this.lastRootTransform) {
+      root.style.transform = rootTransform;
+      this.lastRootTransform = rootTransform;
+    }
 
     const em = this.visualRef().nativeElement;
-    em.style.transform = v.innerTransform;
-    em.style.width = `${v.visualWidth}px`;
-    em.style.height = `${v.visualHeight}px`;
-    em.style.top = `${PET_SIZE - v.visualHeight}px`;
+    const visualGeometry = `${v.innerTransform}:${v.visualWidth}:${v.visualHeight}`;
+    if (visualGeometry !== this.lastVisualGeometry) {
+      em.style.transform = v.innerTransform;
+      em.style.width = `${v.visualWidth}px`;
+      em.style.height = `${v.visualHeight}px`;
+      em.style.top = `${PET_SIZE - v.visualHeight}px`;
+      this.lastVisualGeometry = visualGeometry;
+    }
 
     const { sheet, row, column } = v.sprite;
     const spriteKey = `${sheet.cssClass}:${row}:${column}`;
@@ -432,7 +481,15 @@ export class PetRenderer implements AfterViewInit {
     }
   }
 
+  private readonly updateBounds = (): void => {
+    this.cachedBounds = this.calculateBounds();
+  };
+
   private bounds(): FetchBounds {
+    return this.cachedBounds;
+  }
+
+  private calculateBounds(): FetchBounds {
     const height = typeof window === 'undefined' ? 720 : window.innerHeight;
     return {
       width: typeof window === 'undefined' ? 1280 : window.innerWidth,

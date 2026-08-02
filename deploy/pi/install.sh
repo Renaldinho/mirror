@@ -52,6 +52,7 @@ find /opt/mirror/api -mindepth 1 -delete
 cp -a "$ui_build/." /opt/mirror/ui/
 cp -a "$publish_dir/." /opt/mirror/api/
 install -m 0755 "$repo_root/deploy/pi/mirror-kiosk" /opt/mirror/bin/mirror-kiosk
+install -m 0755 "$repo_root/deploy/pi/mirror-diagnose" /opt/mirror/bin/mirror-diagnose
 
 if [[ ! -f /etc/mirror/config.js ]]; then
   install -m 0644 "$repo_root/frontend/public/config.js" /etc/mirror/config.js
