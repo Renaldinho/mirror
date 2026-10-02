@@ -9,13 +9,17 @@ import {
 import { THEMES } from './theme-registry';
 import { IconName, UiIcon } from '../shared/ui-icon';
 
-/** Warm mirror-light presets plus continuous manual adjustment. */
+/** Theme-aware mirror-light presets plus continuous manual adjustment. */
 @Component({
   selector: 'app-lighting-control',
   imports: [UiIcon],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="lighting-shell fixed right-4 top-4 z-20 flex items-center gap-2" role="group" aria-label="Mirror lighting">
+    <div
+      class="lighting-shell fixed right-4 top-4 z-20 flex items-center gap-2"
+      role="group"
+      aria-label="Mirror lighting"
+    >
       <button
         type="button"
         class="power"
@@ -34,7 +38,9 @@ import { IconName, UiIcon } from '../shared/ui-icon';
         [class.on]="ambience.autoLight()"
         (click)="ambience.toggleAuto()"
         [attr.aria-pressed]="ambience.autoLight()"
-        [attr.aria-label]="ambience.autoLight() ? 'Auto lighting on (dims by time of day)' : 'Auto lighting off'"
+        [attr.aria-label]="
+          ambience.autoLight() ? 'Auto lighting on (dims by time of day)' : 'Auto lighting off'
+        "
         title="Auto-dim by time of day"
       >
         <app-ui-icon aria-hidden="true" name="moon" /><small>AUTO</small>
@@ -76,7 +82,9 @@ import { IconName, UiIcon } from '../shared/ui-icon';
         class="pointer-fx"
         [class.on]="settings.cursorFx()"
         [attr.aria-pressed]="settings.cursorFx()"
-        [attr.aria-label]="settings.cursorFx() ? 'Turn retro pointer effects off' : 'Turn retro pointer effects on'"
+        [attr.aria-label]="
+          settings.cursorFx() ? 'Turn retro pointer effects off' : 'Turn retro pointer effects on'
+        "
         [title]="settings.cursorFx() ? 'Retro pointer FX on' : 'Retro pointer FX off'"
         (click)="settings.toggleCursorFx()"
       >
@@ -106,62 +114,106 @@ import { IconName, UiIcon } from '../shared/ui-icon';
         backdrop-filter: none;
         color: var(--theme-text);
       }
-      button { cursor: pointer; }
-      .power {
-        display: grid; width: 28px; height: 28px; place-items: center;
-        border-radius: calc(var(--control-radius) - 2px);
-        color: var(--theme-text-muted); font-size: 17px; line-height: 1;
+      button {
+        cursor: pointer;
       }
-      .power.on { color: var(--theme-primary-bright); }
+      .power {
+        display: grid;
+        width: 28px;
+        height: 28px;
+        place-items: center;
+        border-radius: calc(var(--control-radius) - 2px);
+        color: var(--theme-text-muted);
+        font-size: 17px;
+        line-height: 1;
+      }
+      .power.on {
+        color: var(--theme-primary-bright);
+      }
       .auto {
-        display: flex; height: 28px; align-items: center; gap: 3px; padding: 0 6px;
+        display: flex;
+        height: 28px;
+        align-items: center;
+        gap: 3px;
+        padding: 0 6px;
         border: 1px solid transparent;
         border-radius: calc(var(--control-radius) - 2px);
         color: var(--theme-text-muted);
       }
-      .auto span { font-size: 13px; line-height: 1; }
-      .auto small { font: 700 8px/1 var(--theme-font-body); letter-spacing: .08em; }
+      .auto span {
+        font-size: 13px;
+        line-height: 1;
+      }
+      .auto small {
+        font: 700 8px/1 var(--theme-font-body);
+        letter-spacing: 0.08em;
+      }
       .auto.on {
         border-color: color-mix(in srgb, var(--theme-primary) 42%, transparent);
         background: var(--theme-primary-soft);
         color: var(--theme-primary-bright);
       }
       .presets {
-        display: flex; overflow: hidden;
+        display: flex;
+        overflow: hidden;
         border: 1px solid var(--theme-border);
         border-radius: calc(var(--control-radius) - 2px);
         background: var(--theme-control-bg);
       }
       .presets button {
-        min-width: 42px; padding: 5px 7px;
+        min-width: 42px;
+        padding: 5px 7px;
         border-right: 1px solid var(--theme-border);
         color: var(--theme-text-muted);
         font: 600 9px/1 var(--theme-font-body);
-        letter-spacing: .06em; text-transform: uppercase;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
       }
-      .presets button:last-child { border-right: 0; }
-      .presets button.active { background: var(--theme-primary-soft); color: var(--theme-primary-bright); }
-      .slider-label { display: flex; align-items: center; }
+      .presets button:last-child {
+        border-right: 0;
+      }
+      .presets button.active {
+        background: var(--theme-primary-soft);
+        color: var(--theme-primary-bright);
+      }
+      .slider-label {
+        display: flex;
+        align-items: center;
+      }
       .lamp {
-        width: 104px; height: 4px; cursor: pointer; appearance: none;
+        width: 104px;
+        height: 4px;
+        cursor: pointer;
+        appearance: none;
         border-radius: 999px;
-        background: linear-gradient(to right, #9a642f, #f1c978);
+        background: linear-gradient(to right, var(--theme-secondary), var(--theme-primary-bright));
       }
-      .lamp:disabled { opacity: .28; }
+      .lamp:disabled {
+        opacity: 0.28;
+      }
       .lamp::-webkit-slider-thumb {
-        appearance: none; width: 14px; height: 14px;
-        border: 1px solid #d8a95f; border-radius: 50%;
-        background: #ffe8b8; box-shadow: 0 0 8px rgba(255, 215, 142, .45);
+        appearance: none;
+        width: 14px;
+        height: 14px;
+        border: 1px solid var(--theme-primary);
+        border-radius: 50%;
+        background: var(--theme-primary-bright);
+        box-shadow: 0 0 8px var(--theme-primary-soft);
       }
       .lamp::-moz-range-thumb {
-        width: 14px; height: 14px;
-        border: 1px solid #d8a95f; border-radius: 50%;
-        background: #ffe8b8; box-shadow: 0 0 8px rgba(255, 215, 142, .45);
+        width: 14px;
+        height: 14px;
+        border: 1px solid var(--theme-primary);
+        border-radius: 50%;
+        background: var(--theme-primary-bright);
+        box-shadow: 0 0 8px var(--theme-primary-soft);
       }
       .level {
-        width: 25px; color: var(--theme-text-muted);
+        width: 25px;
+        color: var(--theme-text-muted);
         font: 600 9px/1 var(--theme-font-body);
-        text-align: right; text-transform: uppercase;
+        text-align: right;
+        text-transform: uppercase;
       }
       .divider {
         width: 1px;
@@ -185,7 +237,7 @@ import { IconName, UiIcon } from '../shared/ui-icon';
       }
       .pointer-fx small {
         font: 700 8px/1 var(--theme-font-body);
-        letter-spacing: .08em;
+        letter-spacing: 0.08em;
       }
       .pointer-fx.on {
         border-color: color-mix(in srgb, var(--theme-primary) 42%, transparent);
@@ -215,13 +267,22 @@ import { IconName, UiIcon } from '../shared/ui-icon';
         overflow: hidden;
         color: var(--theme-text-muted);
         font: 600 8px/1 var(--theme-font-body);
-        letter-spacing: .04em;
+        letter-spacing: 0.04em;
         text-overflow: ellipsis;
         text-transform: uppercase;
       }
       @media (max-width: 700px) {
-        .lighting-shell { right: 12px; top: 60px; }
-        .slider-label, .level, .divider, .pointer-fx, .pointer-style { display: none; }
+        .lighting-shell {
+          right: 12px;
+          top: 60px;
+        }
+        .slider-label,
+        .level,
+        .divider,
+        .pointer-fx,
+        .pointer-style {
+          display: none;
+        }
       }
     `,
   ],

@@ -22,7 +22,7 @@ export const LIGHTING_LEVELS: Record<Exclude<LightingPreset, 'off'>, number> = {
 
 /**
  * Board/mirror settings. The screen is pure black with lighting off; when it is
- * on, a warm edge layer provides practical illumination around the reflection.
+ * on, each theme maps the shared level to its own exposure and edge-light color.
  */
 @Injectable({ providedIn: 'root' })
 export class SettingsService {
@@ -30,7 +30,7 @@ export class SettingsService {
 
   /** Background and practical edge lighting on (false = pure black mirror). */
   readonly bgOn = signal(this.loadBool('dash.bg.on', true));
-  /** Lighting level 0–100 (how much warm light the background gives off). */
+  /** Lighting level 0–100 (theme-aware artwork exposure and edge illumination). */
   readonly bgLight = signal(this.clampLight(this.loadNum('dash.bg.light', LIGHTING_LEVELS.soft)));
   /** Active visual system. Layout and widget state remain theme-independent. */
   readonly theme = signal<ThemeId>(this.loadTheme());
@@ -108,9 +108,7 @@ export class SettingsService {
 
   private loadCursorFxMode(): CursorFxMode {
     const stored = localStorage.getItem('dash.cursor.fx.mode');
-    return CURSOR_FX_MODES.some((mode) => mode.id === stored)
-      ? (stored as CursorFxMode)
-      : 'laser';
+    return CURSOR_FX_MODES.some((mode) => mode.id === stored) ? (stored as CursorFxMode) : 'laser';
   }
 
   private clampLight(value: number): number {
