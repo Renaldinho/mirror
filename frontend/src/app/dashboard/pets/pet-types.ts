@@ -15,8 +15,6 @@ export interface PetContext {
   fetch: FetchIntent | null;
   /** Companion energy 0..1 — biases which existing states run (tired vs lively). */
   energy: number;
-  /** True when the mirror is dark/dimmed — the pet should curl up and sleep. */
-  dim: boolean;
   /** Optional cozy furniture and its activity anchors. */
   cozy?: CozySnapshot;
 }

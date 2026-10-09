@@ -149,8 +149,6 @@ export abstract class Pet {
     if (this.pendingFeed) {
       this.pendingFeed = false;
       this.setState(this.newEat(), ctx);
-    } else if (ctx.dim && this.state!.activity !== 'sleep' && this.state!.name !== 'eat') {
-      this.setState(this.newSleep(), ctx);
     }
 
     const next = this.state!.update(this, ctx);

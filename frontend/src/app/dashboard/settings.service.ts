@@ -3,8 +3,6 @@ import { Injectable, effect, inject, signal } from '@angular/core';
 import { isThemeId, ThemeId } from './theme-registry';
 import { IconName } from '../shared/ui-icon';
 
-export type LightingPreset = 'off' | 'soft' | 'bright';
-
 export const CURSOR_FX_MODES = [
   { id: 'laser', label: 'Laser', icon: 'sparkle' },
   { id: 'glitter', label: 'Glitter', icon: 'glitter' },
@@ -15,26 +13,11 @@ export const CURSOR_FX_MODES = [
 
 export type CursorFxMode = (typeof CURSOR_FX_MODES)[number]['id'];
 
-export const LIGHTING_LEVELS: Record<Exclude<LightingPreset, 'off'>, number> = {
-  soft: 70,
-  bright: 100,
-};
-
-export const RING_SIZE = { min: 50, max: 90, default: 80 } as const;
-
-/**
- * Code rain and the white ring light are independent of each other and the widget theme.
- */
+/** Background and pointer preferences, independent of the widget theme. */
 @Injectable({ providedIn: 'root' })
 export class SettingsService {
   private readonly document = inject(DOCUMENT);
 
-  /** White ring light on. */
-  readonly bgOn = signal(this.loadBool('dash.bg.on', true));
-  /** White ring brightness, 0–100. */
-  readonly bgLight = signal(this.clampLight(this.loadNum('dash.bg.light', LIGHTING_LEVELS.soft)));
-  /** Oval diameter as a percentage of the display, leaving room for its glow. */
-  readonly ringSize = signal(this.clampRingSize(this.loadNum('dash.ring.size', RING_SIZE.default)));
   readonly matrixRain = signal(this.loadBool('dash.background.matrix', true));
   /** Active visual system. Layout and widget state remain theme-independent. */
   readonly theme = signal<ThemeId>(this.loadTheme());
@@ -44,9 +27,9 @@ export class SettingsService {
   readonly cursorFxMode = signal<CursorFxMode>(this.loadCursorFxMode());
 
   constructor() {
-    effect(() => localStorage.setItem('dash.bg.on', JSON.stringify(this.bgOn())));
-    effect(() => localStorage.setItem('dash.bg.light', String(this.bgLight())));
-    effect(() => localStorage.setItem('dash.ring.size', String(this.ringSize())));
+    for (const key of ['dash.bg.on', 'dash.bg.light', 'dash.ring.size', 'dash.ambience.auto']) {
+      localStorage.removeItem(key);
+    }
     effect(() => localStorage.setItem('dash.background.matrix', JSON.stringify(this.matrixRain())));
     effect(() => {
       const theme = this.theme();
@@ -61,28 +44,6 @@ export class SettingsService {
       this.document.documentElement.dataset['cursorFx'] = enabled ? 'on' : 'off';
       this.document.documentElement.dataset['cursorFxMode'] = mode;
     });
-  }
-
-  toggleBg(): void {
-    this.bgOn.update((value) => !value);
-  }
-
-  setLight(value: number): void {
-    this.bgLight.set(this.clampLight(value));
-  }
-
-  setRingSize(value: number): void {
-    this.ringSize.set(this.clampRingSize(value));
-  }
-
-  setLightingPreset(preset: LightingPreset): void {
-    if (preset === 'off') {
-      this.bgOn.set(false);
-      return;
-    }
-
-    this.bgLight.set(LIGHTING_LEVELS[preset]);
-    this.bgOn.set(true);
   }
 
   setTheme(theme: ThemeId): void {
@@ -105,12 +66,6 @@ export class SettingsService {
     return raw === null ? fallback : raw === 'true';
   }
 
-  private loadNum(key: string, fallback: number): number {
-    const raw = localStorage.getItem(key);
-    const value = raw === null ? NaN : Number(raw);
-    return Number.isFinite(value) ? value : fallback;
-  }
-
   private loadTheme(): ThemeId {
     const stored = localStorage.getItem('dash.theme.v1') ?? '';
     return isThemeId(stored) ? stored : 'bare';
@@ -119,14 +74,5 @@ export class SettingsService {
   private loadCursorFxMode(): CursorFxMode {
     const stored = localStorage.getItem('dash.cursor.fx.mode');
     return CURSOR_FX_MODES.some((mode) => mode.id === stored) ? (stored as CursorFxMode) : 'laser';
-  }
-
-  private clampLight(value: number): number {
-    return Math.max(0, Math.min(100, Number.isFinite(value) ? value : LIGHTING_LEVELS.soft));
-  }
-
-  private clampRingSize(value: number): number {
-    return Math.max(RING_SIZE.min, Math.min(RING_SIZE.max,
-      Number.isFinite(value) ? value : RING_SIZE.default));
   }
 }

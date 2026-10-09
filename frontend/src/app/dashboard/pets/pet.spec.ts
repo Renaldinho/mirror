@@ -20,7 +20,6 @@ function context(overrides: Partial<PetContext> = {}): PetContext {
     pointer: { x: 500, y: 300, active: false },
     fetch: null,
     energy: .8,
-    dim: false,
     ...overrides,
   };
 }

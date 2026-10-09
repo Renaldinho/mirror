@@ -133,7 +133,6 @@ export class SleepState extends PetState {
       this.elapsed = 0;
     }
     pet.clampPosition(ctx);
-    if (ctx.dim) return null;
     return this.elapsed > this.duration ? pet.newRest() : null;
   }
 

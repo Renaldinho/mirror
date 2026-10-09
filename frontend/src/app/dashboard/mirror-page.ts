@@ -1,12 +1,10 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { Background } from './background';
-import { LightingControl } from './lighting-control';
 import { WidgetGrid } from './widget-grid';
 import { WidgetFrame } from './widget-frame';
 import { PetRenderer } from './pet-renderer';
 import { PetHabitat } from './pet-habitat';
 import { DashboardService } from './dashboard.service';
-import { AmbienceService } from './ambience.service';
 import { ThemePicker } from './theme-picker';
 import { RetroCursor } from './retro-cursor';
 import { GamesLauncher } from '../minigames/games-launcher';
@@ -19,7 +17,6 @@ import { DisplayService } from './display.service';
   selector: 'app-mirror-page',
   imports: [
     Background,
-    LightingControl,
     WidgetGrid,
     WidgetFrame,
     PetRenderer,
@@ -37,7 +34,6 @@ import { DisplayService } from './display.service';
       <!-- controls -->
       <app-widget-grid />
       <app-theme-picker />
-      <app-lighting-control />
       <app-games-launcher />
 
       <!-- desktop pet -->
@@ -91,8 +87,6 @@ export class MirrorPage {
   readonly dash = inject(DashboardService);
   readonly display = inject(DisplayService);
   rows(): number { return Math.max(1, Math.ceil(this.dash.widgets().length / this.display.columns())); }
-  // Constructed so the auto-dim scheduler starts with the mirror.
-  private readonly ambience = inject(AmbienceService);
   // Constructed so the Spotify OAuth redirect is handled on load.
   private readonly spotify = inject(SpotifyService);
 }

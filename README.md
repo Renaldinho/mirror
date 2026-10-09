@@ -35,15 +35,20 @@ Pulls the newest version, rebuilds, and restarts the service. See
 ## Spotify (optional)
 
 1. Create an app in the [Spotify developer dashboard](https://developer.spotify.com/dashboard).
-2. Register this redirect URI **exactly**: `http://127.0.0.1/`
+2. Register this redirect URI **exactly** for the installed Pi: `http://127.0.0.1:80/`
 3. Put the (public) client ID in `/etc/mirror/config.js` on the Pi:
 
    ```js
    window.__MIRROR_CONFIG__ = {
      spotifyClientId: 'YOUR_CLIENT_ID',
-     spotifyRedirectUri: 'http://127.0.0.1/',
+     spotifyRedirectUri: 'http://127.0.0.1:80/',
    };
    ```
+
+The client ID is public and can be committed in `frontend/public/config.js`.
+An existing Pi installation serves `/etc/mirror/config.js` instead and preserves
+it during updates, so edit that file too. For local development on port 4200,
+register and configure `http://127.0.0.1:4200/`.
 
 4. Reload the kiosk (Ctrl+R) and choose **Connect Spotify**.
 

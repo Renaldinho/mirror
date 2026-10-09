@@ -9,7 +9,6 @@ import {
   viewChild,
 } from '@angular/core';
 import { PetService } from './pet.service';
-import { SettingsService } from './settings.service';
 import { createPet, Pet } from './pets';
 import { BallFetchController, FetchBounds } from './pets/ball-fetch';
 import { PetMoodService } from './pets/pet-mood.service';
@@ -132,7 +131,6 @@ import { UiIcon } from '../shared/ui-icon';
 export class PetRenderer implements AfterViewInit {
   private readonly pets = inject(PetService);
   private readonly mood = inject(PetMoodService);
-  private readonly settings = inject(SettingsService);
   private readonly cozy = inject(PetCozyService);
   private readonly destroyRef = inject(DestroyRef);
 
@@ -372,7 +370,6 @@ export class PetRenderer implements AfterViewInit {
       },
       fetch: null,
       energy: this.mood.energy() / 100,
-      dim: !this.settings.bgOn() || this.settings.bgLight() < 25,
       cozy,
     };
 

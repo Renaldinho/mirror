@@ -4,7 +4,7 @@ import { SettingsService } from './settings.service';
 import { THEME_IDS } from './theme-registry';
 import { vi } from 'vitest';
 
-describe('Mirror ring light', () => {
+describe('Mirror background', () => {
   beforeEach(() => {
     localStorage.clear();
     vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(null);
@@ -13,9 +13,8 @@ describe('Mirror ring light', () => {
 
   afterEach(() => vi.restoreAllMocks());
 
-  it('exposes a dedicated background toggle independent of ring lighting', () => {
+  it('exposes a dedicated code rain toggle', () => {
     const fixture = TestBed.createComponent(Background);
-    const settings = TestBed.inject(SettingsService);
     fixture.detectChanges();
     const button = fixture.nativeElement.querySelector('.matrix-toggle') as HTMLButtonElement;
     expect(button.textContent).toContain('Code rain');
@@ -25,10 +24,9 @@ describe('Mirror ring light', () => {
     fixture.detectChanges();
     expect(button.getAttribute('aria-pressed')).toBe('false');
     expect(fixture.nativeElement.querySelector('app-digital-rain')).toBeNull();
-    expect(settings.bgOn()).toBe(true);
   });
 
-  it('keeps the same ring and black mirror surface across every widget theme', () => {
+  it('keeps the same background controls across every widget theme', () => {
     const fixture = TestBed.createComponent(Background);
     const settings = TestBed.inject(SettingsService);
     fixture.detectChanges();
@@ -42,32 +40,18 @@ describe('Mirror ring light', () => {
     }
   });
 
-  it('dims only the ring and fully hides it at zero or when switched off', () => {
+  it('keeps pointer controls accessible independently of code rain', () => {
     const fixture = TestBed.createComponent(Background);
     const settings = TestBed.inject(SettingsService);
     fixture.detectChanges();
-    const ring = fixture.nativeElement.querySelector('.ring-light') as HTMLElement;
-    for (const level of [0, 40, 100]) {
-      settings.setLight(level);
-      fixture.detectChanges();
-      expect(Number(ring.style.opacity)).toBeCloseTo(Math.sqrt(level / 100));
-    }
-    settings.toggleBg();
+    const toggle = fixture.nativeElement.querySelector('.pointer-fx') as HTMLButtonElement;
+    expect(toggle.getAttribute('aria-pressed')).toBe('false');
+    toggle.click();
     fixture.detectChanges();
-    expect(ring.style.opacity).toBe('0');
-    settings.toggleBg();
+    expect(toggle.getAttribute('aria-pressed')).toBe('true');
+    fixture.nativeElement.querySelector('.pointer-style').click();
     fixture.detectChanges();
-    expect(ring.style.opacity).toBe('1');
-  });
-
-  it('resizes the centered oval without changing its brightness', () => {
-    const fixture = TestBed.createComponent(Background);
-    const settings = TestBed.inject(SettingsService);
-    settings.setRingSize(65);
-    fixture.detectChanges();
-    const ring = fixture.nativeElement.querySelector('.ring-light') as HTMLElement;
-    expect(ring.style.width).toBe('65%');
-    expect(ring.style.height).toBe('65%');
-    expect(Number(ring.style.opacity)).toBeCloseTo(Math.sqrt(0.7));
+    expect(settings.cursorFxMode()).toBe('glitter');
+    expect(settings.matrixRain()).toBe(true);
   });
 });

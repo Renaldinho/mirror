@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { LIGHTING_LEVELS, RING_SIZE, SettingsService } from './settings.service';
+import { SettingsService } from './settings.service';
 
 describe('SettingsService', () => {
   beforeEach(() => {
@@ -9,12 +9,11 @@ describe('SettingsService', () => {
     TestBed.configureTestingModule({});
   });
 
-  it('defaults to Bare Mirror with soft ring lighting', () => {
+  it('defaults to Bare Mirror with code rain', () => {
     const settings = TestBed.inject(SettingsService);
 
     expect(settings.theme()).toBe('bare');
-    expect(settings.bgOn()).toBe(true);
-    expect(settings.bgLight()).toBe(LIGHTING_LEVELS.soft);
+    expect(settings.matrixRain()).toBe(true);
   });
 
   it('remembers when the code rain background is disabled', () => {
@@ -27,28 +26,6 @@ describe('SettingsService', () => {
     expect(TestBed.inject(SettingsService).matrixRain()).toBe(false);
   });
 
-  it('saves ring size independently of theme and brightness', () => {
-    const settings = TestBed.inject(SettingsService);
-    settings.setRingSize(65);
-    settings.setTheme('pinkie');
-    settings.setLight(100);
-    TestBed.flushEffects();
-    expect(localStorage.getItem('dash.ring.size')).toBe('65');
-    TestBed.resetTestingModule();
-    TestBed.configureTestingModule({});
-    expect(TestBed.inject(SettingsService).ringSize()).toBe(65);
-  });
-
-  it('constrains saved and manual ring sizes to fit the screen', () => {
-    localStorage.setItem('dash.ring.size', '500');
-    const settings = TestBed.inject(SettingsService);
-    expect(settings.ringSize()).toBe(RING_SIZE.max);
-    settings.setRingSize(-10);
-    expect(settings.ringSize()).toBe(RING_SIZE.min);
-    settings.setRingSize(Number.NaN);
-    expect(settings.ringSize()).toBe(RING_SIZE.default);
-  });
-
   it('preserves Mushroom but migrates removed stored themes to Bare Mirror', () => {
     localStorage.setItem('dash.theme.v1', 'mushroom');
     expect(TestBed.inject(SettingsService).theme()).toBe('mushroom');
@@ -59,33 +36,14 @@ describe('SettingsService', () => {
     expect(TestBed.inject(SettingsService).theme()).toBe('bare');
   });
 
-  it('applies Off, Soft, and Bright without coupling them to the theme', () => {
+  it('removes obsolete illumination preferences without clearing other settings', () => {
+    const keys = ['dash.bg.on', 'dash.bg.light', 'dash.ring.size', 'dash.ambience.auto'];
+    for (const key of keys) localStorage.setItem(key, 'true');
+    localStorage.setItem('dash.theme.v1', 'pinkie');
     const settings = TestBed.inject(SettingsService);
-    settings.setTheme('pinkie');
-
-    settings.setLightingPreset('off');
-    expect(settings.bgOn()).toBe(false);
-
-    settings.setLightingPreset('bright');
-    expect(settings.bgOn()).toBe(true);
-    expect(settings.bgLight()).toBe(LIGHTING_LEVELS.bright);
-
-    settings.setLightingPreset('soft');
-    expect(settings.bgLight()).toBe(LIGHTING_LEVELS.soft);
+    TestBed.flushEffects();
+    for (const key of keys) expect(localStorage.getItem(key)).toBeNull();
     expect(settings.theme()).toBe('pinkie');
-  });
-
-  it('clamps manual lighting to the supported range', () => {
-    const settings = TestBed.inject(SettingsService);
-
-    settings.setLight(-20);
-    expect(settings.bgLight()).toBe(0);
-
-    settings.setLight(140);
-    expect(settings.bgLight()).toBe(100);
-
-    settings.setLight(Number.NaN);
-    expect(settings.bgLight()).toBe(LIGHTING_LEVELS.soft);
   });
 
   it('persists the retro pointer effects preference', () => {
