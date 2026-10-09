@@ -20,18 +20,22 @@ export const LIGHTING_LEVELS: Record<Exclude<LightingPreset, 'off'>, number> = {
   bright: 100,
 };
 
+export const RING_SIZE = { min: 50, max: 90, default: 80 } as const;
+
 /**
  * Board/mirror settings. The screen is pure black with lighting off; when it is
- * on, each theme maps the shared level to its own exposure and edge-light color.
+ * on, a neutral white ring lights the glass independently of the widget theme.
  */
 @Injectable({ providedIn: 'root' })
 export class SettingsService {
   private readonly document = inject(DOCUMENT);
 
-  /** Background and practical edge lighting on (false = pure black mirror). */
+  /** White ring light on (false = pure black mirror). */
   readonly bgOn = signal(this.loadBool('dash.bg.on', true));
-  /** Lighting level 0–100 (theme-aware artwork exposure and edge illumination). */
+  /** White ring brightness, 0–100. */
   readonly bgLight = signal(this.clampLight(this.loadNum('dash.bg.light', LIGHTING_LEVELS.soft)));
+  /** Oval diameter as a percentage of the display, leaving room for its glow. */
+  readonly ringSize = signal(this.clampRingSize(this.loadNum('dash.ring.size', RING_SIZE.default)));
   /** Active visual system. Layout and widget state remain theme-independent. */
   readonly theme = signal<ThemeId>(this.loadTheme());
   /** Nostalgic custom pointer and particle trail for mouse-like input. */
@@ -42,6 +46,7 @@ export class SettingsService {
   constructor() {
     effect(() => localStorage.setItem('dash.bg.on', JSON.stringify(this.bgOn())));
     effect(() => localStorage.setItem('dash.bg.light', String(this.bgLight())));
+    effect(() => localStorage.setItem('dash.ring.size', String(this.ringSize())));
     effect(() => {
       const theme = this.theme();
       localStorage.setItem('dash.theme.v1', theme);
@@ -63,6 +68,10 @@ export class SettingsService {
 
   setLight(value: number): void {
     this.bgLight.set(this.clampLight(value));
+  }
+
+  setRingSize(value: number): void {
+    this.ringSize.set(this.clampRingSize(value));
   }
 
   setLightingPreset(preset: LightingPreset): void {
@@ -113,5 +122,10 @@ export class SettingsService {
 
   private clampLight(value: number): number {
     return Math.max(0, Math.min(100, Number.isFinite(value) ? value : LIGHTING_LEVELS.soft));
+  }
+
+  private clampRingSize(value: number): number {
+    return Math.max(RING_SIZE.min, Math.min(RING_SIZE.max,
+      Number.isFinite(value) ? value : RING_SIZE.default));
   }
 }

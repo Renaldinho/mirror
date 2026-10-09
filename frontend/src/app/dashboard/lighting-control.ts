@@ -1,22 +1,29 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { AmbienceService } from './ambience.service';
 import {
   CURSOR_FX_MODES,
   LIGHTING_LEVELS,
   LightingPreset,
+  RING_SIZE,
   SettingsService,
 } from './settings.service';
-import { THEMES } from './theme-registry';
-import { IconName, UiIcon } from '../shared/ui-icon';
+import { UiIcon } from '../shared/ui-icon';
 
-/** Theme-aware mirror-light presets plus continuous manual adjustment. */
+/** White ring-light brightness and oval size, plus pointer preferences. */
 @Component({
   selector: 'app-lighting-control',
   imports: [UiIcon],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
+    <button class="lighting-trigger" type="button" title="Mirror lighting"
+      aria-label="Mirror lighting" aria-controls="mirror-lighting"
+      [attr.aria-expanded]="open()" (click)="open.set(!open())">
+      <app-ui-icon name="sun" />
+    </button>
     <div
+      id="mirror-lighting"
       class="lighting-shell fixed right-4 top-4 z-20 flex items-center gap-2"
+      [class.open]="open()"
       role="group"
       aria-label="Mirror lighting"
     >
@@ -29,7 +36,7 @@ import { IconName, UiIcon } from '../shared/ui-icon';
         [attr.aria-label]="settings.bgOn() ? 'Turn mirror lighting off' : 'Turn mirror lighting on'"
         [title]="settings.bgOn() ? 'Turn lighting off' : 'Turn lighting on'"
       >
-        <app-ui-icon [name]="settings.bgOn() ? themeIcon() : 'half'" />
+        <app-ui-icon [name]="settings.bgOn() ? 'sun' : 'half'" />
       </button>
 
       <button
@@ -60,7 +67,7 @@ import { IconName, UiIcon } from '../shared/ui-icon';
       </div>
 
       <label class="slider-label">
-        <span class="sr-only">Custom lighting level</span>
+        <span>Brightness</span>
         <input
           type="range"
           min="0"
@@ -75,6 +82,14 @@ import { IconName, UiIcon } from '../shared/ui-icon';
       <output class="level" aria-live="polite">
         {{ settings.bgOn() ? settings.bgLight() : 'off' }}
       </output>
+
+      <label class="slider-label">
+        <span>Ring size</span>
+        <input type="range" class="lamp" [min]="ringSize.min" [max]="ringSize.max"
+          [value]="settings.ringSize()"
+          (input)="settings.setRingSize($any($event.target).valueAsNumber)" />
+      </label>
+      <output class="level">{{ settings.ringSize() }}%</output>
 
       <span class="divider" aria-hidden="true"></span>
       <button
@@ -105,6 +120,7 @@ import { IconName, UiIcon } from '../shared/ui-icon';
   `,
   styles: [
     `
+      .lighting-trigger { display: none; }
       .lighting-shell {
         padding: 6px 8px;
         border: 1px solid var(--theme-border-strong);
@@ -179,6 +195,9 @@ import { IconName, UiIcon } from '../shared/ui-icon';
       .slider-label {
         display: flex;
         align-items: center;
+        gap: 8px;
+        color: var(--theme-text-muted);
+        font-size: 10px;
       }
       .lamp {
         width: 104px;
@@ -186,7 +205,7 @@ import { IconName, UiIcon } from '../shared/ui-icon';
         cursor: pointer;
         appearance: none;
         border-radius: 999px;
-        background: linear-gradient(to right, var(--theme-secondary), var(--theme-primary-bright));
+        background: linear-gradient(to right, #555, #fff);
       }
       .lamp:disabled {
         opacity: 0.28;
@@ -195,18 +214,16 @@ import { IconName, UiIcon } from '../shared/ui-icon';
         appearance: none;
         width: 14px;
         height: 14px;
-        border: 1px solid var(--theme-primary);
+        border: 1px solid #fff;
         border-radius: 50%;
-        background: var(--theme-primary-bright);
-        box-shadow: 0 0 8px var(--theme-primary-soft);
+        background: #fff;
       }
       .lamp::-moz-range-thumb {
         width: 14px;
         height: 14px;
-        border: 1px solid var(--theme-primary);
+        border: 1px solid #fff;
         border-radius: 50%;
-        background: var(--theme-primary-bright);
-        box-shadow: 0 0 8px var(--theme-primary-soft);
+        background: #fff;
       }
       .level {
         width: 25px;
@@ -284,10 +301,28 @@ import { IconName, UiIcon } from '../shared/ui-icon';
           display: none;
         }
       }
+      @media (orientation: portrait), (max-width: 1100px) {
+        .lighting-trigger {
+          position: fixed; right: 16px; top: 16px; z-index: 35;
+          display: grid; place-items: center; width: 40px; height: 40px;
+          border: 1px solid var(--theme-border-strong); border-radius: var(--control-radius);
+          background: var(--theme-panel);
+        }
+        .lighting-shell { display: none; }
+        .lighting-shell.open {
+          display: flex; flex-wrap: wrap; justify-content: center;
+          top: 64px; right: 16px; left: 16px; z-index: 35;
+          background: var(--theme-panel-opaque);
+        }
+        .slider-label, .pointer-fx, .pointer-style { display: flex; }
+        .level, .divider { display: block; }
+      }
     `,
   ],
 })
 export class LightingControl {
+  readonly ringSize = RING_SIZE;
+  readonly open = signal(false);
   readonly settings = inject(SettingsService);
   readonly ambience = inject(AmbienceService);
   readonly presets: readonly { id: LightingPreset; label: string }[] = [
@@ -295,9 +330,6 @@ export class LightingControl {
     { id: 'soft', label: 'Soft' },
     { id: 'bright', label: 'Bright' },
   ];
-  readonly themeIcon = computed<IconName>(
-    () => THEMES.find((theme) => theme.id === this.settings.theme())?.icon ?? 'circle',
-  );
   readonly cursorMode = computed(
     () =>
       CURSOR_FX_MODES.find((mode) => mode.id === this.settings.cursorFxMode()) ??

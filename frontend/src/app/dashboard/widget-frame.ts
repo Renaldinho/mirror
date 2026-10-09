@@ -12,6 +12,7 @@ import { DashboardService, SCALE_STEPS, WidgetInstance } from './dashboard.servi
 import { WIDGET_META } from './widget-registry';
 import { SettingsService } from './settings.service';
 import { UiIcon } from '../shared/ui-icon';
+import { DisplayService } from './display.service';
 
 /**
  * A pressed-botanical "specimen plate": an arched frosted-glass sheet (so the
@@ -42,8 +43,11 @@ import { UiIcon } from '../shared/ui-icon';
       cdkDrag
       cdkDragBoundary=".board-surface"
       class="anchor absolute"
-      [cdkDragFreeDragPosition]="{ x: widget().x, y: widget().y }"
-      [cdkDragDisabled]="widget().pinned"
+      [class.portrait]="display.portrait()"
+      [style.width.px]="display.portrait() ? layout().width * displayScale() : null"
+      [style.height.px]="display.portrait() ? (widget().collapsed ? 46 : layout().height) * displayScale() : null"
+      [cdkDragFreeDragPosition]="display.portrait() ? { x: 0, y: 0 } : { x: widget().x, y: widget().y }"
+      [cdkDragDisabled]="display.portrait() || widget().pinned"
       (cdkDragEnded)="onDragEnded($event)"
     >
       <div
@@ -54,7 +58,7 @@ import { UiIcon } from '../shared/ui-icon';
         [style.--accent]="meta().accent"
         [style.width.px]="layout().width"
         [style.height.px]="widget().collapsed ? null : layout().height"
-        [style.transform]="'scale(' + widget().scale + ')'"
+        [style.transform]="'scale(' + displayScale() + ')'"
       >
         <!-- winding-flower corners -->
         <app-corner-flourish class="flourish tl" />
@@ -70,10 +74,10 @@ import { UiIcon } from '../shared/ui-icon';
         <div
           cdkDragHandle
           class="crown relative z-10"
-          [class.cursor-move]="!widget().pinned"
+          [class.cursor-move]="!display.portrait() && !widget().pinned"
           (dblclick)="dash.toggleCollapse(widget().type)"
         >
-          @if (!widget().pinned) {
+          @if (!display.portrait() && !widget().pinned) {
             <span class="grip" aria-hidden="true" title="Drag to move"><app-ui-icon name="grip" /></span>
           }
           @if (settings.theme() === 'mushroom') {
@@ -124,14 +128,16 @@ import { UiIcon } from '../shared/ui-icon';
                 <app-ui-icon name="layout" />
               </button>
             }
-            <button
-              [class.text-parchment-dim]="!widget().pinned"
-              [style.color]="widget().pinned ? meta().accent : null"
-              [title]="widget().pinned ? 'Unpin' : 'Pin in place'"
-              (click)="dash.togglePin(widget().type)"
-            >
-              <app-ui-icon [name]="widget().pinned ? 'pin' : 'pin-off'" />
-            </button>
+            @if (!display.portrait()) {
+              <button
+                [class.text-parchment-dim]="!widget().pinned"
+                [style.color]="widget().pinned ? meta().accent : null"
+                [title]="widget().pinned ? 'Unpin' : 'Pin in place'"
+                (click)="dash.togglePin(widget().type)"
+              >
+                <app-ui-icon [name]="widget().pinned ? 'pin' : 'pin-off'" />
+              </button>
+            }
             <button class="text-parchment-dim hover:text-cap" title="Remove" (click)="dash.remove(widget().type)">
               <app-ui-icon name="close" />
             </button>
@@ -168,6 +174,8 @@ import { UiIcon } from '../shared/ui-icon';
         /* sizes to the plate so CDK's drag boundary tracks the widget box */
         width: max-content;
       }
+      .anchor.portrait { position: relative; }
+      .portrait .plate { position: absolute; top: 0; left: 0; }
       .plate {
         position: relative;
         transform-origin: top left;
@@ -283,6 +291,7 @@ import { UiIcon } from '../shared/ui-icon';
         line-height: 1;
       }
       .group:hover .controls,
+      .group:focus-within .controls,
       .is-collapsed .controls { opacity: 1; }
       .controls button { cursor: pointer; }
       .controls button:disabled {
@@ -340,13 +349,23 @@ export class WidgetFrame {
   readonly widget = input.required<WidgetInstance>();
   readonly dash = inject(DashboardService);
   readonly settings = inject(SettingsService);
+  readonly display = inject(DisplayService);
   readonly meta = computed(() => WIDGET_META[this.widget().type]);
   readonly layout = computed(
     () =>
       this.meta().layouts.find((layout) => layout.id === this.widget().variant) ??
       this.meta().layouts[0],
   );
-  readonly scalePercent = computed(() => Math.round(this.widget().scale * 100));
+  readonly displayScale = computed(() => {
+    if (!this.display.portrait()) return this.widget().scale;
+    const cell = this.display.cellSize(this.dash.widgets().length);
+    // Leave room for ornamental corners and a scrollbar on shorter screens.
+    const width = cell.width - 16;
+    const height = cell.height - 16;
+    const base = Math.min(3, width / 360, height / 360);
+    return Math.min(base * this.widget().scale, width / this.layout().width, height / this.layout().height);
+  });
+  readonly scalePercent = computed(() => Math.round(this.displayScale() * 100));
   readonly atMinScale = computed(() => this.widget().scale <= SCALE_STEPS[0]);
   readonly atMaxScale = computed(() => this.widget().scale >= SCALE_STEPS[SCALE_STEPS.length - 1]);
 

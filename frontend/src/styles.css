@@ -592,10 +592,22 @@ body {
 }
 
 .board-surface {
-  background: var(--theme-bg);
+  background: #000;
   color: var(--theme-text);
   font-family: var(--theme-font-body);
   transition: background-color 0.35s ease, color 0.25s ease;
+}
+
+@media (orientation: portrait) {
+  app-pet-habitat .cozy-panel {
+    left: 16px;
+    right: 16px;
+    top: 64px;
+    width: auto;
+    max-width: 390px;
+    max-height: calc(100dvh - 80px);
+    overflow-y: auto;
+  }
 }
 
 /* Native 4K mirror displays are fill-rate constrained. Keep persistent

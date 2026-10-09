@@ -1,58 +1,54 @@
-import { TestBed } from '@angular/core/testing';
+﻿import { TestBed } from '@angular/core/testing';
 import { Background } from './background';
 import { SettingsService } from './settings.service';
 import { THEME_IDS } from './theme-registry';
 
-describe('Background', () => {
+describe('Mirror ring light', () => {
   beforeEach(() => {
     localStorage.clear();
     TestBed.configureTestingModule({ imports: [Background] });
   });
 
-  it('keeps Bare Mirror free of decorative SVG artwork', () => {
-    const fixture = TestBed.createComponent(Background);
-    fixture.detectChanges();
-
-    const backdrop = fixture.nativeElement.querySelector('.backdrop') as HTMLElement;
-    expect(backdrop.dataset['motif']).toBe('bare');
-    expect(backdrop.querySelector('.theme-art')).toBeNull();
-    expect(backdrop.querySelector('.practical-light')).not.toBeNull();
-  });
-
-  it('renders a dedicated motif for every decorative theme', () => {
+  it('keeps the same ring and black mirror surface across every widget theme', () => {
     const fixture = TestBed.createComponent(Background);
     const settings = TestBed.inject(SettingsService);
+    fixture.detectChanges();
+    const initial = fixture.nativeElement.innerHTML;
 
-    for (const theme of THEME_IDS.filter((id) => id !== 'bare')) {
+    for (const theme of THEME_IDS) {
       settings.setTheme(theme);
       fixture.detectChanges();
-
-      const backdrop = fixture.nativeElement.querySelector('.backdrop') as HTMLElement;
-      const image = backdrop.querySelector('.theme-art') as HTMLImageElement;
-      expect(backdrop.dataset['motif']).toBe(theme);
-      expect(image).not.toBeNull();
-      expect(image.getAttribute('src')).toBe(`/themes/${theme}-v2.png`);
+      expect(fixture.nativeElement.innerHTML).toBe(initial);
+      expect(fixture.nativeElement.querySelector('img')).toBeNull();
     }
   });
 
-  it('lights dark artwork with theme-aware exposure instead of a generic warm wash', () => {
+  it('dims only the ring and fully hides it at zero or when switched off', () => {
     const fixture = TestBed.createComponent(Background);
     const settings = TestBed.inject(SettingsService);
-    settings.setTheme('emo');
-    settings.setLight(0);
     fixture.detectChanges();
-
-    const backdrop = fixture.nativeElement.querySelector('.backdrop') as HTMLElement;
-    const image = backdrop.querySelector('.theme-art') as HTMLImageElement;
-    const sceneLight = backdrop.querySelector('.scene-light') as HTMLElement;
-    const darkFilter = image.style.filter;
-    expect(sceneLight.style.opacity).toBe('0');
-
-    settings.setLight(100);
+    const ring = fixture.nativeElement.querySelector('.ring-light') as HTMLElement;
+    for (const level of [0, 40, 100]) {
+      settings.setLight(level);
+      fixture.detectChanges();
+      expect(ring.style.opacity).toBe(String(level / 100));
+    }
+    settings.toggleBg();
     fixture.detectChanges();
+    expect(ring.style.opacity).toBe('0');
+    settings.toggleBg();
+    fixture.detectChanges();
+    expect(ring.style.opacity).toBe('1');
+  });
 
-    expect(image.style.filter).not.toBe(darkFilter);
-    expect(image.style.filter).toContain('brightness(1.180)');
-    expect(sceneLight.style.opacity).toBe('0.5');
+  it('resizes the centered oval without changing its brightness', () => {
+    const fixture = TestBed.createComponent(Background);
+    const settings = TestBed.inject(SettingsService);
+    settings.setRingSize(65);
+    fixture.detectChanges();
+    const ring = fixture.nativeElement.querySelector('.ring-light') as HTMLElement;
+    expect(ring.style.width).toBe('65%');
+    expect(ring.style.height).toBe('65%');
+    expect(ring.style.opacity).toBe('0.4');
   });
 });

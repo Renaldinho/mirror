@@ -16,13 +16,15 @@ import { UiIcon } from '../shared/ui-icon';
   imports: [UiIcon],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="fixed left-4 top-4 z-20 flex flex-col items-start gap-2">
+    <div class="widget-picker fixed left-4 top-4 z-20 flex flex-col items-start gap-2">
       <button
         class="cabinet-trigger flex h-10 w-10 items-center justify-center rounded-full border border-gold/40
                bg-wine/90 text-lg text-gold shadow-lg transition
                hover:bg-gold/10"
         (click)="open.set(!open())"
         [title]="open() ? 'Collapse' : 'Widgets'"
+        [attr.aria-expanded]="open()"
+        aria-label="Choose widgets and companion"
       >
         <app-ui-icon [name]="open() ? 'close' : 'layout'" />
       </button>
@@ -117,6 +119,11 @@ import { UiIcon } from '../shared/ui-icon';
         border-color: var(--theme-border-strong);
         box-shadow: var(--theme-shadow-strong);
       }
+      .widget-picker { max-height: calc(100dvh - 32px); overflow-y: auto; }
+      @media (orientation: portrait) {
+        .widget-picker { z-index: 34; }
+        .cabinet-panel, .reset-btn { background: var(--theme-panel-opaque); }
+      }
       .cabinet-trigger { border-radius: var(--control-radius); background: var(--theme-panel); box-shadow: var(--theme-shadow-soft); }
       .reset-btn {
         border-radius: var(--control-radius);
@@ -168,7 +175,7 @@ export class WidgetGrid {
   readonly mood = inject(PetMoodService);
   readonly widgets = WIDGETS;
   readonly pets = PETS;
-  readonly open = signal(true);
+  readonly open = signal(false);
 
   /** translucent wash of an accent for the active tile background. */
   tint(hex: string): string {

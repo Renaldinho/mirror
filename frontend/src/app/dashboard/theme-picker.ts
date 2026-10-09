@@ -24,7 +24,7 @@ import { UiIcon } from '../shared/ui-icon';
       <section id="theme-gallery" class="theme-gallery" role="dialog" aria-modal="true" aria-label="Choose a theme">
         <header>
           <div>
-            <span class="eyebrow">Mirror appearance</span>
+            <span class="eyebrow">Widget appearance</span>
             <h2>Choose a theme</h2>
           </div>
           <button class="close" type="button" aria-label="Close theme gallery" (click)="open.set(false)"><app-ui-icon name="close" /></button>
@@ -102,6 +102,12 @@ import { UiIcon } from '../shared/ui-icon';
       .copy strong { font: 600 12px/1.1 var(--theme-font-display); }
       .copy small { color: var(--theme-text-muted); font: 400 10px/1.25 var(--theme-font-body); }
       .check { color: var(--theme-primary-bright); font-size: 13px; }
+      @media (orientation: portrait) {
+        .theme-gallery {
+          position: fixed; left: 16px; right: 16px; top: 64px;
+          width: auto; max-width: 600px; max-height: calc(100dvh - 80px);
+        }
+      }
       @media (max-width: 620px) {
         :host { left: 60px; top: 12px; }
         .theme-gallery { position: fixed; left: 12px; right: 12px; top: 60px; width: auto; max-height: calc(100vh - 72px); }

@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { LIGHTING_LEVELS, SettingsService } from './settings.service';
+import { LIGHTING_LEVELS, RING_SIZE, SettingsService } from './settings.service';
 
 describe('SettingsService', () => {
   beforeEach(() => {
@@ -9,12 +9,34 @@ describe('SettingsService', () => {
     TestBed.configureTestingModule({});
   });
 
-  it('defaults to Bare Mirror with soft warm lighting', () => {
+  it('defaults to Bare Mirror with soft ring lighting', () => {
     const settings = TestBed.inject(SettingsService);
 
     expect(settings.theme()).toBe('bare');
     expect(settings.bgOn()).toBe(true);
     expect(settings.bgLight()).toBe(LIGHTING_LEVELS.soft);
+  });
+
+  it('saves ring size independently of theme and brightness', () => {
+    const settings = TestBed.inject(SettingsService);
+    settings.setRingSize(65);
+    settings.setTheme('pinkie');
+    settings.setLight(100);
+    TestBed.flushEffects();
+    expect(localStorage.getItem('dash.ring.size')).toBe('65');
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({});
+    expect(TestBed.inject(SettingsService).ringSize()).toBe(65);
+  });
+
+  it('constrains saved and manual ring sizes to fit the screen', () => {
+    localStorage.setItem('dash.ring.size', '500');
+    const settings = TestBed.inject(SettingsService);
+    expect(settings.ringSize()).toBe(RING_SIZE.max);
+    settings.setRingSize(-10);
+    expect(settings.ringSize()).toBe(RING_SIZE.min);
+    settings.setRingSize(Number.NaN);
+    expect(settings.ringSize()).toBe(RING_SIZE.default);
   });
 
   it('preserves Mushroom but migrates removed stored themes to Bare Mirror', () => {
