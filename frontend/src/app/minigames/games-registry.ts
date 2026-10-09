@@ -20,5 +20,5 @@ export const GAMES: GameMeta[] = [
     thumbnail: '/games/duck-hunt/thumbnail.webp',
     description: 'Shoot the ducks before they flee.',
   },
-  { id: 'whack', label: 'Whack-a-Mole', icon: 'hammer', description: 'Bonk the moles as they pop.' },
+  { id: 'whack', label: 'Whack-a-Mole', icon: 'hammer', thumbnail: '/games/whack/thumbnail.png', description: 'Bonk the moles as they pop.' },
 ];

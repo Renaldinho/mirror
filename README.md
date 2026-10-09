@@ -69,7 +69,11 @@ For display, throttling, memory, Chromium, service, and health details:
 /opt/mirror/bin/mirror-diagnose
 ```
 
-Native 4K displays are supported with the lightweight rendering defaults. The
+Native 4K displays use lightweight rendering defaults. Animated game and cursor
+canvases have a 1080p pixel budget (75% fewer pixels at 4K), while the dashboard
+and pointer coordinates retain the display's native resolution. These canvas
+effects can look softer on large displays. Pet controls move with transforms
+instead of changing their layout positions on every frame. The
 retro pointer FX is off by default because a display-sized particle canvas is
 expensive at 3840×2160; it can still be enabled from the `FX` control. Interface
 icons are bundled SVGs, so they do not depend on Raspberry Pi OS symbol or emoji

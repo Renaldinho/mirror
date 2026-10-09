@@ -12,6 +12,7 @@ import {
 } from '@angular/core';
 import { GamesService } from '../minigames/games.service';
 import { CursorFxMode, SettingsService } from './settings.service';
+import { canvasScale } from '../shared/canvas-scale';
 
 type SparkKind = 'orb' | 'diamond' | 'bubble' | 'glyph' | 'flame';
 
@@ -261,6 +262,7 @@ export class RetroCursor implements AfterViewInit {
   private context: CanvasRenderingContext2D | null = null;
   private frame = 0;
   private lastFrame = 0;
+  private renderScale = 1;
   private lastX = 0;
   private lastY = 0;
   private hasPosition = false;
@@ -487,7 +489,7 @@ export class RetroCursor implements AfterViewInit {
     this.lastFrame = time;
     const context = this.context;
     const canvas = this.trail().nativeElement;
-    const scale = 1;
+    const scale = this.renderScale;
 
     context.setTransform(scale, 0, 0, scale, 0, 0);
     context.clearRect(0, 0, canvas.width / scale, canvas.height / scale);
@@ -543,7 +545,7 @@ export class RetroCursor implements AfterViewInit {
     if (this.sparks.length) {
       this.frame = this.window.requestAnimationFrame(this.animate);
     } else {
-      context.clearRect(0, 0, canvas.width, canvas.height);
+      this.clearCanvas();
       this.frame = 0;
     }
   };
@@ -582,11 +584,12 @@ export class RetroCursor implements AfterViewInit {
   }
 
   private readonly resize = (): void => {
-    if (!this.window || !this.context) return;
+    if (!this.window || !this.context || !this.active) return;
     const canvas = this.trail().nativeElement;
-    const scale = 1;
-    canvas.width = Math.round(this.window.innerWidth * scale);
-    canvas.height = Math.round(this.window.innerHeight * scale);
+    const scale = canvasScale(this.window.innerWidth, this.window.innerHeight);
+    this.renderScale = scale;
+    canvas.width = Math.floor(this.window.innerWidth * scale);
+    canvas.height = Math.floor(this.window.innerHeight * scale);
     canvas.style.width = `${this.window.innerWidth}px`;
     canvas.style.height = `${this.window.innerHeight}px`;
   };
@@ -594,7 +597,7 @@ export class RetroCursor implements AfterViewInit {
   private clearCanvas(): void {
     if (!this.context) return;
     const canvas = this.trail().nativeElement;
-    this.context.clearRect(0, 0, canvas.width, canvas.height);
+    this.context.clearRect(0, 0, canvas.width / this.renderScale, canvas.height / this.renderScale);
   }
 
   private ensureAnimation(): void {

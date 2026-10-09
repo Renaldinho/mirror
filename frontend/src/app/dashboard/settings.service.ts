@@ -16,7 +16,7 @@ export const CURSOR_FX_MODES = [
 export type CursorFxMode = (typeof CURSOR_FX_MODES)[number]['id'];
 
 export const LIGHTING_LEVELS: Record<Exclude<LightingPreset, 'off'>, number> = {
-  soft: 40,
+  soft: 70,
   bright: 100,
 };
 

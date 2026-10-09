@@ -31,7 +31,7 @@ describe('Mirror ring light', () => {
     for (const level of [0, 40, 100]) {
       settings.setLight(level);
       fixture.detectChanges();
-      expect(ring.style.opacity).toBe(String(level / 100));
+      expect(Number(ring.style.opacity)).toBeCloseTo(Math.sqrt(level / 100));
     }
     settings.toggleBg();
     fixture.detectChanges();
@@ -49,6 +49,6 @@ describe('Mirror ring light', () => {
     const ring = fixture.nativeElement.querySelector('.ring-light') as HTMLElement;
     expect(ring.style.width).toBe('65%');
     expect(ring.style.height).toBe('65%');
-    expect(ring.style.opacity).toBe('0.4');
+    expect(Number(ring.style.opacity)).toBeCloseTo(Math.sqrt(0.7));
   });
 });

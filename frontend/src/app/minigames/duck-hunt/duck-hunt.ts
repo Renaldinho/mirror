@@ -12,6 +12,7 @@ import { SettingsService } from '../../dashboard/settings.service';
 import { AudioFx } from '../audio';
 import { GamesService } from '../games.service';
 import { DuckHuntAim } from './duck-hunt-aim';
+import { canvasScale } from '../../shared/canvas-scale';
 import {
   ATLAS_COLUMNS,
   ATLAS_ROWS,
@@ -242,7 +243,7 @@ export class DuckHunt implements AfterViewInit {
 
     const resize = () => {
       const rect = canvas.getBoundingClientRect();
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const dpr = canvasScale(rect.width, rect.height, window.devicePixelRatio || 1);
       this.w = rect.width;
       this.h = rect.height;
       canvas.width = Math.floor(rect.width * dpr);

@@ -22,7 +22,7 @@ import { SettingsService } from './settings.service';
       top: 50%;
       transform: translate(-50%, -50%);
       box-sizing: border-box;
-      border: clamp(8px, 1.4vmin, 24px) solid #fff;
+      border: clamp(16px, 2.8vmin, 60px) solid #fff;
       border-radius: 50%;
       background: transparent;
       box-shadow:
@@ -36,5 +36,5 @@ import { SettingsService } from './settings.service';
 })
 export class Background {
   readonly settings = inject(SettingsService);
-  readonly light = computed(() => this.settings.bgOn() ? this.settings.bgLight() / 100 : 0);
+  readonly light = computed(() => this.settings.bgOn() ? Math.sqrt(this.settings.bgLight() / 100) : 0);
 }

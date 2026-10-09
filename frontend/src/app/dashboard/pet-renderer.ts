@@ -46,6 +46,7 @@ import { UiIcon } from '../shared/ui-icon';
         top: 0;
         z-index: 40;
         will-change: transform;
+        contain: layout style;
         pointer-events: none;
       }
       .visual {
@@ -66,8 +67,8 @@ import { UiIcon } from '../shared/ui-icon';
       }
       .ball-button {
         position: absolute;
-        left: 50px;
-        top: -25px;
+        left: 0;
+        top: 0;
         width: 24px;
         height: 24px;
         padding: 0;
@@ -84,6 +85,8 @@ import { UiIcon } from '../shared/ui-icon';
       .ball-button:active { cursor: grabbing; }
       .pet-item {
         position: absolute;
+        left: 0;
+        top: 0;
         width: 24px;
         height: 24px;
         padding: 0;
@@ -95,9 +98,10 @@ import { UiIcon } from '../shared/ui-icon';
         font-size: 15px;
         opacity: .9;
         box-shadow: 0 2px 5px rgba(0,0,0,.35);
-        transition: transform .15s ease;
       }
-      .pet-item:active { cursor: grabbing; transform: scale(1.12); }
+      .pet-item:active { cursor: grabbing; }
+      /* Positions are supplied every frame; never interpolate those transforms. */
+      .ball-button, .pet-item { transition: none; will-change: transform; }
       .bubble {
         position: absolute;
         left: 30px;
@@ -437,9 +441,7 @@ export class PetRenderer implements AfterViewInit {
     }
     ballEl.style.opacity = '1';
     ballEl.style.pointerEvents = ball.phase === 'ready' ? 'auto' : 'none';
-    ballEl.style.left = `${ball.x - this.pet.x - 12}px`;
-    ballEl.style.top = `${ball.y - this.pet.y - 12}px`;
-    ballEl.style.transform = `rotate(${ball.rotation}deg) scale(${ball.phase === 'held' ? 1.12 : 1})`;
+    ballEl.style.transform = `translate(${ball.x - this.pet.x - 12}px, ${ball.y - this.pet.y - 12}px) rotate(${ball.rotation}deg) scale(${ball.phase === 'held' ? 1.12 : 1})`;
   }
 
   private updateFloatingItems(now: number): void {
@@ -465,8 +467,7 @@ export class PetRenderer implements AfterViewInit {
         const button = this.draggedItem.kind === 'food'
           ? this.foodButtonRef().nativeElement
           : this.brushButtonRef().nativeElement;
-        button.style.left = `${localX}px`;
-        button.style.top = `${localY}px`;
+        button.style.transform = `translate(${localX}px, ${localY}px)`;
       }
       return;
     }
@@ -476,8 +477,7 @@ export class PetRenderer implements AfterViewInit {
       { element: this.brushButtonRef().nativeElement, angle: phase * .65 + 4.2, radius: 82 },
     ];
     for (const item of items) {
-      item.element.style.left = `${this.pet.width / 2 + Math.cos(item.angle) * item.radius - 12}px`;
-      item.element.style.top = `${-22 + Math.sin(item.angle) * item.radius * .5 - 12}px`;
+      item.element.style.transform = `translate(${this.pet.width / 2 + Math.cos(item.angle) * item.radius - 12}px, ${-22 + Math.sin(item.angle) * item.radius * .5 - 12}px)`;
     }
   }
 
