@@ -12,7 +12,10 @@ import {
 } from '@angular/core';
 import { GamesService } from '../minigames/games.service';
 import { CursorFxMode, SettingsService } from './settings.service';
-import { canvasScale } from '../shared/canvas-scale';
+
+const TRAIL_SIZE = 512;
+const MAX_SPARKS = 48;
+const FRAME_INTERVAL = 1000 / 30;
 
 type SparkKind = 'orb' | 'diamond' | 'bubble' | 'glyph' | 'flame';
 
@@ -59,9 +62,11 @@ interface Spark {
       }
       .trail {
         position: fixed;
-        inset: 0;
-        width: 100vw;
-        height: 100vh;
+        left: 0;
+        top: 0;
+        width: 512px;
+        height: 512px;
+        will-change: transform;
         pointer-events: none;
       }
       .retro-pointer {
@@ -72,6 +77,7 @@ interface Spark {
         height: 34px;
         opacity: 0;
         pointer-events: none;
+        will-change: transform;
       }
       .retro-pointer.visible {
         opacity: 1;
@@ -262,7 +268,7 @@ export class RetroCursor implements AfterViewInit {
   private context: CanvasRenderingContext2D | null = null;
   private frame = 0;
   private lastFrame = 0;
-  private renderScale = 1;
+  private lastEmission = -Infinity;
   private lastX = 0;
   private lastY = 0;
   private hasPosition = false;
@@ -291,7 +297,6 @@ export class RetroCursor implements AfterViewInit {
       this.window!.addEventListener('pointerup', this.onPointerUp, { passive: true });
       this.window!.addEventListener('pointercancel', this.onPointerUp, { passive: true });
       this.window!.addEventListener('pointerout', this.onPointerOut, { passive: true });
-      this.window!.addEventListener('resize', this.resize, { passive: true });
       this.document.addEventListener('visibilitychange', this.refresh);
       this.finePointer?.addEventListener('change', this.refresh);
       this.reducedMotion?.addEventListener('change', this.refresh);
@@ -322,6 +327,7 @@ export class RetroCursor implements AfterViewInit {
       this.clearCanvas();
       this.stopAnimation();
       this.hasPosition = false;
+      this.lastEmission = -Infinity;
     }
   };
 
@@ -332,7 +338,8 @@ export class RetroCursor implements AfterViewInit {
     element.style.transform = `translate3d(${event.clientX - 17}px, ${event.clientY - 17}px, 0)`;
     element.classList.add('visible');
 
-    if (this.hasPosition) {
+    const now = performance.now();
+    if (this.hasPosition && now - this.lastEmission >= FRAME_INTERVAL) {
       const dx = event.clientX - this.lastX;
       const dy = event.clientY - this.lastY;
       const distance = Math.hypot(dx, dy);
@@ -342,6 +349,7 @@ export class RetroCursor implements AfterViewInit {
         const progress = (index + 1) / count;
         this.spawnTrail(this.lastX + dx * progress, this.lastY + dy * progress, dx, dy);
       }
+      this.lastEmission = now;
     }
 
     this.lastX = event.clientX;
@@ -354,6 +362,8 @@ export class RetroCursor implements AfterViewInit {
     if (!this.active || event.pointerType === 'touch') return;
 
     this.cursor().nativeElement.classList.add('pressed');
+    this.lastX = event.clientX;
+    this.lastY = event.clientY;
     const mode = this.settings.cursorFxMode();
     const palette = this.palette();
     for (let index = 0; index < 22; index += 1) {
@@ -372,6 +382,7 @@ export class RetroCursor implements AfterViewInit {
         glyph: this.sparkGlyph(mode, index),
       });
     }
+    this.sparks.splice(0, Math.max(0, this.sparks.length - MAX_SPARKS));
     this.ensureAnimation();
   };
 
@@ -424,8 +435,8 @@ export class RetroCursor implements AfterViewInit {
       });
     }
 
-    if (this.sparks.length > 80) {
-      this.sparks.splice(0, this.sparks.length - 80);
+    if (this.sparks.length > MAX_SPARKS) {
+      this.sparks.splice(0, this.sparks.length - MAX_SPARKS);
     }
   }
 
@@ -484,15 +495,21 @@ export class RetroCursor implements AfterViewInit {
 
   private readonly animate = (time: number): void => {
     if (!this.active || !this.window || !this.context) return;
+    if (time - this.lastFrame < FRAME_INTERVAL) {
+      this.frame = this.window.requestAnimationFrame(this.animate);
+      return;
+    }
 
     const delta = Math.min(2, Math.max(.4, (time - this.lastFrame) / 16.667));
     this.lastFrame = time;
     const context = this.context;
     const canvas = this.trail().nativeElement;
-    const scale = this.renderScale;
-
-    context.setTransform(scale, 0, 0, scale, 0, 0);
-    context.clearRect(0, 0, canvas.width / scale, canvas.height / scale);
+    this.clearCanvas();
+    // ponytail: trails are clipped to 512px around the pointer; enlarge only if longer trails are needed.
+    const left = this.lastX - TRAIL_SIZE / 2;
+    const top = this.lastY - TRAIL_SIZE / 2;
+    canvas.style.transform = `translate3d(${left}px, ${top}px, 0)`;
+    context.setTransform(1, 0, 0, 1, -left, -top);
     context.globalCompositeOperation = 'lighter';
 
     for (let index = this.sparks.length - 1; index >= 0; index -= 1) {
@@ -586,18 +603,15 @@ export class RetroCursor implements AfterViewInit {
   private readonly resize = (): void => {
     if (!this.window || !this.context || !this.active) return;
     const canvas = this.trail().nativeElement;
-    const scale = canvasScale(this.window.innerWidth, this.window.innerHeight);
-    this.renderScale = scale;
-    canvas.width = Math.floor(this.window.innerWidth * scale);
-    canvas.height = Math.floor(this.window.innerHeight * scale);
-    canvas.style.width = `${this.window.innerWidth}px`;
-    canvas.style.height = `${this.window.innerHeight}px`;
+    canvas.width = TRAIL_SIZE;
+    canvas.height = TRAIL_SIZE;
   };
 
   private clearCanvas(): void {
     if (!this.context) return;
     const canvas = this.trail().nativeElement;
-    this.context.clearRect(0, 0, canvas.width / this.renderScale, canvas.height / this.renderScale);
+    this.context.setTransform(1, 0, 0, 1, 0, 0);
+    this.context.clearRect(0, 0, canvas.width, canvas.height);
   }
 
   private ensureAnimation(): void {
@@ -620,7 +634,6 @@ export class RetroCursor implements AfterViewInit {
     this.window.removeEventListener('pointerup', this.onPointerUp);
     this.window.removeEventListener('pointercancel', this.onPointerUp);
     this.window.removeEventListener('pointerout', this.onPointerOut);
-    this.window.removeEventListener('resize', this.resize);
     this.document.removeEventListener('visibilitychange', this.refresh);
     this.finePointer?.removeEventListener('change', this.refresh);
     this.reducedMotion?.removeEventListener('change', this.refresh);

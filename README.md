@@ -69,13 +69,15 @@ For display, throttling, memory, Chromium, service, and health details:
 /opt/mirror/bin/mirror-diagnose
 ```
 
-Native 4K displays use lightweight rendering defaults. Animated game and cursor
+Native 4K displays use lightweight rendering defaults. Animated game
 canvases have a 1080p pixel budget (75% fewer pixels at 4K), while the dashboard
 and pointer coordinates retain the display's native resolution. These canvas
 effects can look softer on large displays. Pet controls move with transforms
 instead of changing their layout positions on every frame. The
-retro pointer FX is off by default because a display-sized particle canvas is
-expensive at 3840×2160; it can still be enabled from the `FX` control. Interface
+retro pointer FX is off by default; it can still be enabled from the `FX` control.
+Its trail uses a moving 512×512 canvas, draws at most 30 times per second, and
+keeps at most 48 particles, including click bursts. Older trails are clipped
+outside the area around the pointer. Interface
 icons are bundled SVGs, so they do not depend on Raspberry Pi OS symbol or emoji
 fonts.
 
