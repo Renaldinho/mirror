@@ -1,11 +1,10 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { Background } from './background';
-import { WidgetGrid } from './widget-grid';
+import { ControlHub } from './control-hub';
 import { WidgetFrame } from './widget-frame';
 import { PetRenderer } from './pet-renderer';
 import { PetHabitat } from './pet-habitat';
 import { DashboardService } from './dashboard.service';
-import { ThemePicker } from './theme-picker';
 import { RetroCursor } from './retro-cursor';
 import { GamesLauncher } from '../minigames/games-launcher';
 import { GameOverlay } from '../minigames/game-overlay';
@@ -17,11 +16,10 @@ import { DisplayService } from './display.service';
   selector: 'app-mirror-page',
   imports: [
     Background,
-    WidgetGrid,
+    ControlHub,
     WidgetFrame,
     PetRenderer,
     PetHabitat,
-    ThemePicker,
     RetroCursor,
     GamesLauncher,
     GameOverlay,
@@ -32,8 +30,7 @@ import { DisplayService } from './display.service';
       <app-background />
 
       <!-- controls -->
-      <app-widget-grid />
-      <app-theme-picker />
+      <app-control-hub />
       <app-games-launcher />
 
       <!-- desktop pet -->

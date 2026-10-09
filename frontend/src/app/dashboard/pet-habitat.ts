@@ -55,15 +55,6 @@ import {
       }
     }
 
-    <button
-      class="cozy-trigger"
-      type="button"
-      [class.active]="cozy.editing()"
-      [attr.aria-pressed]="cozy.editing()"
-      title="Arrange a cozy pet space"
-      (click)="toggleEditing()"
-    >&#8962;</button>
-
     @if (cozy.editing()) {
       <div
         class="cozy-canvas"

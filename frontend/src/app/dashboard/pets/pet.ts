@@ -1,5 +1,6 @@
 import {
   CuriousState,
+  DanceState,
   EatState,
   FetchCarryState,
   FetchDeliverState,
@@ -151,6 +152,12 @@ export abstract class Pet {
       this.setState(this.newEat(), ctx);
     }
 
+    if (ctx.musicPlaying && this.stateName !== 'eat' && this.stateName !== 'dance') {
+      this.setState(new DanceState(), ctx);
+    } else if (!ctx.musicPlaying && this.stateName === 'dance') {
+      this.setState(this.newRest(), ctx);
+    }
+
     const next = this.state!.update(this, ctx);
     if (next) this.setState(next, ctx);
   }
@@ -240,20 +247,21 @@ export abstract class Pet {
   }
 
   private spriteFrame(animation: PetSpriteAnimation, pokeTime: number | null): PetSpriteFrame {
+    const sheet = animation.sheet ?? this.spriteSheet;
     const time = pokeTime ?? this.state?.animationTime ?? 0;
     const rawFrame = Math.floor(time * animation.fps);
     const frame = animation.loop === false
       ? Math.min(rawFrame, animation.frames - 1)
       : rawFrame % animation.frames;
-    const column = frame % this.spriteSheet.columns;
+    const column = frame % sheet.columns;
     const sequencedRow = animation.rowSequence?.[
-      Math.min(animation.rowSequence.length - 1, Math.floor(frame / this.spriteSheet.columns))
+      Math.min(animation.rowSequence.length - 1, Math.floor(frame / sheet.columns))
     ];
     const row = sequencedRow ?? animation.directionRows?.[this.direction] ??
       (this.facing === -1 && animation.reverseRow !== undefined
         ? animation.reverseRow
         : animation.row);
 
-    return { sheet: this.spriteSheet, row, column };
+    return { sheet, row, column };
   }
 }

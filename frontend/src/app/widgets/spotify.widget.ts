@@ -1,5 +1,7 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 import { SpotifyService } from './spotify/spotify.service';
+import { SettingsService } from '../dashboard/settings.service';
+import { themeFlavor } from '../dashboard/theme-flavor';
 
 /** Now-playing: connect to Spotify, stream on the mirror (Web Playback SDK), and
  *  control playback. Degrades to a read-only display when streaming isn't possible. */
@@ -7,13 +9,49 @@ import { SpotifyService } from './spotify/spotify.service';
   selector: 'app-spotify',
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
+    @if (collapsed()) {
+      <div class="mini">
+        @if (!sp.authed() || !sp.track()) {
+          <div class="mini-art empty">♪</div>
+          <span class="mini-title muted">{{ flavor().nothingPlaying }}</span>
+        } @else {
+          @if (sp.track()?.artUrl) {
+            <img class="mini-art" [src]="sp.track()!.artUrl" alt="" />
+          } @else {
+            <div class="mini-art empty">♪</div>
+          }
+          <div class="mini-meta">
+            <span class="mini-title">{{ sp.track()?.title || flavor().nothingPlaying }}</span>
+            <span class="mini-artist">{{ sp.track()?.artists || '—' }}</span>
+          </div>
+          <div class="mini-ctrls">
+            <button (click)="sp.prev()" aria-label="Previous">⏮</button>
+            <button class="mini-play" (click)="sp.togglePlay()" [attr.aria-label]="sp.paused() ? 'Play' : 'Pause'">
+              {{ sp.paused() ? '▶' : '⏸' }}
+            </button>
+            <button (click)="sp.next()" aria-label="Next">⏭</button>
+          </div>
+          <div
+            class="mini-bar"
+            role="slider"
+            [attr.aria-valuenow]="pct()"
+            aria-valuemin="0"
+            aria-valuemax="100"
+            aria-label="Seek"
+            (pointerdown)="seek($event)"
+          >
+            <div class="mini-fill" [style.width.%]="pct()"></div>
+          </div>
+        }
+      </div>
+    } @else {
     <div class="np">
       @if (!sp.configured()) {
         <p class="hint">Add a Spotify Client ID in <code>spotify.config.ts</code> to enable this widget.</p>
       } @else if (!sp.authed()) {
         <div class="connect">
           <div class="logo">♫</div>
-          <button class="btn" (click)="sp.login()">Connect Spotify</button>
+          <button class="btn" (click)="sp.login()">{{ flavor().connect }}</button>
         </div>
       } @else {
         <div class="cover">
@@ -24,7 +62,7 @@ import { SpotifyService } from './spotify/spotify.service';
           }
         </div>
         <div class="meta">
-          <div class="title">{{ sp.track()?.title || 'Nothing playing' }}</div>
+          <div class="title">{{ sp.track()?.title || flavor().nothingPlaying }}</div>
           <div class="artist">{{ sp.track()?.artists || '—' }}</div>
         </div>
 
@@ -73,6 +111,7 @@ import { SpotifyService } from './spotify/spotify.service';
         <button class="logout" (click)="sp.logout()">disconnect</button>
       }
     </div>
+    }
   `,
   styles: [
     `
@@ -109,11 +148,27 @@ import { SpotifyService } from './spotify/spotify.service';
       .badge.on { color: var(--accent); }
       .badge.warn { color: var(--theme-warning, #d8a24a); }
       .logout { align-self: center; color: var(--theme-text-muted); background: none; border: none; font-size: 10px; text-transform: uppercase; letter-spacing: .18em; cursor: pointer; }
+
+      .mini { position: relative; display: flex; align-items: center; gap: 10px; height: 100%; padding-bottom: 4px; }
+      .mini-art { width: 44px; height: 44px; border-radius: 8px; object-fit: cover; flex: none; box-shadow: 0 4px 12px rgba(0, 0, 0, .4); }
+      .mini-art.empty { display: grid; place-items: center; background: var(--theme-surface-soft); color: var(--accent); font-size: 20px; }
+      .mini-meta { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+      .mini-title { color: var(--theme-text); font-size: 13px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .mini-title.muted { color: var(--theme-text-muted); font-weight: 400; }
+      .mini-artist { color: var(--theme-text-muted); font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .mini-ctrls { flex: none; display: flex; align-items: center; gap: 6px; }
+      .mini-ctrls button { background: none; border: none; color: var(--theme-text); font-size: 14px; cursor: pointer; line-height: 1; }
+      .mini-ctrls .mini-play { color: var(--accent); font-size: 18px; }
+      .mini-bar { position: absolute; left: 0; right: 0; bottom: 0; height: 3px; border-radius: 999px; background: var(--theme-surface-soft); cursor: pointer; overflow: hidden; }
+      .mini-fill { height: 100%; background: var(--accent); border-radius: 999px; }
     `,
   ],
 })
 export class SpotifyWidget {
   readonly sp = inject(SpotifyService);
+  private readonly settings = inject(SettingsService);
+  readonly collapsed = input(false);
+  readonly flavor = computed(() => themeFlavor(this.settings.theme()));
 
   readonly pct = computed(() => {
     const d = this.sp.track()?.durationMs ?? 0;

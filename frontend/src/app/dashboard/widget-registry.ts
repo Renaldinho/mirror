@@ -94,3 +94,9 @@ export const WIDGETS: WidgetMeta[] = [
 export const WIDGET_META: Record<WidgetType, WidgetMeta> = Object.fromEntries(
   WIDGETS.map((widget) => [widget.type, widget]),
 ) as Record<WidgetType, WidgetMeta>;
+
+/**
+ * Widgets that render a compact "mini" view when collapsed instead of hiding
+ * their body entirely — a glanceable now-playing bar / current lyric line.
+ */
+export const MINI_COLLAPSE = new Set<WidgetType>(['spotify', 'lyrics']);

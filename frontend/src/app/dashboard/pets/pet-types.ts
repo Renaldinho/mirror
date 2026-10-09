@@ -15,6 +15,8 @@ export interface PetContext {
   fetch: FetchIntent | null;
   /** Companion energy 0..1 — biases which existing states run (tired vs lively). */
   energy: number;
+  /** Spotify has an actively playing track. */
+  musicPlaying: boolean;
   /** Optional cozy furniture and its activity anchors. */
   cozy?: CozySnapshot;
 }
@@ -41,6 +43,8 @@ export type PetDirection = 'up' | 'down' | 'left' | 'right';
 
 /** One animation strip inside a fixed-grid sprite sheet. */
 export interface PetSpriteAnimation {
+  /** Optional dedicated atlas for actions such as dancing. */
+  sheet?: PetSpriteSheet;
   /** Zero-based sheet row. */
   row: number;
   /** Number of populated frames in the row. */

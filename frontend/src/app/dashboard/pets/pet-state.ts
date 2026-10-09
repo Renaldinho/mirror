@@ -64,6 +64,24 @@ export class CuriousState extends PetState {
   }
 }
 
+/** Play the dedicated dance atlas in place while music plays. */
+export class DanceState extends PetState {
+  readonly name = 'dance';
+
+  override enter(pet: Pet): void {
+    pet.direction = 'down';
+  }
+
+  protected tick(pet: Pet, ctx: PetContext): PetState | null {
+    pet.clampPosition(ctx);
+    return ctx.musicPlaying ? null : pet.newRest();
+  }
+
+  pose(): PetPose {
+    return { bubble: '♫' };
+  }
+}
+
 /** Wander toward a stable point in the two-dimensional desktop space. */
 export class WalkState extends PetState {
   readonly name = 'walk';
@@ -97,7 +115,7 @@ export class WalkState extends PetState {
   }
 }
 
-/** Use the dedicated curled-up sleep strip and remain asleep while dimmed. */
+/** Use the dedicated curled-up sleep strip for a timed nap. */
 export class SleepState extends PetState {
   override readonly activity = 'sleep' as const;
   private target: CozyActivityAnchor | null;

@@ -16,6 +16,7 @@ import { PET_SIZE } from './pets/pet-state';
 import { PetContext } from './pets/pet-types';
 import { PetCozyService } from './pets/pet-cozy.service';
 import { UiIcon } from '../shared/ui-icon';
+import { SpotifyService } from '../widgets/spotify/spotify.service';
 
 /**
  * Thin view layer for the pet domain: builds the current Pet from the selected
@@ -132,6 +133,8 @@ export class PetRenderer implements AfterViewInit {
   private readonly pets = inject(PetService);
   private readonly mood = inject(PetMoodService);
   private readonly cozy = inject(PetCozyService);
+  private readonly spotify = inject(SpotifyService);
+  private readonly reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)');
   private readonly destroyRef = inject(DestroyRef);
 
   private readonly rootRef = viewChild.required<ElementRef<HTMLElement>>('root');
@@ -370,6 +373,8 @@ export class PetRenderer implements AfterViewInit {
       },
       fetch: null,
       energy: this.mood.energy() / 100,
+      musicPlaying: this.spotify.authed() && !!this.spotify.track()
+        && !this.spotify.paused() && !this.reducedMotion?.matches,
       cozy,
     };
 

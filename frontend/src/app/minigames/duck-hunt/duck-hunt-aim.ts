@@ -15,6 +15,12 @@ export class DuckHuntAim {
   private width = 1;
   private height = 1;
   private hasPointer = false;
+  private handicap = 1;
+
+  setHandicap(strength: number): void {
+    this.handicap = strength;
+    this.offsetX = this.offsetY = 0;
+  }
 
   setBounds(width: number, height: number): void {
     this.width = Math.max(1, width);
@@ -29,15 +35,16 @@ export class DuckHuntAim {
   setRawPointer(x: number, y: number): void {
     this.rawX = x;
     this.rawY = y;
-    if (!this.hasPointer) {
+    if (!this.hasPointer || this.handicap === 0) {
       this.scopeX = x;
       this.scopeY = y;
       this.hasPointer = true;
+      this.clampScope();
     }
   }
 
   beginWave(round: number, random: () => number = Math.random): void {
-    const magnitude = Math.min(105, 45 + Math.max(0, round - 1) * 4 + random() * 20);
+    const magnitude = this.handicap * Math.min(105, 45 + Math.max(0, round - 1) * 4 + random() * 20);
     const angle = random() * Math.PI * 2;
     this.offsetX = Math.cos(angle) * magnitude;
     this.offsetY = Math.sin(angle) * magnitude;
@@ -46,12 +53,19 @@ export class DuckHuntAim {
 
   update(dt: number, elapsed: number, round: number): void {
     if (dt <= 0) return;
+    if (this.handicap === 0) {
+      this.scopeX = this.rawX;
+      this.scopeY = this.rawY;
+      this.clampScope();
+      return;
+    }
     // Sway wobbles the scope more each round; the follow lag also grows so the
     // scope trails the mouse — both make holding a small target genuinely hard.
-    const sway = Math.min(24, 6 + Math.max(0, round - 1) * 1.8);
+    const sway = this.handicap * Math.min(24, 6 + Math.max(0, round - 1) * 1.8);
     const targetX = this.rawX + this.offsetX + Math.sin(elapsed * 1.9 + this.phase) * sway;
     const targetY = this.rawY + this.offsetY + Math.cos(elapsed * 1.5 + this.phase * 1.31) * sway * .8;
-    const followRate = Math.max(4.5, 9 - Math.max(0, round - 1) * 0.5);
+    const followRate = 24 * (1 - this.handicap)
+      + this.handicap * Math.max(4.5, 9 - Math.max(0, round - 1) * 0.5);
     const follow = 1 - Math.exp(-dt * followRate);
     this.scopeX += (targetX - this.scopeX) * follow;
     this.scopeY += (targetY - this.scopeY) * follow;

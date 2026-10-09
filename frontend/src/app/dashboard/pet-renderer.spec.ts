@@ -4,6 +4,7 @@ import { vi } from 'vitest';
 import { PetRenderer } from './pet-renderer';
 import { PetService } from './pet.service';
 import { PetMoodService } from './pets/pet-mood.service';
+import { SpotifyService } from '../widgets/spotify/spotify.service';
 
 describe('pet rendering', () => {
   afterEach(() => {
@@ -20,11 +21,13 @@ describe('pet rendering', () => {
     }));
     const cancel = vi.fn();
     vi.stubGlobal('cancelAnimationFrame', cancel);
+    const spotify = { authed: signal(true), track: signal({ id: 'test' }), paused: signal(true) };
     TestBed.configureTestingModule({
       imports: [PetRenderer],
       providers: [
         { provide: PetService, useValue: { petId: signal('capy') } },
         { provide: PetMoodService, useValue: { energy: signal(70), name: signal(''), feed: vi.fn() } },
+        { provide: SpotifyService, useValue: spotify },
       ],
     });
     const fixture = TestBed.createComponent(PetRenderer);
@@ -43,6 +46,18 @@ describe('pet rendering', () => {
     expect(food.style.transform).toBe(`translate(${300 - x - 12}px, ${200 - y - 12}px)`);
     expect(food.style.left).toBe('');
     expect(food.style.top).toBe('');
+    spotify.paused.set(false);
+    frame(1300);
+    expect(fixture.nativeElement.querySelector('.bubble').textContent).toBe('♫');
+    const visual = fixture.nativeElement.querySelector('.visual') as HTMLElement;
+    expect(visual.classList.contains('pet-sprite-capy-dance')).toBe(true);
+    expect(visual.style.backgroundSize).toBe('320px 640px');
+    const geometry = [visual.style.width, visual.style.height, visual.style.top];
+    frame(1500);
+    expect([visual.style.width, visual.style.height, visual.style.top]).toEqual(geometry);
+    spotify.paused.set(true);
+    frame(1600);
+    expect(fixture.nativeElement.querySelector('.bubble').textContent).toBe('');
     fixture.destroy();
     expect(cancel).toHaveBeenCalledWith(1);
   });

@@ -24,7 +24,8 @@ import {
   EFFECT_FRAMES,
 } from './duck-hunt-assets';
 
-type Phase = 'ready' | 'round' | 'gameover';
+type Phase = 'setup' | 'ready' | 'round' | 'gameover';
+type Difficulty = 'easy' | 'normal' | 'hard';
 type DuckPhase = 'fly' | 'hit' | 'fall' | 'flee' | 'gone';
 type AtlasSource = HTMLImageElement | HTMLCanvasElement;
 
@@ -65,19 +66,30 @@ interface LoadedArt {
 const DUCK_SIZE = 108;
 const DOG_SIZE = 132;
 const HIT_RADIUS = 34;
-const FLIGHT_TIME = 4.2;
 const MISS_CAP = 10;
 const WAVES_PER_ROUND = 6;
+const DIFFICULTIES = {
+  easy: { label: 'Easy', description: 'Controller friendly: direct aim, slower ducks, bigger targets.',
+    speed: .55, maxSpeed: 100, hitRadius: 56, flightTime: 9, ducks: 1, handicap: 0 },
+  normal: { label: 'Normal', description: 'Faster ducks with a little scope drift.',
+    speed: .8, maxSpeed: 220, hitRadius: 40, flightTime: 6.5, ducks: 2, handicap: .3 },
+  hard: { label: 'Hard', description: 'Original challenge: fast ducks, scope drift and precise aim.',
+    speed: 1, maxSpeed: Infinity, hitRadius: 0, flightTime: 4.2, ducks: 3, handicap: 1 },
+} as const;
 
 /** Themed light-gun game with generated pixel art and a deliberately offset aim model. */
 @Component({
   selector: 'app-duck-hunt',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    '[style.cursor]': "phase() === 'round' || phase() === 'ready' ? 'none' : 'auto'",
+  },
   template: `
     <div class="wrap">
       <canvas #canvas></canvas>
 
       <div class="hud">
+        <span class="chip">{{ mode.label }}</span>
         <span class="chip">Round {{ round() }}</span>
         <span class="chip">Score {{ score() }}</span>
         <span class="chip">Hi {{ games.highScore('duck-hunt') }}</span>
@@ -107,18 +119,27 @@ const WAVES_PER_ROUND = 6;
         <div class="banner"><span>Round {{ round() }}</span><small>calibrating scope…</small></div>
       }
 
-      @if (phase() === 'gameover') {
+      @if (assetsReady() && (phase() === 'setup' || phase() === 'gameover')) {
         <div class="over">
-          <h2>Game Over</h2>
-          <p>Score {{ score() }} @if (record()) { <em>· new record!</em> }</p>
-          <button (click)="restart()">Play again</button>
+          <h2>{{ phase() === 'gameover' ? 'Game Over' : 'Duck Hunt' }}</h2>
+          @if (phase() === 'gameover') {
+            <p>Score {{ score() }} @if (record()) { <em>· new record!</em> }</p>
+          }
+          <div class="difficulties" role="group" aria-label="Difficulty">
+            @for (level of levels; track level) {
+              <button type="button" [attr.aria-pressed]="difficulty() === level"
+                (click)="selectDifficulty(level)">{{ difficulties[level].label }}</button>
+            }
+          </div>
+          <p class="difficulty-description">{{ mode.description }}</p>
+          <button type="button" (click)="restart()">{{ phase() === 'gameover' ? 'Play again' : 'Start game' }}</button>
         </div>
       }
     </div>
   `,
   styles: [
     `
-      :host { display: block; width: 100%; height: 100%; cursor: none; }
+      :host { display: block; width: 100%; height: 100%; }
       .wrap { position: relative; width: 100%; height: 100%; overflow: hidden; background: #020306; }
       canvas { display: block; width: 100%; height: 100%; image-rendering: pixelated; }
       .hud {
@@ -186,6 +207,7 @@ const WAVES_PER_ROUND = 6;
       .over h2 { margin: 0; font: 700 40px/1 var(--theme-font-display); }
       .over em { color: #ffd76a; font-style: normal; }
       .over button {
+        min-height: 44px;
         margin-top: 10px;
         padding: 9px 18px;
         border: 1px solid var(--theme-border-strong);
@@ -195,6 +217,9 @@ const WAVES_PER_ROUND = 6;
         font: 600 14px/1 var(--theme-font-body);
         cursor: pointer;
       }
+      .difficulties { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+      .difficulties button[aria-pressed='true'] { border-color: #ffd76a; color: #ffd76a; }
+      .difficulty-description { max-width: 32ch; padding: 0 16px; line-height: 1.5; }
       @media (orientation: portrait) {
         .hud { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
           gap: clamp(6px, 1.5vw, 16px); }
@@ -212,7 +237,10 @@ export class DuckHunt implements AfterViewInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly canvasRef = viewChild.required<ElementRef<HTMLCanvasElement>>('canvas');
 
-  readonly phase = signal<Phase>('ready');
+  readonly phase = signal<Phase>('setup');
+  readonly difficulties = DIFFICULTIES;
+  readonly levels: readonly Difficulty[] = ['easy', 'normal', 'hard'];
+  readonly difficulty = signal<Difficulty>(this.loadDifficulty());
   readonly assetsReady = signal(false);
   readonly round = signal(1);
   readonly score = signal(0);
@@ -245,6 +273,18 @@ export class DuckHunt implements AfterViewInit {
     return DUCK_HUNT_THEME_STYLES[this.settings.theme()];
   }
 
+  get mode() { return DIFFICULTIES[this.difficulty()]; }
+
+  selectDifficulty(level: Difficulty): void {
+    this.difficulty.set(level);
+    localStorage.setItem('dash.duck-hunt.difficulty', level);
+  }
+
+  private loadDifficulty(): Difficulty {
+    const stored = localStorage.getItem('dash.duck-hunt.difficulty');
+    return stored === 'normal' || stored === 'hard' ? stored : 'easy';
+  }
+
   ngAfterViewInit(): void {
     const canvas = this.canvasRef().nativeElement;
     this.ctx = canvas.getContext('2d')!;
@@ -267,7 +307,7 @@ export class DuckHunt implements AfterViewInit {
     observer.observe(canvas);
 
     const onMove = (event: PointerEvent) => {
-      this.games.gameCursorSuppressed.set(true);
+      this.games.gameCursorSuppressed.set(this.phase() === 'round' || this.phase() === 'ready');
       const rect = canvas.getBoundingClientRect();
       this.aim.setRawPointer(event.clientX - rect.left, event.clientY - rect.top);
     };
@@ -275,7 +315,7 @@ export class DuckHunt implements AfterViewInit {
       onMove(event);
       this.shoot();
     };
-    const onEnter = () => this.games.gameCursorSuppressed.set(true);
+    const onEnter = () => this.games.gameCursorSuppressed.set(this.phase() === 'round' || this.phase() === 'ready');
     const onLeave = () => this.games.gameCursorSuppressed.set(false);
     canvas.addEventListener('pointerenter', onEnter);
     canvas.addEventListener('pointermove', onMove);
@@ -305,6 +345,7 @@ export class DuckHunt implements AfterViewInit {
   }
 
   restart(): void {
+    this.aim.setHandicap(this.mode.handicap);
     this.ducks = [];
     this.impacts = [];
     this.shotFx = null;
@@ -313,6 +354,7 @@ export class DuckHunt implements AfterViewInit {
     this.round.set(1);
     this.record.set(false);
     this.waveInRound = 0;
+    this.spawnDelay = 0;
     this.elapsed = 0;
     this.enterReady();
   }
@@ -334,7 +376,6 @@ export class DuckHunt implements AfterViewInit {
       effects,
     };
     this.assetsReady.set(true);
-    this.enterReady();
   }
 
   private loadImage(source: string): Promise<HTMLImageElement | null> {
@@ -369,16 +410,18 @@ export class DuckHunt implements AfterViewInit {
   }
 
   private speed(): number {
-    return 90 + this.round() * 16 + Math.min(150, this.elapsed * 2);
+    return Math.min(this.mode.maxSpeed,
+      (90 + this.round() * 16 + Math.min(150, this.elapsed * 2)) * this.mode.speed);
   }
 
   /** Shrinks with rounds + time survived, so precise aim matters more and more. */
   private hitRadius(): number {
+    if (this.mode.hitRadius) return this.mode.hitRadius;
     return Math.max(13, HIT_RADIUS - 8 - (this.round() - 1) * 1.6 - Math.min(6, this.elapsed * 0.1));
   }
 
   private concurrent(): number {
-    return Math.min(1 + Math.floor((this.round() - 1) / 3), 3);
+    return Math.min(1 + Math.floor((this.round() - 1) / 3), this.mode.ducks);
   }
 
   private spawnWave(): void {
@@ -433,6 +476,7 @@ export class DuckHunt implements AfterViewInit {
 
   private update(dt: number): void {
     if (dt === 0 || !this.assetsReady()) return;
+    if (this.phase() === 'setup') return;
     if (this.phase() !== 'gameover') this.elapsed += dt;
     this.aim.update(dt, this.elapsed, this.round());
     this.updateEffects(dt);
@@ -485,7 +529,7 @@ export class DuckHunt implements AfterViewInit {
     duck.t += dt;
     if (duck.phase === 'fly') {
       // Evasive jitter grows with the round so the flight path gets twitchy.
-      duck.vy += (Math.random() - 0.5) * (40 + this.round() * 22) * dt;
+      duck.vy += (Math.random() - 0.5) * (40 + this.round() * 22) * this.mode.handicap * dt;
       duck.vy = Math.max(-170, Math.min(170, duck.vy));
       duck.x += duck.vx * dt;
       duck.y += duck.vy * dt;
@@ -496,7 +540,7 @@ export class DuckHunt implements AfterViewInit {
       if (duck.y > this.groundY - 45) duck.vy = -Math.abs(duck.vy);
       if (duck.x < 24) { duck.x = 24; duck.vx = Math.abs(duck.vx); }
       if (duck.x > this.w - 24) { duck.x = this.w - 24; duck.vx = -Math.abs(duck.vx); }
-      if (duck.t > FLIGHT_TIME) this.flee(duck);
+      if (duck.t > this.mode.flightTime) this.flee(duck);
     } else if (duck.phase === 'hit' && duck.t > .16) {
       duck.phase = 'fall';
       duck.t = 0;
@@ -524,6 +568,7 @@ export class DuckHunt implements AfterViewInit {
 
   private gameOver(): void {
     this.phase.set('gameover');
+    this.games.gameCursorSuppressed.set(false);
     this.sfx.play('gameover');
     this.record.set(this.games.submitScore('duck-hunt', this.score()));
   }
@@ -550,7 +595,7 @@ export class DuckHunt implements AfterViewInit {
     for (const duck of this.ducks) this.drawDuck(context, duck);
     this.drawDog(context);
     this.drawEffects(context);
-    if (this.phase() !== 'gameover') this.drawCrosshair(context);
+    if (this.phase() === 'round' || this.phase() === 'ready') this.drawCrosshair(context);
   }
 
   private drawEnvironment(context: CanvasRenderingContext2D): void {

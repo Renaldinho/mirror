@@ -38,6 +38,17 @@ const COMMON_ANIMATIONS: Readonly<Record<string, PetSpriteAnimation>> = {
 };
 
 function sheet(cssClass: string): PetSpriteSheet {
+  const danceSheet: PetSpriteSheet = {
+    cssClass: `${cssClass}-dance`,
+    columns: 4,
+    rows: 8,
+    frameWidth: 128,
+    frameHeight: 128,
+    displayWidth: 80,
+    displayHeight: 80,
+    animations: {},
+    reactions: [],
+  };
   return {
     cssClass,
     columns: 4,
@@ -46,7 +57,10 @@ function sheet(cssClass: string): PetSpriteSheet {
     frameHeight: 128,
     displayWidth: 80,
     displayHeight: 80,
-    animations: COMMON_ANIMATIONS,
+    animations: {
+      ...COMMON_ANIMATIONS,
+      dance: { sheet: danceSheet, row: 0, rowSequence: [0, 1, 2, 3, 4, 5, 6, 7], frames: 32, fps: 5 },
+    },
     reactions: [HAPPY],
   };
 }

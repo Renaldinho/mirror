@@ -9,7 +9,7 @@ import { WeatherWidget } from '../widgets/weather';
 import { CornerFlourish } from './corner-flourish';
 import { SpecimenArt } from './specimen-art';
 import { DashboardService, SCALE_STEPS, WidgetInstance } from './dashboard.service';
-import { WIDGET_META } from './widget-registry';
+import { MINI_COLLAPSE, WIDGET_META } from './widget-registry';
 import { SettingsService } from './settings.service';
 import { UiIcon } from '../shared/ui-icon';
 import { DisplayService } from './display.service';
@@ -45,7 +45,7 @@ import { DisplayService } from './display.service';
       class="anchor absolute"
       [class.portrait]="display.portrait()"
       [style.width.px]="display.portrait() ? layout().width * displayScale() : null"
-      [style.height.px]="display.portrait() ? (widget().collapsed ? 46 : layout().height) * displayScale() : null"
+      [style.height.px]="display.portrait() ? portraitHeight() * displayScale() : null"
       [cdkDragFreeDragPosition]="display.portrait() ? { x: 0, y: 0 } : { x: widget().x, y: widget().y }"
       [cdkDragDisabled]="display.portrait() || widget().pinned"
       (cdkDragEnded)="onDragEnded($event)"
@@ -53,6 +53,7 @@ import { DisplayService } from './display.service';
       <div
         class="plate group flex flex-col"
         [class.is-collapsed]="widget().collapsed"
+        [class.has-mini]="hasMini()"
         [attr.data-widget]="widget().type"
         [attr.data-variant]="layout().id"
         [style.--accent]="meta().accent"
@@ -75,7 +76,7 @@ import { DisplayService } from './display.service';
           cdkDragHandle
           class="crown relative z-10"
           [class.cursor-move]="!display.portrait() && !widget().pinned"
-          (dblclick)="dash.toggleCollapse(widget().type)"
+          (dblclick)="onCrownDblClick()"
         >
           @if (!display.portrait() && !widget().pinned) {
             <span class="grip" aria-hidden="true" title="Drag to move"><app-ui-icon name="grip" /></span>
@@ -85,7 +86,7 @@ import { DisplayService } from './display.service';
           } @else {
             <span class="theme-emblem" aria-hidden="true"><app-ui-icon [name]="meta().icon" /></span>
           }
-          @if (widget().collapsed) {
+          @if (widget().collapsed && !hasMini()) {
             <span class="crown-name">{{ meta().label }}</span>
           }
           <div class="controls" (dblclick)="$event.stopPropagation()">
@@ -110,14 +111,16 @@ import { DisplayService } from './display.service';
                 +
               </button>
             </span>
-            <button
-              class="text-parchment-dim hover:text-cap"
-              [title]="widget().collapsed ? 'Expand' : 'Collapse'"
-              [attr.aria-label]="(widget().collapsed ? 'Expand ' : 'Collapse ') + meta().label"
-              (click)="dash.toggleCollapse(widget().type)"
-            >
-              <app-ui-icon [name]="widget().collapsed ? 'chevron-right' : 'chevron-down'" />
-            </button>
+            @if (canCollapse() || widget().collapsed) {
+              <button
+                class="text-parchment-dim hover:text-cap"
+                [title]="widget().collapsed ? 'Expand' : 'Collapse'"
+                [attr.aria-label]="(widget().collapsed ? 'Expand ' : 'Collapse ') + meta().label"
+                (click)="dash.toggleCollapse(widget().type)"
+              >
+                <app-ui-icon [name]="widget().collapsed ? 'chevron-right' : 'chevron-down'" />
+              </button>
+            }
             @if (meta().layouts.length > 1) {
               <button
                 class="text-parchment-dim hover:text-cap"
@@ -151,8 +154,8 @@ import { DisplayService } from './display.service';
             @case ('weather') { <app-weather [variant]="layout().id" /> }
             @case ('quote') { <app-quote /> }
             @case ('notes') { <app-notes /> }
-            @case ('spotify') { <app-spotify /> }
-            @case ('lyrics') { <app-lyrics /> }
+            @case ('spotify') { <app-spotify [collapsed]="widget().collapsed" /> }
+            @case ('lyrics') { <app-lyrics [collapsed]="widget().collapsed" /> }
           }
         </div>
 
@@ -189,11 +192,26 @@ import { DisplayService } from './display.service';
         font-family: var(--theme-font-body);
         transition: border-radius .35s ease, background .35s ease, border-color .25s ease,
           box-shadow .35s ease, height .3s ease;
+        /* Gentle entrance. Opacity only — the inline scale owns transform. */
+        animation: plate-in .4s ease both;
       }
-      .plate.is-collapsed .widget-body,
+      @keyframes plate-in { from { opacity: 0; } to { opacity: 1; } }
+      /* Hover lift reads through shadow + border rather than transform. */
+      .plate:hover {
+        border-color: color-mix(in srgb, var(--accent) 45%, var(--frame-border));
+        box-shadow: var(--frame-shadow), 0 10px 30px color-mix(in srgb, var(--accent) 22%, transparent);
+      }
       .plate.is-collapsed .label,
       .plate.is-collapsed .watermark {
         display: none;
+      }
+      /* Most widgets hide their body entirely; mini-capable ones keep a
+         compact view (see .plate.has-mini). */
+      .plate.is-collapsed:not(.has-mini) .widget-body {
+        display: none;
+      }
+      .plate.is-collapsed.has-mini .widget-body {
+        padding-bottom: 8px;
       }
       .plate.is-collapsed .crown {
         height: auto;
@@ -365,9 +383,25 @@ export class WidgetFrame {
     const base = Math.min(3, width / 360, height / 360);
     return Math.min(base * this.widget().scale, width / this.layout().width, height / this.layout().height);
   });
+  /** Collapsing only makes sense where it still shows something (a mini view). */
+  readonly canCollapse = computed(() => MINI_COLLAPSE.has(this.widget().type));
+  /** True once the widget is collapsed AND its type renders a compact view. */
+  readonly hasMini = computed(() => this.widget().collapsed && MINI_COLLAPSE.has(this.widget().type));
+  /** Portrait rows size to a crown (46) or a taller mini player (108) when collapsed. */
+  readonly portraitHeight = computed(() => {
+    if (!this.widget().collapsed) return this.layout().height;
+    return MINI_COLLAPSE.has(this.widget().type) ? 108 : 46;
+  });
   readonly scalePercent = computed(() => Math.round(this.displayScale() * 100));
   readonly atMinScale = computed(() => this.widget().scale <= SCALE_STEPS[0]);
   readonly atMaxScale = computed(() => this.widget().scale >= SCALE_STEPS[SCALE_STEPS.length - 1]);
+
+  /** Double-click collapses only when meaningful; always allows re-expanding. */
+  onCrownDblClick(): void {
+    if (this.canCollapse() || this.widget().collapsed) {
+      this.dash.toggleCollapse(this.widget().type);
+    }
+  }
 
   onDragEnded(event: CdkDragEnd): void {
     const p = event.source.getFreeDragPosition();

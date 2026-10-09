@@ -20,11 +20,58 @@ function context(overrides: Partial<PetContext> = {}): PetContext {
     pointer: { x: 500, y: 300, active: false },
     fetch: null,
     energy: .8,
+    musicPlaying: false,
     ...overrides,
   };
 }
 
 describe('desktop pet actions', () => {
+  it('loops all 32 dedicated dance frames for every pet and stops when music pauses', () => {
+    for (const info of PET_CATALOG) {
+      const pet = createPet(info.id)!;
+      const playing = context({ dt: .2, musicPlaying: true });
+      pet.update(playing);
+      expect(pet.stateName).toBe('dance');
+      expect(pet.view().sprite.sheet.cssClass).toBe(`${info.sprite.cssClass}-dance`);
+      expect(pet.view().bubble).toBe('♫');
+      const cells = new Set<string>();
+      for (let index = 0; index < 32; index++) {
+        const { row, column } = pet.view().sprite;
+        cells.add(`${row}:${column}`);
+        pet.update(playing);
+      }
+      expect(cells.size).toBe(32);
+      expect(pet.stateName).toBe('dance');
+      expect(pet.view().sprite.column).toBeLessThan(4);
+      pet.update(context({ dt: .01, musicPlaying: false }));
+      expect(pet.stateName).toBe('rest');
+      expect(pet.view().sprite.sheet).toBe(info.sprite);
+      expect(pet.view().bubble).toBeNull();
+    }
+  });
+
+  it('lets feeding, dragging and fetch interrupt the dance', () => {
+    const pet = new CapyPet();
+    const playing = context({ dt: .1, musicPlaying: true });
+    pet.update(playing);
+    pet.feed();
+    pet.update(playing);
+    expect(pet.stateName).toBe('eat');
+    for (let index = 0; index < 20; index++) pet.update(playing);
+    expect(pet.stateName).toBe('dance');
+    pet.setHeld(true);
+    pet.update(playing);
+    expect(pet.stateName).toBe('held');
+    pet.setHeld(false);
+    pet.update(playing);
+    expect(pet.stateName).toBe('dance');
+    pet.update(context({ dt: .1, musicPlaying: true,
+      fetch: { mode: 'chase', targetX: 800, targetY: 400, speed: 100 } }));
+    expect(pet.stateName).toBe('fetch');
+    pet.update(playing);
+    expect(pet.stateName).toBe('dance');
+  });
+
   it('registers every companion in both the picker catalog and factory', () => {
     expect(PET_CATALOG.map((pet) => pet.id)).toEqual([
       'capy',

@@ -5,11 +5,14 @@ import {
   computed,
   effect,
   inject,
+  input,
   signal,
   viewChild,
 } from '@angular/core';
 import { LrcLibResult, LyricLine, parseLrc } from './spotify/lrc';
 import { SpotifyService } from './spotify/spotify.service';
+import { SettingsService } from '../dashboard/settings.service';
+import { themeFlavor } from '../dashboard/theme-flavor';
 
 type LyricsState = 'idle' | 'loading' | 'synced' | 'plain' | 'none';
 
@@ -18,6 +21,9 @@ type LyricsState = 'idle' | 'loading' | 'synced' | 'plain' | 'none';
   selector: 'app-lyrics',
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
+    @if (collapsed()) {
+      <div class="mini"><span class="mini-line">{{ miniText() }}</span></div>
+    } @else {
     <div class="lyrics">
       @if (!sp.authed()) {
         <p class="hint">Connect Spotify in the Now Playing widget to see lyrics.</p>
@@ -26,7 +32,7 @@ type LyricsState = 'idle' | 'loading' | 'synced' | 'plain' | 'none';
       } @else if (state() === 'loading') {
         <p class="hint">Finding lyrics…</p>
       } @else if (state() === 'none') {
-        <p class="hint">No lyrics found for this track.</p>
+        <p class="hint">{{ flavor().noLyrics }}</p>
       } @else if (state() === 'plain') {
         <pre class="plain">{{ plain() }}</pre>
       } @else {
@@ -39,6 +45,7 @@ type LyricsState = 'idle' | 'loading' | 'synced' | 'plain' | 'none';
         </div>
       }
     </div>
+    }
   `,
   styles: [
     `
@@ -51,11 +58,16 @@ type LyricsState = 'idle' | 'loading' | 'synced' | 'plain' | 'none';
       .line { margin: 6px 0; font: 500 15px/1.35 var(--theme-font-display); color: var(--theme-text-muted); opacity: 0.5; transition: color 0.25s ease, opacity 0.25s ease, transform 0.25s ease; }
       .line.past { opacity: 0.32; }
       .line.active { color: var(--accent); opacity: 1; transform: scale(1.05); }
+      .mini { display: grid; place-items: center; height: 100%; padding: 0 8px; }
+      .mini-line { color: var(--accent); font: 500 14px/1.3 var(--theme-font-display); text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
     `,
   ],
 })
 export class LyricsWidget {
   readonly sp = inject(SpotifyService);
+  private readonly settings = inject(SettingsService);
+  readonly collapsed = input(false);
+  readonly flavor = computed(() => themeFlavor(this.settings.theme()));
   private readonly scrollRef = viewChild<ElementRef<HTMLElement>>('scroll');
 
   readonly lines = signal<LyricLine[]>([]);
@@ -73,6 +85,18 @@ export class LyricsWidget {
       else break;
     }
     return index;
+  });
+
+  /** One-line summary for the collapsed mini view: the current synced line. */
+  readonly miniText = computed(() => {
+    if (!this.sp.authed() || !this.sp.track()) return '';
+    switch (this.state()) {
+      case 'loading': return 'Finding lyrics…';
+      case 'none': return this.flavor().noLyrics;
+      case 'synced': return this.lines()[this.activeIndex()]?.text || '♪';
+      case 'plain': return '♪';
+      default: return '';
+    }
   });
 
   constructor() {

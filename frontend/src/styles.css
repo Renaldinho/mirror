@@ -489,9 +489,11 @@
   inset: 7px;
   opacity: .28;
 }
-[data-theme='bare'] app-widget-frame .plate::after,
-[data-theme='bare'] app-widget-frame .flourish {
+[data-theme='bare'] app-widget-frame .plate::after {
   display: none;
+}
+[data-theme='bare'] app-widget-frame .flourish {
+  opacity: 0.32;
 }
 [data-theme='bare'] app-widget-frame .common {
   letter-spacing: .2em;
@@ -577,6 +579,72 @@
   box-shadow: 0 0 16px var(--accent);
 }
 
+/* ── Per-theme ambient board wash. Static gradients only (no animation /
+   full-screen filters — see the 4K fill-rate note below). Sits beneath the
+   code rain, so it reads on its own when the rain is off and recedes when on. */
+[data-theme='bare'] .board-surface {
+  background: radial-gradient(120% 85% at 50% -10%, rgba(201, 155, 88, 0.05), transparent 60%), #000;
+}
+[data-theme='mushroom'] .board-surface {
+  background:
+    radial-gradient(90% 70% at 18% 0%, rgba(124, 138, 82, 0.1), transparent 55%),
+    radial-gradient(80% 60% at 85% 100%, rgba(162, 80, 59, 0.08), transparent 60%),
+    #050604;
+}
+[data-theme='occult'] .board-surface {
+  background:
+    radial-gradient(70% 55% at 50% 115%, rgba(163, 19, 44, 0.18), transparent 60%),
+    radial-gradient(130% 130% at 50% 45%, transparent 52%, rgba(0, 0, 0, 0.6)),
+    #030101;
+}
+[data-theme='star-wars'] .board-surface {
+  background:
+    repeating-linear-gradient(0deg, rgba(174, 191, 206, 0.035) 0 1px, transparent 1px 42px),
+    repeating-linear-gradient(90deg, rgba(174, 191, 206, 0.035) 0 1px, transparent 1px 42px),
+    radial-gradient(100% 100% at 50% 50%, rgba(49, 93, 117, 0.08), transparent 70%),
+    #010205;
+}
+[data-theme='warhammer'] .board-surface {
+  background:
+    radial-gradient(80% 60% at 50% 0%, rgba(169, 133, 72, 0.1), transparent 55%),
+    radial-gradient(130% 130% at 50% 50%, transparent 48%, rgba(0, 0, 0, 0.66)),
+    #020201;
+}
+[data-theme='pinkie'] .board-surface {
+  background:
+    radial-gradient(70% 60% at 15% 10%, rgba(255, 143, 202, 0.14), transparent 55%),
+    radial-gradient(70% 60% at 85% 92%, rgba(190, 141, 224, 0.14), transparent 55%),
+    #120710;
+}
+[data-theme='emo'] .board-surface {
+  background:
+    repeating-linear-gradient(115deg, rgba(132, 107, 137, 0.045) 0 2px, transparent 2px 24px),
+    radial-gradient(130% 130% at 50% 40%, transparent 55%, rgba(0, 0, 0, 0.6)),
+    #030305;
+}
+[data-theme='spooky-gay'] .board-surface {
+  background:
+    radial-gradient(55% 45% at 20% 15%, rgba(224, 88, 165, 0.12), transparent 60%),
+    radial-gradient(55% 45% at 80% 25%, rgba(74, 168, 233, 0.1), transparent 60%),
+    radial-gradient(60% 50% at 50% 100%, rgba(55, 214, 182, 0.1), transparent 60%),
+    #020104;
+}
+
+/* ── Per-theme crown-emblem signature motion. Single small glyph per widget,
+   transform/opacity only (cheap on the 4K mirror); the flourish SVGs stay
+   frozen via the rule further down, and reduced-motion neutralises these. */
+@keyframes emblem-pulse { 0%, 100% { opacity: 0.68; } 50% { opacity: 1; } }
+@keyframes emblem-breathe { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.09); } }
+@keyframes emblem-flicker { 0%, 90%, 100% { opacity: 1; } 93% { opacity: 0.45; } 96% { opacity: 1; } }
+@keyframes emblem-drift { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-2px); } }
+
+[data-theme='occult'] app-widget-frame .theme-emblem { animation: emblem-pulse 6s ease-in-out infinite; }
+[data-theme='warhammer'] app-widget-frame .theme-emblem { animation: emblem-pulse 7s ease-in-out infinite; }
+[data-theme='spooky-gay'] app-widget-frame .theme-emblem { animation: emblem-pulse 5s ease-in-out infinite; }
+[data-theme='pinkie'] app-widget-frame .theme-emblem { animation: emblem-breathe 4s ease-in-out infinite; }
+[data-theme='star-wars'] app-widget-frame .theme-emblem { animation: emblem-flicker 6s steps(1, end) infinite; }
+[data-theme='emo'] app-widget-frame .theme-emblem { animation: emblem-drift 6.5s ease-in-out infinite; }
+
 html,
 body {
   height: 100%;
@@ -649,6 +717,50 @@ app-pet-habitat .tv .detail {
 :where(button, input, textarea, select):disabled {
   cursor: not-allowed;
   opacity: 0.48;
+}
+
+/* Themed range sliders (Spotify volume, etc.). Thumbs inherit --accent from the
+   widget plate, and each theme reshapes the thumb to match its control language. */
+.board-surface input[type='range'] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--theme-surface-hover);
+}
+.board-surface input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--accent, var(--theme-primary));
+  box-shadow: 0 0 6px color-mix(in srgb, var(--accent, var(--theme-primary)) 60%, transparent);
+  cursor: pointer;
+}
+.board-surface input[type='range']::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border: none;
+  border-radius: 50%;
+  background: var(--accent, var(--theme-primary));
+  cursor: pointer;
+}
+[data-theme='star-wars'] .board-surface input[type='range']::-webkit-slider-thumb,
+[data-theme='star-wars'] .board-surface input[type='range']::-moz-range-thumb {
+  width: 10px;
+  height: 14px;
+  border-radius: 0;
+}
+[data-theme='pinkie'] .board-surface input[type='range']::-webkit-slider-thumb {
+  width: 14px;
+  height: 14px;
+  box-shadow: 0 0 8px var(--accent), inset 0 1px 1px rgba(255, 255, 255, 0.7);
+}
+[data-theme='emo'] .board-surface input[type='range']::-webkit-slider-thumb,
+[data-theme='emo'] .board-surface input[type='range']::-moz-range-thumb {
+  width: 10px;
+  height: 10px;
 }
 
 @media (any-pointer: fine) and (prefers-reduced-motion: no-preference) {
@@ -779,4 +891,37 @@ app-widget-frame .plate[data-variant='dial'] .flourish {
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
   }
+}
+
+/* Dedicated 16-frame dance loops, separate from each pet's interaction atlas. */
+.pet-sprite-capy-dance {
+  background-image: url('./app/dashboard/pets/capy/capy-dance-v2.png');
+}
+
+.pet-sprite-collie-dance {
+  background-image: url('./app/dashboard/pets/collie/collie-dance-v2.png');
+}
+
+.pet-sprite-frog-dance {
+  background-image: url('./app/dashboard/pets/frog/frog-dance-v2.png');
+}
+
+.pet-sprite-shadow-cat-dance {
+  background-image: url('./app/dashboard/pets/shadow-cat/shadow-cat-dance-v2.png');
+}
+
+.pet-sprite-ginger-dance {
+  background-image: url('./app/dashboard/pets/ginger/ginger-dance-v2.png');
+}
+
+.pet-sprite-blue-kit-dance {
+  background-image: url('./app/dashboard/pets/blue-kit/blue-kit-dance-v2.png');
+}
+
+.pet-sprite-diplodocus-dance {
+  background-image: url('./app/dashboard/pets/diplodocus/diplodocus-dance-v2.png');
+}
+
+.pet-sprite-pigeon-dance {
+  background-image: url('./app/dashboard/pets/pigeon/pigeon-dance-v2.png');
 }

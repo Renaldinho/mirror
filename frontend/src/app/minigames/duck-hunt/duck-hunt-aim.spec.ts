@@ -1,6 +1,20 @@
 import { DuckHuntAim } from './duck-hunt-aim';
 
 describe('DuckHuntAim', () => {
+  it('keeps controller-friendly aim on the pointer without drift or shot lag', () => {
+    const aim = new DuckHuntAim();
+    aim.setBounds(1000, 700);
+    aim.setHandicap(0);
+    aim.beginWave(99, () => .5);
+    aim.setRawPointer(100, 100);
+    aim.update(.016, 0, 99);
+    aim.setRawPointer(800, 500);
+    expect(aim.point()).toEqual({ x: 800, y: 500 });
+    for (let index = 0; index < 120; index++) aim.update(.016, index, 99);
+    expect(aim.point()).toEqual({ x: 800, y: 500 });
+    expect(Math.hypot(aim.waveOffset().x, aim.waveOffset().y)).toBe(0);
+  });
+
   it('keeps a deterministic offset stable for the whole wave', () => {
     const values = [0, .25, .5];
     const aim = new DuckHuntAim();
