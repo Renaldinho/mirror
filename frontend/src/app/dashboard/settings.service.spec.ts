@@ -17,6 +17,16 @@ describe('SettingsService', () => {
     expect(settings.bgLight()).toBe(LIGHTING_LEVELS.soft);
   });
 
+  it('remembers when the code rain background is disabled', () => {
+    const settings = TestBed.inject(SettingsService);
+    expect(settings.matrixRain()).toBe(true);
+    settings.matrixRain.set(false);
+    TestBed.flushEffects();
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({});
+    expect(TestBed.inject(SettingsService).matrixRain()).toBe(false);
+  });
+
   it('saves ring size independently of theme and brightness', () => {
     const settings = TestBed.inject(SettingsService);
     settings.setRingSize(65);

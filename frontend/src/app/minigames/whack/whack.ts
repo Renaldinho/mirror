@@ -50,25 +50,27 @@ const TICK = 0.1;
     `
       :host { display: block; width: 100%; height: 100%; }
       .wrap { position: relative; display: flex; flex-direction: column; align-items: center;
-        justify-content: center; gap: 18px; width: 100%; height: 100%; }
-      .hud { display: flex; gap: 8px; }
+        justify-content: center; gap: 18px; width: 100%; height: 100%;
+        container-type: size; box-sizing: border-box; padding: clamp(12px, 2vmin, 32px); }
+      .hud { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
       .chip {
         padding: 3px 9px; border-radius: 999px; background: var(--theme-surface-soft);
-        color: var(--theme-text); font: 600 12px/1.4 var(--theme-font-body); letter-spacing: 0.06em;
+        color: var(--theme-text); font: 600 clamp(12px, 1.8vmin, 24px)/1.4 var(--theme-font-body); letter-spacing: 0.06em;
       }
       .time.low { color: #ff8f8f; }
-      .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
-      .grid.dim { filter: blur(2px) brightness(0.6); }
+      .grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
+        width: min(90cqw, 76cqh, 1440px); gap: clamp(8px, 2cqw, 24px); }
+      .grid.dim { opacity: .35; }
       .hole {
         display: grid; place-items: center; overflow: hidden;
-        width: min(20vmin, 116px); height: min(20vmin, 116px);
+        width: 100%; aspect-ratio: 1; min-width: 0;
         border-radius: 50%; cursor: pointer;
         border: 3px solid var(--theme-border-strong);
         background: radial-gradient(circle at 50% 120%, var(--theme-surface-hover), #0000 70%),
           var(--theme-control-bg);
       }
       .mole {
-        font-size: min(12vmin, 68px);
+        font-size: clamp(28px, min(14cqw, 12cqh), 180px);
         transform: translateY(120%);
         transition: transform 0.11s ease;
       }

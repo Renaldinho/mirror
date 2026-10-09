@@ -70,27 +70,29 @@ import { UiIcon } from '../shared/ui-icon';
         display: flex;
         align-items: center;
         gap: 8px;
-        padding: 8px 12px;
+        padding: clamp(8px, 1.5vmin, 20px);
+        flex-shrink: 0;
         border-bottom: 1px solid var(--theme-border);
       }
       .title {
         display: flex;
         align-items: center;
         gap: 6px;
-        font: 600 14px/1 var(--theme-font-display);
+        font: 600 clamp(14px, 2vmin, 28px)/1 var(--theme-font-display);
         letter-spacing: 0.08em;
       }
       .spacer { flex: 1; }
       .chrome-btn {
         display: grid;
-        width: 30px;
-        height: 30px;
+        width: clamp(44px, 5vmin, 72px);
+        height: clamp(44px, 5vmin, 72px);
+        flex-shrink: 0;
         place-items: center;
         border-radius: var(--control-radius);
         border: 1px solid var(--theme-border);
         background: var(--theme-control-bg);
         color: var(--theme-text);
-        font-size: 16px;
+        font-size: clamp(20px, 2.5vmin, 32px);
         cursor: pointer;
       }
       .chrome-btn:hover { background: var(--theme-surface-hover); }
@@ -98,6 +100,10 @@ import { UiIcon } from '../shared/ui-icon';
         position: relative;
         flex: 1;
         min-height: 0;
+      }
+      @media (orientation: portrait) {
+        .frame { inset: max(12px, 2vmin); }
+        .title { letter-spacing: .04em; }
       }
     `,
   ],

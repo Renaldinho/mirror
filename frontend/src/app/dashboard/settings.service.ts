@@ -23,19 +23,19 @@ export const LIGHTING_LEVELS: Record<Exclude<LightingPreset, 'off'>, number> = {
 export const RING_SIZE = { min: 50, max: 90, default: 80 } as const;
 
 /**
- * Board/mirror settings. The screen is pure black with lighting off; when it is
- * on, a neutral white ring lights the glass independently of the widget theme.
+ * Code rain and the white ring light are independent of each other and the widget theme.
  */
 @Injectable({ providedIn: 'root' })
 export class SettingsService {
   private readonly document = inject(DOCUMENT);
 
-  /** White ring light on (false = pure black mirror). */
+  /** White ring light on. */
   readonly bgOn = signal(this.loadBool('dash.bg.on', true));
   /** White ring brightness, 0–100. */
   readonly bgLight = signal(this.clampLight(this.loadNum('dash.bg.light', LIGHTING_LEVELS.soft)));
   /** Oval diameter as a percentage of the display, leaving room for its glow. */
   readonly ringSize = signal(this.clampRingSize(this.loadNum('dash.ring.size', RING_SIZE.default)));
+  readonly matrixRain = signal(this.loadBool('dash.background.matrix', true));
   /** Active visual system. Layout and widget state remain theme-independent. */
   readonly theme = signal<ThemeId>(this.loadTheme());
   /** Nostalgic custom pointer and particle trail for mouse-like input. */
@@ -47,6 +47,7 @@ export class SettingsService {
     effect(() => localStorage.setItem('dash.bg.on', JSON.stringify(this.bgOn())));
     effect(() => localStorage.setItem('dash.bg.light', String(this.bgLight())));
     effect(() => localStorage.setItem('dash.ring.size', String(this.ringSize())));
+    effect(() => localStorage.setItem('dash.background.matrix', JSON.stringify(this.matrixRain())));
     effect(() => {
       const theme = this.theme();
       localStorage.setItem('dash.theme.v1', theme);

@@ -195,6 +195,13 @@ const WAVES_PER_ROUND = 6;
         font: 600 14px/1 var(--theme-font-body);
         cursor: pointer;
       }
+      @media (orientation: portrait) {
+        .hud { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: clamp(6px, 1.5vw, 16px); }
+        .chip { justify-content: center; min-width: 0;
+          font-size: clamp(12px, 2.2vw, 24px); padding: 6px 8px; }
+        .banner small { max-width: 80%; letter-spacing: .12em; }
+      }
     `,
   ],
 })
@@ -218,6 +225,7 @@ export class DuckHunt implements AfterViewInit {
   private ctx!: CanvasRenderingContext2D;
   private w = 0;
   private h = 0;
+  private playTop = 70;
   private raf = 0;
   private prev = 0;
   private elapsed = 0;
@@ -246,6 +254,8 @@ export class DuckHunt implements AfterViewInit {
       const dpr = canvasScale(rect.width, rect.height, window.devicePixelRatio || 1);
       this.w = rect.width;
       this.h = rect.height;
+      const hud = canvas.parentElement!.querySelector('.hud')!.getBoundingClientRect();
+      this.playTop = Math.min(this.h * .4, Math.max(70, hud.bottom - rect.top + 24));
       canvas.width = Math.floor(rect.width * dpr);
       canvas.height = Math.floor(rect.height * dpr);
       this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -385,7 +395,7 @@ export class DuckHunt implements AfterViewInit {
     const speed = this.speed() * (.7 + Math.random() * .6);
     return {
       x: fromLeft ? -50 : this.w + 50,
-      y: 70 + Math.random() * Math.max(40, this.groundY - 165),
+      y: this.playTop + Math.random() * Math.max(40, this.groundY - this.playTop - 95),
       vx: direction * speed,
       vy: -(18 + Math.random() * 28),
       phase: 'fly',
@@ -479,7 +489,10 @@ export class DuckHunt implements AfterViewInit {
       duck.vy = Math.max(-170, Math.min(170, duck.vy));
       duck.x += duck.vx * dt;
       duck.y += duck.vy * dt;
-      if (duck.y < 40) duck.vy = Math.abs(duck.vy);
+      if (duck.y < this.playTop) {
+        duck.y = this.playTop;
+        duck.vy = Math.abs(duck.vy);
+      }
       if (duck.y > this.groundY - 45) duck.vy = -Math.abs(duck.vy);
       if (duck.x < 24) { duck.x = 24; duck.vx = Math.abs(duck.vx); }
       if (duck.x > this.w - 24) { duck.x = this.w - 24; duck.vx = -Math.abs(duck.vx); }
@@ -542,7 +555,11 @@ export class DuckHunt implements AfterViewInit {
 
   private drawEnvironment(context: CanvasRenderingContext2D): void {
     if (this.art.background) {
-      context.drawImage(this.art.background, 0, 0, this.w, this.h);
+      const image = this.art.background;
+      const scale = Math.max(this.w / image.naturalWidth, this.h / image.naturalHeight);
+      const width = image.naturalWidth * scale;
+      const height = image.naturalHeight * scale;
+      context.drawImage(image, (this.w - width) / 2, (this.h - height) / 2, width, height);
       return;
     }
 

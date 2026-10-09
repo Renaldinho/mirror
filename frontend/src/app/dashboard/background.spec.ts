@@ -2,11 +2,30 @@
 import { Background } from './background';
 import { SettingsService } from './settings.service';
 import { THEME_IDS } from './theme-registry';
+import { vi } from 'vitest';
 
 describe('Mirror ring light', () => {
   beforeEach(() => {
     localStorage.clear();
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(null);
     TestBed.configureTestingModule({ imports: [Background] });
+  });
+
+  afterEach(() => vi.restoreAllMocks());
+
+  it('exposes a dedicated background toggle independent of ring lighting', () => {
+    const fixture = TestBed.createComponent(Background);
+    const settings = TestBed.inject(SettingsService);
+    fixture.detectChanges();
+    const button = fixture.nativeElement.querySelector('.matrix-toggle') as HTMLButtonElement;
+    expect(button.textContent).toContain('Code rain');
+    expect(button.getAttribute('aria-pressed')).toBe('true');
+    expect(fixture.nativeElement.querySelector('app-digital-rain')).not.toBeNull();
+    button.click();
+    fixture.detectChanges();
+    expect(button.getAttribute('aria-pressed')).toBe('false');
+    expect(fixture.nativeElement.querySelector('app-digital-rain')).toBeNull();
+    expect(settings.bgOn()).toBe(true);
   });
 
   it('keeps the same ring and black mirror surface across every widget theme', () => {
