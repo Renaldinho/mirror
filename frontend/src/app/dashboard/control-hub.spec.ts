@@ -29,7 +29,7 @@ describe('ControlHub', () => {
     hub.toggleMenu();
     fixture.detectChanges();
     expect(hub.menuOpen()).toBe(true);
-    expect(fixture.nativeElement.querySelectorAll('.petal').length).toBe(4);
+    expect(fixture.nativeElement.querySelectorAll('.petal').length).toBe(5);
 
     hub.openSection('theme');
     hub.toggleMenu();

@@ -13,9 +13,9 @@ import {
 import { GamesService } from '../minigames/games.service';
 import { CursorFxMode, SettingsService } from './settings.service';
 
-const TRAIL_SIZE = 512;
-const MAX_SPARKS = 48;
-const FRAME_INTERVAL = 1000 / 30;
+const TRAIL_SIZE = 384;
+const MAX_SPARKS = 24;
+const FRAME_INTERVAL = 1000 / 20;
 
 type SparkKind = 'orb' | 'diamond' | 'bubble' | 'glyph' | 'flame';
 
@@ -366,8 +366,8 @@ export class RetroCursor implements AfterViewInit {
     this.lastY = event.clientY;
     const mode = this.settings.cursorFxMode();
     const palette = this.palette();
-    for (let index = 0; index < 22; index += 1) {
-      const angle = (Math.PI * 2 * index) / 22 + Math.random() * .16;
+    for (let index = 0; index < 10; index += 1) {
+      const angle = (Math.PI * 2 * index) / 10 + Math.random() * .16;
       const speed = 1.8 + Math.random() * 3.8;
       this.sparks.push({
         x: event.clientX,
@@ -500,12 +500,13 @@ export class RetroCursor implements AfterViewInit {
       return;
     }
 
-    const delta = Math.min(2, Math.max(.4, (time - this.lastFrame) / 16.667));
+    const delta = Math.min(3, Math.max(.4, (time - this.lastFrame) / 16.667));
+    const decay = Math.pow(.97, delta);
     this.lastFrame = time;
     const context = this.context;
     const canvas = this.trail().nativeElement;
     this.clearCanvas();
-    // ponytail: trails are clipped to 512px around the pointer; enlarge only if longer trails are needed.
+    // ponytail: trails are clipped to 384px around the pointer; enlarge only if longer trails are needed.
     const left = this.lastX - TRAIL_SIZE / 2;
     const top = this.lastY - TRAIL_SIZE / 2;
     canvas.style.transform = `translate3d(${left}px, ${top}px, 0)`;
@@ -522,8 +523,8 @@ export class RetroCursor implements AfterViewInit {
 
       spark.x += spark.vx * delta;
       spark.y += spark.vy * delta;
-      spark.vx *= Math.pow(.97, delta);
-      spark.vy = spark.vy * Math.pow(.97, delta) + .018 * delta;
+      spark.vx *= decay;
+      spark.vy = spark.vy * decay + .018 * delta;
 
       const alpha = Math.min(1, spark.life / Math.min(14, spark.ttl));
       const size = spark.size * (.55 + spark.life / spark.ttl);

@@ -6,7 +6,6 @@ import { PetRenderer } from './pet-renderer';
 import { PetHabitat } from './pet-habitat';
 import { DashboardService } from './dashboard.service';
 import { RetroCursor } from './retro-cursor';
-import { GamesLauncher } from '../minigames/games-launcher';
 import { GameOverlay } from '../minigames/game-overlay';
 import { SpotifyService } from '../widgets/spotify/spotify.service';
 import { DisplayService } from './display.service';
@@ -21,7 +20,6 @@ import { DisplayService } from './display.service';
     PetRenderer,
     PetHabitat,
     RetroCursor,
-    GamesLauncher,
     GameOverlay,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -31,7 +29,6 @@ import { DisplayService } from './display.service';
 
       <!-- controls -->
       <app-control-hub />
-      <app-games-launcher />
 
       <!-- desktop pet -->
       <app-pet-habitat />

@@ -47,22 +47,22 @@ describe('cursor effects rendering budget', () => {
     settings.cursorFx.set(true);
     fixture.detectChanges();
     const canvas = fixture.nativeElement.querySelector('canvas') as HTMLCanvasElement;
-    expect([canvas.width, canvas.height]).toEqual([512, 512]);
+    expect([canvas.width, canvas.height]).toEqual([384, 384]);
     pointer('pointermove', 100, 100);
     for (let i = 0; i < 20; i++) pointer('pointermove', 120 + i, 100);
-    frame(40);
+    frame(60);
     // High-frequency input produces only one trail particle during this interval.
     expect(context.fillText).toHaveBeenCalledTimes(1);
 
     context.fillText.mockClear();
     for (let i = 0; i < 10; i++) pointer('pointerdown', 3000, 1800);
-    frame(50);
+    frame(70);
     expect(context.fillText).not.toHaveBeenCalled();
-    frame(80);
-    expect(context.fillText).toHaveBeenCalledTimes(48);
-    expect(context.clearRect).toHaveBeenLastCalledWith(0, 0, 512, 512);
-    expect(context.setTransform).toHaveBeenLastCalledWith(1, 0, 0, 1, -2744, -1544);
-    expect(canvas.style.transform).toBe('translate3d(2744px, 1544px, 0)');
+    frame(120);
+    expect(context.fillText).toHaveBeenCalledTimes(24);
+    expect(context.clearRect).toHaveBeenLastCalledWith(0, 0, 384, 384);
+    expect(context.setTransform).toHaveBeenLastCalledWith(1, 0, 0, 1, -2808, -1608);
+    expect(canvas.style.transform).toBe('translate3d(2808px, 1608px, 0)');
 
     settings.cursorFx.set(false);
     fixture.detectChanges();

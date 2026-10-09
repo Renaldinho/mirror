@@ -4,6 +4,7 @@ import {
   Component,
   DestroyRef,
   ElementRef,
+  NgZone,
   effect,
   inject,
   viewChild,
@@ -17,6 +18,7 @@ import { PetContext } from './pets/pet-types';
 import { PetCozyService } from './pets/pet-cozy.service';
 import { UiIcon } from '../shared/ui-icon';
 import { SpotifyService } from '../widgets/spotify/spotify.service';
+import { GamesService } from '../minigames/games.service';
 
 /**
  * Thin view layer for the pet domain: builds the current Pet from the selected
@@ -62,7 +64,6 @@ import { SpotifyService } from '../widgets/spotify/spotify.service';
         pointer-events: auto;
         display: inline-block;
         transform-origin: 50% 100%;
-        filter: drop-shadow(0 3px 4px rgba(0, 0, 0, 0.5));
         touch-action: none;
       }
       .ball-button {
@@ -74,7 +75,6 @@ import { SpotifyService } from '../widgets/spotify/spotify.service';
         padding: 0;
         border: 0;
         background-color: transparent;
-        filter: drop-shadow(0 2px 2px rgba(0, 0, 0, .55));
         image-rendering: pixelated;
         cursor: grab;
         opacity: 0;
@@ -134,6 +134,8 @@ export class PetRenderer implements AfterViewInit {
   private readonly mood = inject(PetMoodService);
   private readonly cozy = inject(PetCozyService);
   private readonly spotify = inject(SpotifyService);
+  private readonly games = inject(GamesService);
+  private readonly zone = inject(NgZone);
   private readonly reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)');
   private readonly destroyRef = inject(DestroyRef);
 
@@ -164,6 +166,10 @@ export class PetRenderer implements AfterViewInit {
   private draggedItem: { kind: 'food' | 'brush'; x: number; y: number } | null = null;
 
   constructor() {
+    effect(() => {
+      if (this.games.playing()) this.stopAnimation();
+      else this.startAnimation();
+    });
     // Rebuild the pet instance whenever the selection changes.
     effect(() => {
       const id = this.pets.petId();
@@ -320,15 +326,15 @@ export class PetRenderer implements AfterViewInit {
 
   private readonly loop = (time: number): void => {
     this.raf = 0;
-    if (!this.pet || document.hidden) return;
-    if (!this.prev || time - this.prev >= 1000 / 30) this.frame(time);
+    if (!this.pet || document.hidden || this.games.playing()) return;
+    if (!this.prev || time - this.prev >= 1000 / 20) this.frame(time);
     this.raf = requestAnimationFrame(this.loop);
   };
 
   private startAnimation(): void {
-    if (!this.viewReady || !this.pet || document.hidden || this.raf) return;
+    if (!this.viewReady || !this.pet || document.hidden || this.games.playing() || this.raf) return;
     this.prev = 0;
-    this.raf = requestAnimationFrame(this.loop);
+    this.zone.runOutsideAngular(() => { this.raf = requestAnimationFrame(this.loop); });
   }
 
   private stopAnimation(): void {
@@ -355,7 +361,7 @@ export class PetRenderer implements AfterViewInit {
     }
     root.style.display = 'block';
 
-    const dt = this.prev ? Math.min((t - this.prev) / 1000, 0.05) : 0;
+    const dt = this.prev ? Math.min((t - this.prev) / 1000, 0.1) : 0;
     this.prev = t;
 
     const bounds = this.bounds();
@@ -403,6 +409,9 @@ export class PetRenderer implements AfterViewInit {
       em.style.width = `${v.visualWidth}px`;
       em.style.height = `${v.visualHeight}px`;
       em.style.top = `${PET_SIZE - v.visualHeight}px`;
+      const bubble = this.bubbleRef().nativeElement;
+      bubble.style.left = `${Math.max(30, v.visualWidth * 0.7)}px`;
+      bubble.style.top = `${PET_SIZE - v.visualHeight - 18}px`;
       this.lastVisualGeometry = visualGeometry;
     }
 
@@ -411,11 +420,11 @@ export class PetRenderer implements AfterViewInit {
     if (sheet.cssClass !== this.lastSpriteClass) {
       if (this.lastSpriteClass) em.classList.remove(this.lastSpriteClass);
       em.classList.add(sheet.cssClass);
+      em.style.backgroundSize =
+        `${sheet.columns * sheet.displayWidth}px ${sheet.rows * sheet.displayHeight}px`;
       this.lastSpriteClass = sheet.cssClass;
     }
     if (spriteKey !== this.lastSprite) {
-      em.style.backgroundSize =
-        `${sheet.columns * sheet.displayWidth}px ${sheet.rows * sheet.displayHeight}px`;
       em.style.backgroundPosition =
         `${-column * sheet.displayWidth}px ${-row * sheet.displayHeight}px`;
       this.lastSprite = spriteKey;
@@ -428,9 +437,6 @@ export class PetRenderer implements AfterViewInit {
       bu.style.opacity = bubbleText ? '1' : '0';
       this.lastBubble = bubbleText;
     }
-    const bubble = this.bubbleRef().nativeElement;
-    bubble.style.left = `${Math.max(30, v.visualWidth * 0.7)}px`;
-    bubble.style.top = `${PET_SIZE - v.visualHeight - 18}px`;
   }
 
   private updateBall(): void {

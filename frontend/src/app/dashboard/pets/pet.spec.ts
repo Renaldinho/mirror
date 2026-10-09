@@ -29,13 +29,13 @@ describe('desktop pet actions', () => {
   it('loops all 32 dedicated dance frames for every pet and stops when music pauses', () => {
     for (const info of PET_CATALOG) {
       const pet = createPet(info.id)!;
-      const playing = context({ dt: .2, musicPlaying: true });
+      const playing = context({ dt: .05, musicPlaying: true });
       pet.update(playing);
       expect(pet.stateName).toBe('dance');
       expect(pet.view().sprite.sheet.cssClass).toBe(`${info.sprite.cssClass}-dance`);
       expect(pet.view().bubble).toBe('♫');
       const cells = new Set<string>();
-      for (let index = 0; index < 32; index++) {
+      for (let index = 0; index < 132; index++) {
         const { row, column } = pet.view().sprite;
         cells.add(`${row}:${column}`);
         pet.update(playing);

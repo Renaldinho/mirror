@@ -1,7 +1,9 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   HostListener,
+  NgZone,
   computed,
   inject,
   signal,
@@ -114,11 +116,9 @@ import {
       .bowl-name { position: absolute; left: 50%; top: 47px; max-width: 104px; transform: translateX(-50%); overflow: hidden; color: #fff4d6; font: 700 8px/10px var(--theme-font-display); text-shadow: 1px 1px 0 #3b193e, -1px 0 #3b193e, 0 -1px #3b193e; white-space: nowrap; text-overflow: ellipsis; text-align: center; }
       .tv.off .detail { display: none; }
       .preview { opacity: .58; filter: drop-shadow(0 0 5px var(--theme-primary-bright)); }
-      .cozy-trigger { position: fixed; left: 112px; top: 16px; z-index: 48; display: grid; width: 40px; height: 40px; place-items: center; pointer-events: auto; border: 1px solid var(--theme-border-strong); border-radius: var(--control-radius); background: var(--theme-panel); color: var(--theme-primary); box-shadow: var(--theme-shadow-soft); font-size: 20px; cursor: pointer; }
-      .cozy-trigger:hover,.cozy-trigger.active { color: var(--theme-primary-bright); border-color: var(--theme-primary); }
       .tv-toggle { position: fixed; z-index: 45; pointer-events: auto; border: 0; background: transparent; cursor: pointer; }
       .cozy-canvas { position: fixed; inset: 0; z-index: 46; pointer-events: auto; cursor: crosshair; }
-      .cozy-panel { position: fixed; left: 164px; top: 16px; z-index: 50; width: min(390px,calc(100vw - 180px)); padding: 12px; pointer-events: auto; border: 1px solid var(--theme-border-strong); border-radius: var(--panel-radius); background: var(--theme-panel-opaque); color: var(--theme-text); box-shadow: var(--theme-shadow-strong); }
+      .cozy-panel { position: fixed; left: 50%; bottom: 92px; transform: translateX(-50%); z-index: 50; width: min(390px,calc(100vw - 32px)); padding: 12px; pointer-events: auto; border: 1px solid var(--theme-border-strong); border-radius: var(--panel-radius); background: var(--theme-panel-opaque); color: var(--theme-text); box-shadow: var(--theme-shadow-strong); }
       header { display: flex; justify-content: space-between; margin-bottom: 9px; }
       header span { display: flex; flex-direction: column; }
       header small { color: var(--theme-text-muted); font-size: 9px; text-transform: uppercase; }
@@ -154,11 +154,18 @@ export class PetHabitat {
 
   constructor() {
     this.cozy.initialise(this.bounds());
-  }
-
-  toggleEditing(): void {
-    if (this.cozy.editing()) this.finish();
-    else this.cozy.editing.set(true);
+    const move = (event: PointerEvent) => this.moveSelected(event);
+    const drop = () => this.dropSelected();
+    inject(NgZone).runOutsideAngular(() => {
+      window.addEventListener('pointermove', move, { passive: true });
+      window.addEventListener('pointerup', drop);
+      window.addEventListener('pointercancel', drop);
+    });
+    inject(DestroyRef).onDestroy(() => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', drop);
+      window.removeEventListener('pointercancel', drop);
+    });
   }
 
   finish(): void {
@@ -211,7 +218,6 @@ export class PetHabitat {
     event.stopPropagation();
   }
 
-  @HostListener('window:pointermove', ['$event'])
   moveSelected(event: PointerEvent): void {
     if (!this.drag) return;
     const current = this.cozy.items().find((item) => item.id === this.drag!.id);
@@ -225,7 +231,6 @@ export class PetHabitat {
     ));
   }
 
-  @HostListener('window:pointerup')
   dropSelected(): void {
     if (!this.drag) return;
     const item = this.preview();

@@ -1,70 +1,83 @@
 # Dedicated pet dance frames
 
-Generated with the built-in imagegen tool, using each pet's existing interaction atlas as its identity reference. Each new transparent sheet contains a dedicated 4 × 4 sequence, played in order at 8 frames per second while Spotify is playing. Other actions keep their existing artwork.
+Generated with the built-in imagegen tool, then normalized with the user's explicit permission using `normalize-dance.ps1`. Processing is offline; there is no image-processing work on the Pi.
 
-## Prompts
+All eight `SPECIES/SPECIES-dance-v2.png` assets are transparent 512 × 1024 atlases (four columns, eight rows, 128 × 128 cells). Playback is 32 ordered frames at 5 fps, a 6.4-second loop. Collie and frog have 28 generated poses, blue-kit has 24; evenly spaced holds fill their playback frames. Other pets have 32 generated poses.
+
+The script keeps the main connected silhouette, fixes height to 90 pixels (pigeon: 72 for wing clearance), aligns the foot baseline to 116 and centers the lower silhouette at x=64. Nearest-neighbor scaling preserves the pixel style.
+
+```powershell
+powershell.exe -ExecutionPolicy Bypass -File frontend/src/app/dashboard/pets/normalize-dance.ps1 -Source SOURCE.png -Destination OUTPUT.png
+```
+
+For pigeon add `-TargetHeight 72`.
+
+## Image generation prompt
+
+References were the previous dance atlas and the original interaction atlas. The generator sometimes supplied fewer rows than requested; normalization accepts six to eight rows.
+
+Use case: identity-preserve. Asset type: transparent production pixel-art sprite sheet for a desktop pet game. Image 1 is the CURRENT DANCE atlas to revise; image 2 is the original interaction atlas for exact character identity and pixel-art style. Replace the jumpy coarse dance with a NEW restrained, very smooth 32-FRAME slow dance loop. Output a PORTRAIT image with aspect ratio 1:2, exactly FOUR COLUMNS by EIGHT ROWS of equal SQUARE cells, exactly one full character per cell. 32 distinct sequential frames read left-to-right, top-to-bottom. Do not output 16 frames, do not duplicate a row, and do not put two characters in a cell. No grid, labels, text, motion lines, hearts, background or extraneous objects. Real transparent RGBA background with clean alpha, no colored fringe or halo. Preserve the original character's exact colors, markings, outline, proportions, accessories and species. Keep character scale consistent: standing height around 65% of each cell, whole silhouette INCLUDING tail and lifted paws strictly within 75% of the cell width, at least 12% transparent padding on every edge, feet at the same 85% baseline. Same front-facing camera in all frames; NO zoom, NO turning into a different angle or changing proportions. Choreography is one gentle relaxed groove, not exaggerated dance poses. Frames 1-8 ease slowly from center toward a tiny left step, frames 9-16 ease gently back to center, frames 17-24 ease slowly into a tiny right step, frames 25-32 ease back to the starting pose. Only small changes between consecutive frames: carefully drawn anatomical IN-BETWEEN poses, one or two pixel increments rather than abrupt paw changes. Minimal vertical bounce, at most 3% of cell height, head tilt at most 5 degrees, small paw gestures only. The last frame must flow seamlessly into the first.
 
 ### capy
 
-Reference: `capy/capy-interactions-v7.png`
+Output: `capy/capy-dance-v2.png`
 
-Output: `capy/capy-dance-v1.png`
+Raw source: `C:\Users\Renars\.codex\generated_images\01a121b7-f78e-78f1-ad83-750f3378ad23\exec-5d746f94-8032-4ef7-8cb0-33250c0f7403.png`
 
-Use case: stylized-concept. Asset type: production pixel-art dance animation sprite sheet for a desktop pet game. Reference image 1 is the existing capy character atlas, ONLY an identity/style reference. Create a NEW dedicated DANCE sheet, not a reused happy strip. Exactly 16 sequential frames in a perfectly regular 4 columns x 4 rows grid, square 1024x1024 image, each cell 256x256. Transparent RGBA background, no grid lines, labels, shadows outside the sprite, hearts, objects, duplicate pets or watermark. Match the reference pet's pixel art, outlines, palette, proportions, facial features and signature accessories precisely. Face the viewer, same character scale in every frame (body about 65% of cell height), centered with identical feet baseline, full silhouette safely inside each cell with transparent margins. Read animation left to right then top to bottom. Choreograph a smooth 16-frame dance loop: bounce down, step left raising right forepaw, left shimmy, center bounce, step right raising left forepaw, right shimmy, alternating paw pumps, small happy hop, settle smoothly back to the initial pose. Real distinct articulated dance poses, not rotated copies or idle frames. Keep all sixteen characters the same size, clean fixed cell registration. The last pose transitions smoothly into frame 1. Preserve the capybara's tiny orange on its head.
+Species direction: Tiny relaxed belly bobs and alternating paw taps, with its orange balanced on its head.
 
 ### collie
 
-Reference: `collie/collie-interactions-v7.png`
+Output: `collie/collie-dance-v2.png`
 
-Output: `collie/collie-dance-v1.png`
+Raw source: `C:\Users\Renars\.codex\generated_images\01a121b7-f78e-78f1-ad83-750f3378ad23\exec-2e50c29e-f649-4887-84ed-b28e62b9c4ac.png`
 
-Use case: stylized-concept. Asset type: production pixel-art dance animation sprite sheet for a desktop pet game. Reference image 1 is the existing collie character atlas, ONLY an identity/style reference. Create a NEW dedicated DANCE sheet, not a reused happy strip. Exactly 16 sequential frames in a perfectly regular 4 columns x 4 rows grid, square 1024x1024 image, each cell 256x256. Transparent RGBA background, no grid lines, labels, shadows outside the sprite, hearts, objects, duplicate pets or watermark. Match the reference pet's pixel art, outlines, palette, proportions, facial features and signature accessories precisely. Face the viewer, same character scale in every frame (body about 65% of cell height), centered with identical feet baseline, full silhouette safely inside each cell with transparent margins. Read animation left to right then top to bottom. Choreograph a smooth 16-frame dance loop: bounce down, step left raising right forepaw, left shimmy, center bounce, step right raising left forepaw, right shimmy, alternating paw pumps, small happy hop, settle smoothly back to the initial pose. Real distinct articulated dance poses, not rotated copies or idle frames. Keep all sixteen characters the same size, clean fixed cell registration. The last pose transitions smoothly into frame 1. Keep the black-and-white border collie's blaze, white chest, fluffy tail tip and floppy ears. Dance on hind paws with alternating front-paw pumps.
+Species direction: Small front paw lifts and a soft tail wag, not big human-style arm waving.
 
 ### frog
 
-Reference: `frog/frog-interactions-v7.png`
+Output: `frog/frog-dance-v2.png`
 
-Output: `frog/frog-dance-v1.png`
+Raw source: `C:\Users\Renars\.codex\generated_images\01a121b7-f78e-78f1-ad83-750f3378ad23\exec-a73d6356-0562-4a91-a310-d48c58a517cb.png`
 
-Use case: stylized-concept. Asset type: production pixel-art dance animation sprite sheet for a desktop pet game. Reference image 1 is the existing frog character atlas, ONLY an identity/style reference. Create a NEW dedicated DANCE sheet, not a reused happy strip. Exactly 16 sequential frames in a perfectly regular 4 columns x 4 rows grid, square 1024x1024 image, each cell 256x256. Transparent RGBA background, no grid lines, labels, shadows outside the sprite, hearts, objects, duplicate pets or watermark. Match the reference pet's pixel art, outlines, palette, proportions, facial features and signature accessories precisely. Face the viewer, same character scale in every frame (body about 65% of cell height), centered with identical feet baseline, full silhouette safely inside each cell with transparent margins. Read animation left to right then top to bottom. Choreograph a smooth 16-frame dance loop: bounce down, step left raising right forepaw, left shimmy, center bounce, step right raising left forepaw, right shimmy, alternating paw pumps, small happy hop, settle smoothly back to the initial pose. Real distinct articulated dance poses, not rotated copies or idle frames. Keep all sixteen characters the same size, clean fixed cell registration. The last pose transitions smoothly into frame 1. Keep the lime-green frog, cream belly, pink cheeks and large cheerful eyes. Dance with side steps, knee bends, hand waves and small frog hops.
+Species direction: Gentle frog knee bends and toe taps, no high jumps.
 
 ### shadow-cat
 
-Reference: `shadow-cat/shadow-cat-interactions-v7.png`
+Output: `shadow-cat/shadow-cat-dance-v2.png`
 
-Output: `shadow-cat/shadow-cat-dance-v1.png`
+Raw source: `C:\Users\Renars\.codex\generated_images\01a121b7-f78e-78f1-ad83-750f3378ad23\exec-395792c9-8673-4ca2-9442-da2a682047b8.png`
 
-Use case: stylized-concept. Asset type: production pixel-art dance animation sprite sheet for a desktop pet game. Reference image 1 is the existing shadow-cat character atlas, ONLY an identity/style reference. Create a NEW dedicated DANCE sheet, not a reused happy strip. Exactly 16 sequential frames in a perfectly regular 4 columns x 4 rows grid, square 1024x1024 image, each cell 256x256. Transparent RGBA background, no grid lines, labels, shadows outside the sprite, hearts, objects, duplicate pets or watermark. Match the reference pet's pixel art, outlines, palette, proportions, facial features and signature accessories precisely. Face the viewer, same character scale in every frame (body about 65% of cell height), centered with identical feet baseline, full silhouette safely inside each cell with transparent margins. Read animation left to right then top to bottom. Choreograph a smooth 16-frame dance loop: bounce down, step left raising right forepaw, left shimmy, center bounce, step right raising left forepaw, right shimmy, alternating paw pumps, small happy hop, settle smoothly back to the initial pose. Real distinct articulated dance poses, not rotated copies or idle frames. Keep all sixteen characters the same size, clean fixed cell registration. The last pose transitions smoothly into frame 1. Keep the tiny black kitten, amber eyes, pink inner ears and purple collar. Dance with paw pumps, side steps and a swishing tail.
+Species direction: Tiny paw taps, small shoulder sway and a slow curling tail.
 
 ### ginger
 
-Reference: `ginger/ginger-interactions-v2.png`
+Output: `ginger/ginger-dance-v2.png`
 
-Output: `ginger/ginger-dance-v1.png`
+Raw source: `C:\Users\Renars\.codex\generated_images\01a121b7-f78e-78f1-ad83-750f3378ad23\exec-7754601d-ac12-4369-893a-369a9bd1bdc7.png`
 
-Use case: stylized-concept. Asset type: production pixel-art dance animation sprite sheet for a desktop pet game. Reference image 1 is the existing ginger character atlas, ONLY an identity/style reference. Create a NEW dedicated DANCE sheet, not a reused happy strip. Exactly 16 sequential frames in a perfectly regular 4 columns x 4 rows grid, square 1024x1024 image, each cell 256x256. Transparent RGBA background, no grid lines, labels, shadows outside the sprite, hearts, objects, duplicate pets or watermark. Match the reference pet's pixel art, outlines, palette, proportions, facial features and signature accessories precisely. Face the viewer, same character scale in every frame (body about 65% of cell height), centered with identical feet baseline, full silhouette safely inside each cell with transparent margins. Read animation left to right then top to bottom. Choreograph a smooth 16-frame dance loop: bounce down, step left raising right forepaw, left shimmy, center bounce, step right raising left forepaw, right shimmy, alternating paw pumps, small happy hop, settle smoothly back to the initial pose. Real distinct articulated dance poses, not rotated copies or idle frames. Keep all sixteen characters the same size, clean fixed cell registration. The last pose transitions smoothly into frame 1. Keep the chunky orange tabby's stripes, round cream belly and green eyes. Dance with humorous belly shimmies, paw pumps and side steps.
+Species direction: A relaxed chunky-cat belly shimmy and toe taps, not energetic bouncing.
 
 ### blue-kit
 
-Reference: `blue-kit/blue-kit-interactions-v2.png`
+Output: `blue-kit/blue-kit-dance-v2.png`
 
-Output: `blue-kit/blue-kit-dance-v1.png`
+Raw source: `C:\Users\Renars\.codex\generated_images\01a121b7-f78e-78f1-ad83-750f3378ad23\exec-4d28e86c-905e-4f1e-bb54-911e1ec07ae5.png`
 
-Use case: stylized-concept. Asset type: production pixel-art dance animation sprite sheet for a desktop pet game. Reference image 1 is the existing blue-kit character atlas, ONLY an identity/style reference. Create a NEW dedicated DANCE sheet, not a reused happy strip. Exactly 16 sequential frames in a perfectly regular 4 columns x 4 rows grid, square 1024x1024 image, each cell 256x256. Transparent RGBA background, no grid lines, labels, shadows outside the sprite, hearts, objects, duplicate pets or watermark. Match the reference pet's pixel art, outlines, palette, proportions, facial features and signature accessories precisely. Face the viewer, same character scale in every frame (body about 65% of cell height), centered with identical feet baseline, full silhouette safely inside each cell with transparent margins. Read animation left to right then top to bottom. Choreograph a smooth 16-frame dance loop: bounce down, step left raising right forepaw, left shimmy, center bounce, step right raising left forepaw, right shimmy, alternating paw pumps, small happy hop, settle smoothly back to the initial pose. Real distinct articulated dance poses, not rotated copies or idle frames. Keep all sixteen characters the same size, clean fixed cell registration. The last pose transitions smoothly into frame 1. Keep the small blue-grey mackerel tabby, white muzzle/chest, green eyes and dark stripes. Dance with paw waves, side steps and a swishing tail.
+Species direction: Tiny alternating paw taps, a gentle head bob and a slow tail swish.
 
 ### diplodocus
 
-Reference: `diplodocus/diplodocus-interactions-v2.png`
+Output: `diplodocus/diplodocus-dance-v2.png`
 
-Output: `diplodocus/diplodocus-dance-v1.png`
+Raw source: `C:\Users\Renars\.codex\generated_images\01a121b7-f78e-78f1-ad83-750f3378ad23\exec-5efc4f93-6ef5-4606-b6a5-9adb61da13cd.png`
 
-Use case: stylized-concept. Asset type: production pixel-art dance animation sprite sheet for a desktop pet game. Reference image 1 is the existing diplodocus character atlas, ONLY an identity/style reference. Create a NEW dedicated DANCE sheet, not a reused happy strip. Exactly 16 sequential frames in a perfectly regular 4 columns x 4 rows grid, square 1024x1024 image, each cell 256x256. Transparent RGBA background, no grid lines, labels, shadows outside the sprite, hearts, objects, duplicate pets or watermark. Match the reference pet's pixel art, outlines, palette, proportions, facial features and signature accessories precisely. Face the viewer, same character scale in every frame (body about 65% of cell height), centered with identical feet baseline, full silhouette safely inside each cell with transparent margins. Read animation left to right then top to bottom. Choreograph a smooth 16-frame dance loop: bounce down, step left raising right forepaw, left shimmy, center bounce, step right raising left forepaw, right shimmy, alternating paw pumps, small happy hop, settle smoothly back to the initial pose. Real distinct articulated dance poses, not rotated copies or idle frames. Keep all sixteen characters the same size, clean fixed cell registration. The last pose transitions smoothly into frame 1. Keep the green baby diplodocus, dark green spots, long neck, cream belly and tail. Dance with alternating foot steps, neck bobs and tail swishes.
+Species direction: Small alternating foot steps, a soft long-neck bob, tail kept folded comfortably inside its cell.
 
 ### pigeon
 
-Reference: `pigeon/pigeon-interactions-v2.png`
+Output: `pigeon/pigeon-dance-v2.png`
 
-Output: `pigeon/pigeon-dance-v1.png`
+Raw source: `C:\Users\Renars\.codex\generated_images\01a121b7-f78e-78f1-ad83-750f3378ad23\exec-6eed1b16-a648-4eb2-b8ab-b54f4a4d533c.png`
 
-Use case: stylized-concept. Asset type: production pixel-art dance animation sprite sheet for a desktop pet game. Reference image 1 is the existing pigeon character atlas, ONLY an identity/style reference. Create a NEW dedicated DANCE sheet, not a reused happy strip. Exactly 16 sequential frames in a perfectly regular 4 columns x 4 rows grid, square 1024x1024 image, each cell 256x256. Transparent RGBA background, no grid lines, labels, shadows outside the sprite, hearts, objects, duplicate pets or watermark. Match the reference pet's pixel art, outlines, palette, proportions, facial features and signature accessories precisely. Face the viewer, same character scale in every frame (body about 65% of cell height), centered with identical feet baseline, full silhouette safely inside each cell with transparent margins. Read animation left to right then top to bottom. Choreograph a smooth 16-frame dance loop: bounce down, step left raising right forepaw, left shimmy, center bounce, step right raising left forepaw, right shimmy, alternating paw pumps, small happy hop, settle smoothly back to the initial pose. Real distinct articulated dance poses, not rotated copies or idle frames. Keep all sixteen characters the same size, clean fixed cell registration. The last pose transitions smoothly into frame 1. Keep the plump grey city pigeon, iridescent green-purple neck, red eyes, striped wings and pink feet. Dance with pigeon head bobs, side steps and wing raises.
-
+Species direction: Subtle head bobs, tiny foot steps and low half-raised wings, never a full wide wing spread.

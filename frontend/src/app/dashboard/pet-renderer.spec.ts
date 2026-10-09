@@ -5,6 +5,7 @@ import { PetRenderer } from './pet-renderer';
 import { PetService } from './pet.service';
 import { PetMoodService } from './pets/pet-mood.service';
 import { SpotifyService } from '../widgets/spotify/spotify.service';
+import { GamesService } from '../minigames/games.service';
 
 describe('pet rendering', () => {
   afterEach(() => {
@@ -15,10 +16,11 @@ describe('pet rendering', () => {
   it('moves orbiting and dragged controls with transforms and cancels its loop on destroy', () => {
     localStorage.clear();
     let frame: FrameRequestCallback = () => {};
-    vi.stubGlobal('requestAnimationFrame', vi.fn((callback: FrameRequestCallback) => {
+    const request = vi.fn((callback: FrameRequestCallback) => {
       frame = callback;
       return 1;
-    }));
+    });
+    vi.stubGlobal('requestAnimationFrame', request);
     const cancel = vi.fn();
     vi.stubGlobal('cancelAnimationFrame', cancel);
     const spotify = { authed: signal(true), track: signal({ id: 'test' }), paused: signal(true) };
@@ -36,6 +38,9 @@ describe('pet rendering', () => {
     const food = fixture.nativeElement.querySelector('.food-button') as HTMLElement;
     const initial = food.style.transform;
     expect(initial).toMatch(/^translate\(/);
+    frame(1016);
+    frame(1033);
+    expect(food.style.transform).toBe(initial);
     frame(1100);
     expect(food.style.transform).not.toBe(initial);
 
@@ -57,6 +62,20 @@ describe('pet rendering', () => {
     expect([visual.style.width, visual.style.height, visual.style.top]).toEqual(geometry);
     spotify.paused.set(true);
     frame(1600);
+    expect(fixture.nativeElement.querySelector('.bubble').textContent).toBe('');
+    const games = TestBed.inject(GamesService);
+    games.open('whack');
+    fixture.detectChanges();
+    expect(cancel).toHaveBeenCalledWith(1);
+    const requests = request.mock.calls.length;
+    const beforeGame = food.style.transform;
+    frame(1800);
+    expect(request).toHaveBeenCalledTimes(requests);
+    expect(food.style.transform).toBe(beforeGame);
+    games.close();
+    fixture.detectChanges();
+    expect(request).toHaveBeenCalledTimes(requests + 1);
+    frame(3000);
     expect(fixture.nativeElement.querySelector('.bubble').textContent).toBe('');
     fixture.destroy();
     expect(cancel).toHaveBeenCalledWith(1);

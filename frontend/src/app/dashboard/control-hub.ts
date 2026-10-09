@@ -7,9 +7,11 @@ import { PetSpriteSheet } from './pets/pet-types';
 import { SettingsService, CURSOR_FX_MODES } from './settings.service';
 import { THEMES } from './theme-registry';
 import { WIDGETS } from './widget-registry';
+import { GamesService } from '../minigames/games.service';
+import { GAMES, GameId } from '../minigames/games-registry';
 import { IconName, UiIcon } from '../shared/ui-icon';
 
-type Section = 'widgets' | 'companion' | 'theme' | 'effects';
+type Section = 'widgets' | 'companion' | 'games' | 'theme' | 'effects';
 
 interface Petal {
   id: Section;
@@ -125,6 +127,24 @@ interface Petal {
             }
           }
 
+          @case ('games') {
+            <div class="games-list">
+              @for (g of gamesList; track g.id) {
+                <button class="game-row" type="button" (click)="playGame(g.id)" [title]="g.description">
+                  @if (g.thumbnail) {
+                    <img class="game-thumb" [src]="g.thumbnail" alt="" aria-hidden="true" />
+                  } @else {
+                    <app-ui-icon class="glyph" [name]="g.icon" />
+                  }
+                  <span class="game-labels">
+                    <span class="game-name">{{ g.label }}</span>
+                    <span class="game-hi">HI {{ games.highScore(g.id) }}</span>
+                  </span>
+                </button>
+              }
+            </div>
+          }
+
           @case ('theme') {
             <div class="themes">
               @for (t of themes; track t.id) {
@@ -199,14 +219,19 @@ interface Petal {
       .hub-ring.open .petal { opacity: 1; }
       .petal:hover { color: var(--theme-primary-bright); border-color: var(--theme-primary); }
       .petal.active { color: var(--theme-primary-bright); border-color: var(--theme-primary); background: var(--theme-primary-soft); }
+      /* Labels reveal one-at-a-time on hover/focus/active so they never collide. */
       .petal-label {
         position: absolute; bottom: -15px; font: 600 8px/1 var(--theme-font-body);
-        letter-spacing: 0.14em; text-transform: uppercase; white-space: nowrap; color: var(--theme-text-muted);
+        letter-spacing: 0.14em; text-transform: uppercase; white-space: nowrap; color: var(--theme-text);
+        opacity: 0; transition: opacity 0.15s ease; text-shadow: 0 1px 4px var(--theme-bg);
       }
+      .petal:hover .petal-label,
+      .petal:focus-visible .petal-label,
+      .petal.active .petal-label { opacity: 1; }
 
       .panel {
-        position: absolute; left: 50%; bottom: 150px; transform: translateX(-50%);
-        width: min(340px, calc(100vw - 32px)); max-height: min(60vh, 480px); overflow: auto;
+        position: absolute; left: 50%; bottom: 178px; transform: translateX(-50%);
+        width: min(340px, calc(100vw - 32px)); max-height: min(58vh, 460px); overflow: auto;
         display: flex; flex-direction: column; gap: 8px; padding: 14px;
         border: 1px solid var(--theme-border-strong); border-radius: var(--panel-radius);
         background: var(--theme-panel-opaque); color: var(--theme-text);
@@ -254,6 +279,23 @@ interface Petal {
       .energy { height: 5px; border-radius: 999px; overflow: hidden; background: var(--theme-surface-soft); }
       .energy-fill { height: 100%; border-radius: 999px; background: linear-gradient(to right, var(--theme-primary), var(--theme-primary-bright)); transition: width 0.4s ease; }
 
+      .games-list { display: flex; flex-direction: column; gap: 4px; }
+      .game-row {
+        display: flex; align-items: center; gap: 10px; padding: 7px 8px; text-align: left;
+        border: 1px solid transparent; border-radius: var(--control-radius);
+        background: transparent; color: var(--theme-text); cursor: pointer; transition: 150ms ease;
+      }
+      .game-row:hover { background: var(--theme-surface-hover); border-color: var(--theme-border); }
+      .game-row .glyph { font-size: 22px; color: var(--theme-primary); }
+      .game-thumb {
+        width: 44px; height: 30px; flex: none; object-fit: cover; image-rendering: pixelated;
+        border: 1px solid var(--theme-border); border-radius: calc(var(--control-radius) * 0.65);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.28);
+      }
+      .game-labels { display: flex; flex-direction: column; line-height: 1.25; }
+      .game-name { font-size: 13px; }
+      .game-hi { color: var(--theme-text-muted); font: 600 9px/1 var(--theme-font-body); letter-spacing: 0.12em; }
+
       .themes { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; }
       .theme-card {
         display: flex; align-items: center; gap: 8px; padding: 6px; text-align: left;
@@ -292,9 +334,11 @@ export class ControlHub {
   private readonly cozy = inject(PetCozyService);
   readonly settings = inject(SettingsService);
 
+  readonly games = inject(GamesService);
   readonly widgets = WIDGETS;
   readonly pets = PETS;
   readonly themes = THEMES;
+  readonly gamesList = GAMES;
 
   readonly menuOpen = signal(false);
   readonly section = signal<Section | null>(null);
@@ -302,6 +346,7 @@ export class ControlHub {
   readonly petals: Petal[] = [
     { id: 'widgets', label: 'Widgets', icon: 'layout' },
     { id: 'companion', label: 'Companion', icon: 'duck' },
+    { id: 'games', label: 'Games', icon: 'gamepad' },
     { id: 'theme', label: 'Theme', icon: 'brush' },
     { id: 'effects', label: 'Effects', icon: 'sparkle' },
   ];
@@ -341,6 +386,11 @@ export class ControlHub {
 
   arrangeCozy(): void {
     this.cozy.editing.set(true);
+    this.closeAll();
+  }
+
+  playGame(id: GameId): void {
+    this.games.open(id);
     this.closeAll();
   }
 
