@@ -64,8 +64,8 @@ interface Spark {
         position: fixed;
         left: 0;
         top: 0;
-        width: 512px;
-        height: 512px;
+        width: ${TRAIL_SIZE}px;
+        height: ${TRAIL_SIZE}px;
         will-change: transform;
         pointer-events: none;
       }

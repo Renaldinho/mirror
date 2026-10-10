@@ -48,6 +48,9 @@ describe('cursor effects rendering budget', () => {
     fixture.detectChanges();
     const canvas = fixture.nativeElement.querySelector('canvas') as HTMLCanvasElement;
     expect([canvas.width, canvas.height]).toEqual([384, 384]);
+    const canvasStyle = getComputedStyle(canvas);
+    expect(canvasStyle.width).toBe(`${canvas.width}px`);
+    expect(canvasStyle.height).toBe(`${canvas.height}px`);
     pointer('pointermove', 100, 100);
     for (let i = 0; i < 20; i++) pointer('pointermove', 120 + i, 100);
     frame(60);
