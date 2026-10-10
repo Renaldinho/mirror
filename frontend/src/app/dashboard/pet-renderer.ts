@@ -7,6 +7,7 @@ import {
   NgZone,
   effect,
   inject,
+  untracked,
   viewChild,
 } from '@angular/core';
 import { PetService } from './pet.service';
@@ -179,7 +180,7 @@ export class PetRenderer implements AfterViewInit {
       this.fetch.reset(this.pet, this.bounds());
       if (!this.viewReady) return;
       if (this.pet) {
-        this.startAnimation();
+        untracked(() => this.startAnimation());
       } else {
         this.rootRef().nativeElement.style.display = 'none';
         this.stopAnimation();
