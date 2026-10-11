@@ -11,6 +11,7 @@ import {
   viewChild,
 } from '@angular/core';
 import { GamesService } from '../minigames/games.service';
+import { AlarmService } from '../widgets/alarm.service';
 import { CursorFxMode, SettingsService } from './settings.service';
 
 const TRAIL_SIZE = 384;
@@ -251,6 +252,7 @@ interface Spark {
 export class RetroCursor implements AfterViewInit {
   readonly settings = inject(SettingsService);
   private readonly games = inject(GamesService);
+  private readonly alarm = inject(AlarmService);
   private readonly document = inject(DOCUMENT);
   private readonly zone = inject(NgZone);
   private readonly destroyRef = inject(DestroyRef);
@@ -281,6 +283,7 @@ export class RetroCursor implements AfterViewInit {
     effect(() => {
       this.settings.cursorFx();
       this.games.gameCursorSuppressed();
+      this.alarm.ringing();
       if (this.viewReady) this.refresh();
     });
   }
@@ -311,7 +314,7 @@ export class RetroCursor implements AfterViewInit {
 
     const shouldRun =
       this.settings.cursorFx() &&
-      !this.games.gameCursorSuppressed() &&
+      (!this.games.gameCursorSuppressed() || this.alarm.ringing()) &&
       !this.document.hidden &&
       (this.finePointer?.matches ?? false) &&
       !(this.reducedMotion?.matches ?? false);

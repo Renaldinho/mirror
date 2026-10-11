@@ -39,6 +39,7 @@ export class SpotifyService {
   readonly configured = signal(!!CLIENT_ID);
   readonly authed = signal(false);
   readonly premiumError = signal(false);
+  readonly error = signal<string | null>(null);
 
   readonly track = signal<Track | null>(null);
   readonly positionMs = signal(0);
@@ -53,6 +54,8 @@ export class SpotifyService {
   private tickTimer?: ReturnType<typeof setInterval>;
   private backoffUntil = 0;
   private lastTick = 0;
+  private refreshing: Promise<boolean> | null = null;
+  private polling = false;
 
   constructor() {
     this.tickTimer = setInterval(() => this.tickPosition(), 250);
@@ -60,12 +63,8 @@ export class SpotifyService {
       if (this.tickTimer) clearInterval(this.tickTimer);
       if (this.pollTimer) clearInterval(this.pollTimer);
     });
-    // No client ID configured: stay dormant and drop any stale tokens left in this
-    // browser profile, so an old/expired token can't spam failed refreshes.
-    if (!this.configured()) {
-      if (this.tokens) this.disconnect();
-      return;
-    }
+    // A missing runtime config must not erase a previously saved session.
+    if (!this.configured()) return;
 
     void this.handleRedirect().then(() => {
       if (this.tokens) {
@@ -95,6 +94,7 @@ export class SpotifyService {
 
   logout(): void {
     this.disconnect();
+    this.error.set(null);
   }
 
   /** Drop tokens and stop polling — on sign-out, or when Spotify rejects the token. */
@@ -167,8 +167,18 @@ export class SpotifyService {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body,
+        signal: AbortSignal.timeout(10_000),
       });
-      if (!res.ok) return false;
+      if (!res.ok) {
+        if (res.status === 400 || res.status === 401) {
+          if (body.get('grant_type') === 'refresh_token') this.disconnect();
+          this.error.set('Spotify session expired. Connect again.');
+        } else {
+          this.error.set(`Spotify sign-in temporarily unavailable (${res.status}). Retrying…`);
+          this.backoffUntil = Date.now() + 5000;
+        }
+        return false;
+      }
       const json = (await res.json()) as {
         access_token: string;
         refresh_token?: string;
@@ -180,30 +190,31 @@ export class SpotifyService {
         expiresAt: Date.now() + json.expires_in * 1000,
       };
       localStorage.setItem(TOKENS_KEY, JSON.stringify(this.tokens));
+      this.error.set(null);
       return true;
     } catch {
+      this.error.set('Cannot reach Spotify. Check the internet connection. Retrying…');
+      this.backoffUntil = Date.now() + 5000;
       return false;
     }
   }
 
-  private async token(): Promise<string | null> {
+  private async token(forceRefresh = false): Promise<string | null> {
     if (!this.tokens) return null;
-    if (this.tokens.expiresAt - Date.now() < 60_000) {
-      const refreshed =
-        this.tokens.refresh &&
-        (await this.exchange(
-          new URLSearchParams({
-            grant_type: 'refresh_token',
-            refresh_token: this.tokens.refresh,
-            client_id: CLIENT_ID,
-          }),
-        ));
-      if (!refreshed) {
-        // No refresh token, or Spotify rejected it (e.g. issued for a different
-        // client): give up instead of polling with a dead token forever.
+    if (forceRefresh || this.tokens.expiresAt - Date.now() < 60_000) {
+      if (!this.tokens.refresh) {
         this.disconnect();
+        this.error.set('Spotify session expired. Connect again.');
         return null;
       }
+      const refreshed = await (this.refreshing ??= this.exchange(
+        new URLSearchParams({
+          grant_type: 'refresh_token',
+          refresh_token: this.tokens.refresh,
+          client_id: CLIENT_ID,
+        }),
+      ).finally(() => { this.refreshing = null; }));
+      if (!refreshed) return null;
     }
     return this.tokens?.access ?? null;
   }
@@ -220,29 +231,33 @@ export class SpotifyService {
   }
 
   private async poll(): Promise<void> {
-    if (Date.now() < this.backoffUntil) return;
-    const token = await this.token();
-    if (!token) return;
+    if (this.polling || Date.now() < this.backoffUntil) return;
+    this.polling = true;
     try {
-      const res = await fetch(`${API_BASE}/me/player`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await this.request('/me/player');
+      if (!res) return;
       if (res.status === 204) {
+        this.error.set(null);
+        this.track.set(null);
+        this.positionMs.set(0);
         this.hasDevice.set(false);
         this.deviceName.set(null);
         this.paused.set(true);
         return;
       }
-      if (res.status === 401) {
-        this.disconnect();
-        return;
-      }
+      if (res.status === 401) return;
       if (res.status === 429) {
         const retry = Number(res.headers.get('Retry-After') ?? '5');
         this.backoffUntil = Date.now() + (retry + 1) * 1000;
+        this.error.set('Spotify is rate limiting requests. Retrying shortly…');
         return;
       }
-      if (!res.ok) return;
+      if (!res.ok) {
+        this.error.set(res.status === 403
+          ? 'Spotify denied playback access. Check app permissions and account access.'
+          : `Spotify playback unavailable (${res.status}). Retrying…`);
+        return;
+      }
       const json = (await res.json()) as {
         is_playing: boolean;
         progress_ms: number;
@@ -258,9 +273,34 @@ export class SpotifyService {
       this.positionMs.set(json.progress_ms ?? 0);
       this.lastTick = performance.now();
       if (json.item) this.setTrack(json.item);
+      else this.track.set(null);
+      this.error.set(null);
     } catch {
-      /* ignore */
+      this.error.set('Cannot reach Spotify. Check the internet connection. Retrying…');
+    } finally {
+      this.polling = false;
     }
+  }
+
+  private async request(path: string, method = 'GET'): Promise<Response | null> {
+    let token = await this.token();
+    if (!token) return null;
+    const send = () => fetch(`${API_BASE}${path}`, {
+      method,
+      headers: { Authorization: `Bearer ${token}` },
+      signal: AbortSignal.timeout(10_000),
+    });
+    let res = await send();
+    if (res.status === 401) {
+      token = await this.token(true);
+      if (!token) return null;
+      res = await send();
+      if (res.status === 401) {
+        this.disconnect();
+        this.error.set('Spotify session expired. Connect again.');
+      }
+    }
+    return res;
   }
 
   private setTrack(item: SpotifyItem): void {
@@ -276,18 +316,13 @@ export class SpotifyService {
   }
 
   private async api(path: string, method: string): Promise<void> {
-    const token = await this.token();
-    if (!token) return;
     try {
-      const res = await fetch(`${API_BASE}${path}`, {
-        method,
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (res.status === 401) this.disconnect();
-      else if (res.status === 403) this.premiumError.set(true);
+      const res = await this.request(path, method);
+      if (!res) return;
+      if (res.status === 403) this.premiumError.set(true);
       else if (res.ok || res.status === 204) this.premiumError.set(false);
     } catch {
-      /* ignore */
+      this.error.set('Cannot reach Spotify. Check the internet connection. Retrying…');
     }
   }
 

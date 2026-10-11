@@ -765,8 +765,7 @@ app-pet-habitat .tv .detail {
 
 @media (any-pointer: fine) and (prefers-reduced-motion: no-preference) {
   html[data-cursor-fx='on'],
-  html[data-cursor-fx='on'] body,
-  html[data-cursor-fx='on'] :where(a, button, input, textarea, select, label, [role='button'], [cdkdraghandle]) {
+  html[data-cursor-fx='on'] * {
     cursor: none !important;
   }
 }

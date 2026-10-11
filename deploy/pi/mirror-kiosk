@@ -16,6 +16,7 @@ fi
 exec "$browser" \
   --kiosk \
   --no-first-run \
+  --autoplay-policy=no-user-gesture-required \
   --disable-session-crashed-bubble \
   --user-data-dir="$profile_root" \
   http://127.0.0.1/

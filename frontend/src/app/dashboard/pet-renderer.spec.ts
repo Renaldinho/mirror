@@ -63,6 +63,19 @@ describe('pet rendering', () => {
     spotify.paused.set(true);
     frame(1600);
     expect(fixture.nativeElement.querySelector('.bubble').textContent).toBe('');
+    const ball = fixture.nativeElement.querySelector('.ball-button') as HTMLElement;
+    const ballPointer = (type: string, x: number) => Object.assign(new Event(type), {
+      button: 0, pointerId: 2, clientX: x, clientY: 300,
+    });
+    ball.dispatchEvent(ballPointer('pointerdown', 400));
+    window.dispatchEvent(ballPointer('pointerup', 480));
+    frame(1700);
+    expect(ball.style.pointerEvents).toBe('auto');
+    ball.dispatchEvent(ballPointer('pointerdown', 600));
+    frame(1800);
+    expect(ball.style.transform).toContain('scale(1.12)');
+    window.dispatchEvent(ballPointer('pointerup', 600));
+    frame(1900);
     const games = TestBed.inject(GamesService);
     const petFrame = frame;
     const petRequests = () => request.mock.calls.filter(([callback]) => callback === petFrame).length;

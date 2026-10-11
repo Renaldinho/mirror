@@ -9,6 +9,7 @@ import { RetroCursor } from './retro-cursor';
 import { GameOverlay } from '../minigames/game-overlay';
 import { SpotifyService } from '../widgets/spotify/spotify.service';
 import { DisplayService } from './display.service';
+import { AlarmPopup } from '../widgets/alarm-popup';
 
 /** The mirror display itself: the ambient dark-academia board shown on the Pi. */
 @Component({
@@ -21,6 +22,7 @@ import { DisplayService } from './display.service';
     PetHabitat,
     RetroCursor,
     GameOverlay,
+    AlarmPopup,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -43,6 +45,7 @@ import { DisplayService } from './display.service';
       </section>
 
       <app-game-overlay />
+      <app-alarm-popup />
 
       <app-retro-cursor />
     </main>
@@ -69,6 +72,7 @@ import { DisplayService } from './display.service';
     .portrait [data-widget='notes'] { order: 3; }
     .portrait [data-widget='spotify'] { order: 4; }
     .portrait [data-widget='lyrics'] { order: 5; }
+    .portrait [data-widget='alarm'] { order: 6; }
     @media (max-width: 599px) {
       .widget-board.portrait {
         grid-template-columns: minmax(0, 1fr);

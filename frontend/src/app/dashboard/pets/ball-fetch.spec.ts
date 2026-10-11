@@ -23,6 +23,32 @@ function thrown(controller: BallFetchController): void {
 }
 
 describe('BallFetchController', () => {
+  it('lets the user reclaim a moving or stopped throw before the pet catches it', () => {
+    for (const frames of [0, 360]) {
+      const controller = new BallFetchController();
+      const distantPet = { ...pet, x: 0 };
+      controller.reset(distantPet, bounds);
+      controller.beginDrag(1, 400, 300, 0, bounds);
+      controller.release(1, 450, 300, 100, bounds);
+      for (let frame = 0; frame < frames; frame++) {
+        controller.step(1 / 60, bounds, distantPet, pointer);
+      }
+      expect(controller.ball?.phase).toBe('thrown');
+      const x = controller.ball!.x;
+      const y = controller.ball!.y;
+      expect(controller.beginDrag(2, x, y, 10_000, bounds)).toBe(true);
+      expect(controller.ball).toMatchObject({ phase: 'held', vx: 0, vy: 0 });
+      expect(controller.beginDrag(3, x, y, 10_010, bounds)).toBe(false);
+      // Even a pet standing at the ball must stop fetching once the user holds it.
+      expect(controller.step(.1, bounds, { ...pet, x: x - pet.width / 2, y: y + 22 }, pointer)).toBeNull();
+      expect(controller.ball?.phase).toBe('held');
+      controller.drag(2, x - 20, y, 10_040, bounds);
+      expect(controller.release(2, x - 40, y, 10_080, bounds)).toBe(true);
+      expect(controller.ball?.phase).toBe('thrown');
+      expect(controller.ball!.vx).toBeCloseTo(-500);
+    }
+  });
+
   it('keeps a click-only release ready instead of starting a fetch', () => {
     const controller = new BallFetchController();
     controller.reset(pet, bounds);
@@ -33,12 +59,32 @@ describe('BallFetchController', () => {
     expect(controller.active).toBe(false);
   });
 
-  it('derives and clamps throw velocity from recent pointer movement', () => {
+  it('preserves the speed and direction of a throw above the old cap', () => {
     const controller = new BallFetchController();
     thrown(controller);
 
     expect(controller.ball?.phase).toBe('thrown');
-    expect(Math.hypot(controller.ball!.vx, controller.ball!.vy)).toBeCloseTo(MAX_THROW_SPEED);
+    expect(controller.ball!.vx).toBeCloseTo(160 / .12);
+    expect(controller.ball!.vy).toBeCloseTo(-120 / .12);
+  });
+
+  it('keeps gentle throws proportional and caps only very fast flicks', () => {
+    const cases = [
+      { distance: 60, milliseconds: 120, speed: 500 },
+      { distance: 240, milliseconds: 120, speed: 2000 },
+      { distance: 600, milliseconds: 10, speed: MAX_THROW_SPEED },
+    ];
+    for (const sample of cases) {
+      const controller = new BallFetchController();
+      controller.reset(pet, bounds);
+      controller.beginDrag(1, 100, 300, 0, bounds);
+      controller.release(1, 100 + sample.distance, 300, sample.milliseconds, bounds);
+      expect(controller.ball!.vx).toBeCloseTo(sample.speed);
+      expect(controller.ball!.vy).toBe(0);
+      controller.step(.1, bounds, pet, pointer, false);
+      expect(controller.ball!.x).toBeGreaterThanOrEqual(BALL_RADIUS);
+      expect(controller.ball!.x).toBeLessThanOrEqual(bounds.width - BALL_RADIUS);
+    }
   });
 
   it('has no gravity and damps both velocity axes evenly', () => {
@@ -47,11 +93,12 @@ describe('BallFetchController', () => {
     const before = { vx: controller.ball!.vx, vy: controller.ball!.vy };
     const ratio = before.vy / before.vx;
 
-    controller.step(.1, bounds, { ...pet, x: 0, y: bounds.floorY }, pointer);
+    // Measure free flight before the stronger throw reaches a wall.
+    controller.step(.04, bounds, { ...pet, x: 0, y: bounds.floorY }, pointer);
 
     expect(controller.ball!.vy / controller.ball!.vx).toBeCloseTo(ratio, 4);
     expect(Math.hypot(controller.ball!.vx, controller.ball!.vy))
-      .toBeCloseTo(Math.hypot(before.vx, before.vy) * Math.exp(-AIR_DAMPING * .1), 3);
+      .toBeCloseTo(Math.hypot(before.vx, before.vy) * Math.exp(-AIR_DAMPING * .04), 3);
   });
 
   it('rebounds from every edge of the reachable pet area', () => {

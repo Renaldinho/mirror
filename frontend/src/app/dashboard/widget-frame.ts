@@ -6,6 +6,7 @@ import { QuoteWidget } from '../widgets/quote';
 import { SpotifyWidget } from '../widgets/spotify.widget';
 import { LyricsWidget } from '../widgets/lyrics.widget';
 import { WeatherWidget } from '../widgets/weather';
+import { AlarmWidget } from '../widgets/alarm.widget';
 import { CornerFlourish } from './corner-flourish';
 import { SpecimenArt } from './specimen-art';
 import { DashboardService, SCALE_STEPS, WidgetInstance } from './dashboard.service';
@@ -34,6 +35,7 @@ import { DisplayService } from './display.service';
     NotesWidget,
     SpotifyWidget,
     LyricsWidget,
+    AlarmWidget,
     UiIcon,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -156,6 +158,7 @@ import { DisplayService } from './display.service';
             @case ('notes') { <app-notes /> }
             @case ('spotify') { <app-spotify [collapsed]="widget().collapsed" /> }
             @case ('lyrics') { <app-lyrics [collapsed]="widget().collapsed" /> }
+            @case ('alarm') { <app-alarm [collapsed]="widget().collapsed" /> }
           }
         </div>
 

@@ -449,7 +449,7 @@ export class PetRenderer implements AfterViewInit {
       return;
     }
     ballEl.style.opacity = '1';
-    ballEl.style.pointerEvents = ball.phase === 'ready' ? 'auto' : 'none';
+    ballEl.style.pointerEvents = ball.phase === 'ready' || ball.phase === 'thrown' ? 'auto' : 'none';
     ballEl.style.transform = `translate(${ball.x - this.pet.x - 12}px, ${ball.y - this.pet.y - 12}px) rotate(${ball.rotation}deg) scale(${ball.phase === 'held' ? 1.12 : 1})`;
   }
 

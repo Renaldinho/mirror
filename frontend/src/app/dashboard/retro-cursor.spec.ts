@@ -2,6 +2,8 @@ import { TestBed } from '@angular/core/testing';
 import { vi } from 'vitest';
 import { RetroCursor } from './retro-cursor';
 import { SettingsService } from './settings.service';
+import { GamesService } from '../minigames/games.service';
+import { AlarmService } from '../widgets/alarm.service';
 
 describe('cursor effects rendering budget', () => {
   afterEach(() => {
@@ -66,6 +68,23 @@ describe('cursor effects rendering budget', () => {
     expect(context.clearRect).toHaveBeenLastCalledWith(0, 0, 384, 384);
     expect(context.setTransform).toHaveBeenLastCalledWith(1, 0, 0, 1, -2808, -1608);
     expect(canvas.style.transform).toBe('translate3d(2808px, 1608px, 0)');
+
+    const games = TestBed.inject(GamesService);
+    const alarm = TestBed.inject(AlarmService);
+    const cursor = fixture.nativeElement.querySelector('.retro-pointer') as HTMLElement;
+    games.gameCursorSuppressed.set(true);
+    fixture.detectChanges();
+    pointer('pointermove', 200, 200);
+    expect(cursor.classList.contains('visible')).toBe(false);
+    alarm.ringing.set(true);
+    fixture.detectChanges();
+    pointer('pointermove', 200, 200);
+    expect(cursor.classList.contains('visible')).toBe(true);
+    alarm.ringing.set(false);
+    fixture.detectChanges();
+    expect(cursor.classList.contains('visible')).toBe(false);
+    games.gameCursorSuppressed.set(false);
+    fixture.detectChanges();
 
     settings.cursorFx.set(false);
     fixture.detectChanges();

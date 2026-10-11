@@ -38,7 +38,7 @@ interface MotionSample {
 
 export const BALL_RADIUS = 12;
 export const THROW_SAMPLE_MS = 120;
-export const MAX_THROW_SPEED = 1000;
+export const MAX_THROW_SPEED = 3000;
 export const THROW_DISTANCE_THRESHOLD = 6;
 export const WALL_RESTITUTION = .82;
 export const AIR_DAMPING = 1.35;
@@ -94,7 +94,7 @@ export class BallFetchController {
   }
 
   beginDrag(pointerId: number, x: number, y: number, time: number, bounds: FetchBounds): boolean {
-    if (!this.current || this.current.phase !== 'ready') return false;
+    if (!this.current || (this.current.phase !== 'ready' && this.current.phase !== 'thrown')) return false;
     this.pointerId = pointerId;
     this.dragOrigin = { x, y };
     this.samples = [];

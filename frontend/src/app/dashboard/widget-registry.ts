@@ -2,7 +2,7 @@ import { ArtKey } from './specimen-art';
 import { IconName } from '../shared/ui-icon';
 
 /** The widget kinds available on the board. */
-export type WidgetType = 'weather' | 'clock' | 'quote' | 'notes' | 'spotify' | 'lyrics';
+export type WidgetType = 'weather' | 'clock' | 'quote' | 'notes' | 'spotify' | 'lyrics' | 'alarm';
 
 export type WidgetVariantId =
   | 'default'
@@ -89,6 +89,11 @@ export const WIDGETS: WidgetMeta[] = [
     accent: 'var(--widget-spotify-accent)',
     layouts: [{ id: 'default', label: 'Default', width: 300, height: 360 }],
   },
+  {
+    type: 'alarm', label: 'Alarm', latin: 'Hora expergiscendi', icon: 'clock', art: 'moth',
+    accent: 'var(--widget-clock-accent)',
+    layouts: [{ id: 'default', label: 'Default', width: 320, height: 540 }],
+  },
 ];
 
 export const WIDGET_META: Record<WidgetType, WidgetMeta> = Object.fromEntries(
@@ -99,4 +104,4 @@ export const WIDGET_META: Record<WidgetType, WidgetMeta> = Object.fromEntries(
  * Widgets that render a compact "mini" view when collapsed instead of hiding
  * their body entirely — a glanceable now-playing bar / current lyric line.
  */
-export const MINI_COLLAPSE = new Set<WidgetType>(['spotify', 'lyrics']);
+export const MINI_COLLAPSE = new Set<WidgetType>(['spotify', 'lyrics', 'alarm']);

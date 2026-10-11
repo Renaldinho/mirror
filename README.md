@@ -55,6 +55,21 @@ register and configure `http://127.0.0.1:4200/`.
 It uses PKCE, so there's no client secret — never add one. Controlling playback
 needs a Spotify Premium account with an active device.
 
+## Alarm
+
+Add **Alarm** from the Widgets menu. Pick a time, switch **Alarm on**, and use
+**Preview laugh + popup** to check the sound. The first ringtone is **Petah
+Gryffin**: Peter Griffin's laugh repeats alongside a face popup until you stop
+it or snooze for five minutes. Alarms fire once; a time that has passed is set
+for tomorrow. Time and settings use the mirror's local timezone and survive
+reloads. Removing the widget cancels its alarm. Keep the mirror app running.
+
+The updated Pi kiosk launcher allows alarm audio after a reboot without a
+click. Restart the kiosk after updating to apply that launcher setting. Normal
+browsers may require a click; the popup offers **Play sound** if audio is
+blocked. Audio and image assets are bundled locally; their sources are listed
+in [`frontend/public/alarms/ASSETS.md`](frontend/public/alarms/ASSETS.md).
+
 ## Check it's running / troubleshooting
 
 > These commands only work **after** `install.sh` has run — that's what creates

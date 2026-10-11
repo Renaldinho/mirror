@@ -3,17 +3,21 @@ import { SpotifyService } from './spotify/spotify.service';
 import { SettingsService } from '../dashboard/settings.service';
 import { themeFlavor } from '../dashboard/theme-flavor';
 
-/** Now-playing: connect to Spotify, stream on the mirror (Web Playback SDK), and
- *  control playback. Degrades to a read-only display when streaming isn't possible. */
+/** Now-playing display and remote controls for the user's active Spotify device. */
 @Component({
   selector: 'app-spotify',
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (collapsed()) {
       <div class="mini">
-        @if (!sp.authed() || !sp.track()) {
+        @if (!sp.configured()) {
+          <span class="mini-title muted">Spotify is not configured</span>
+        } @else if (!sp.authed()) {
+          <button class="btn" (click)="sp.login()">{{ flavor().connect }}</button>
+          @if (sp.error()) { <span class="mini-title muted" role="status">{{ sp.error() }}</span> }
+        } @else if (!sp.track()) {
           <div class="mini-art empty">♪</div>
-          <span class="mini-title muted">{{ flavor().nothingPlaying }}</span>
+          <span class="mini-title muted" role="status">{{ sp.error() || 'Start playing on a Spotify device' }}</span>
         } @else {
           @if (sp.track()?.artUrl) {
             <img class="mini-art" [src]="sp.track()!.artUrl" alt="" />
@@ -47,11 +51,12 @@ import { themeFlavor } from '../dashboard/theme-flavor';
     } @else {
     <div class="np">
       @if (!sp.configured()) {
-        <p class="hint">Add a Spotify Client ID in <code>spotify.config.ts</code> to enable this widget.</p>
+        <p class="hint">Spotify is not configured on this mirror.</p>
       } @else if (!sp.authed()) {
         <div class="connect">
           <div class="logo">♫</div>
           <button class="btn" (click)="sp.login()">{{ flavor().connect }}</button>
+          @if (sp.error()) { <p class="hint" role="status">{{ sp.error() }}</p> }
         </div>
       } @else {
         <div class="cover">
@@ -62,7 +67,7 @@ import { themeFlavor } from '../dashboard/theme-flavor';
           }
         </div>
         <div class="meta">
-          <div class="title">{{ sp.track()?.title || flavor().nothingPlaying }}</div>
+          <div class="title">{{ sp.track()?.title || sp.error() || flavor().nothingPlaying }}</div>
           <div class="artist">{{ sp.track()?.artists || '—' }}</div>
         </div>
 
@@ -100,7 +105,9 @@ import { themeFlavor } from '../dashboard/theme-flavor';
           />
         </div>
 
-        @if (sp.premiumError()) {
+        @if (sp.error()) {
+          <div class="badge warn" role="status">{{ sp.error() }}</div>
+        } @else if (sp.premiumError()) {
           <div class="badge warn">Spotify Premium required to control playback</div>
         } @else if (sp.hasDevice()) {
           <div class="badge on">▷ {{ sp.deviceName() }}</div>
