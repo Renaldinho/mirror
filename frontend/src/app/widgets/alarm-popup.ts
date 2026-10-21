@@ -47,8 +47,15 @@ import { AlarmService } from './alarm.service';
     button {
       min-height: 48px; border-radius: 12px; padding: 12px 18px; border: 1px solid var(--theme-border-strong);
       background: var(--theme-control-bg); color: var(--theme-text); cursor: pointer; font-weight: 600;
+      transition: background-color 150ms ease, border-color 150ms ease, box-shadow 150ms ease;
     }
+    button:hover:not(:disabled) {
+      background: var(--theme-surface-hover); border-color: var(--theme-primary);
+      box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--theme-primary) 35%, transparent);
+    }
+    button:focus-visible { outline: 2px solid var(--theme-focus); outline-offset: 3px; }
     .stop { background: var(--theme-primary); color: #080808; font-weight: 800; }
+    .stop:hover:not(:disabled) { background: var(--theme-primary-bright); }
     .error { color: var(--theme-warning, #eebf68); }
 
     @keyframes strobe {
@@ -57,6 +64,7 @@ import { AlarmService } from './alarm.service';
     }
     @media (prefers-reduced-motion: reduce) {
       .backdrop { animation: none; }
+      button { transition: none; }
     }
   `],
 })

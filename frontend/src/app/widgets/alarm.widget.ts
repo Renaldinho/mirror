@@ -128,7 +128,7 @@ import { UiIcon } from '../shared/ui-icon';
       background: var(--theme-surface-soft); color: var(--theme-text-muted);
       font: 600 11px/1 var(--theme-font-body); letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; transition: 150ms ease;
     }
-    .mode:hover { color: var(--theme-text); }
+    .mode:hover { color: var(--theme-text); background: var(--theme-surface-hover); }
     .mode.on { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 14%, transparent); color: var(--theme-text); }
 
     /* Relative presets. */
@@ -168,7 +168,7 @@ import { UiIcon } from '../shared/ui-icon';
       padding: 9px 12px; border: 1px solid var(--theme-border); border-radius: var(--control-radius);
       background: var(--theme-surface-soft); color: var(--theme-text); cursor: pointer; transition: 180ms ease;
     }
-    .switch:hover { border-color: color-mix(in srgb, var(--accent) 45%, var(--theme-border)); }
+    .switch:hover { background: var(--theme-surface-hover); border-color: color-mix(in srgb, var(--accent) 45%, var(--theme-border)); }
     .switch.on { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent); }
     .sw-label { font: 600 13px/1 var(--theme-font-body); letter-spacing: 0.04em; }
     .track {
@@ -190,7 +190,9 @@ import { UiIcon } from '../shared/ui-icon';
       border: 1px solid var(--theme-border); border-radius: var(--control-radius);
       background: var(--theme-control-bg); color: var(--theme-text);
       font: 600 13px/1.2 var(--theme-font-body); cursor: pointer;
+      transition: background-color 150ms ease, border-color 150ms ease, box-shadow 150ms ease;
     }
+    .ringtone select:hover { background: var(--theme-surface-hover); }
 
     .preview {
       display: inline-flex; align-items: center; justify-content: center; gap: 8px; width: 100%;
@@ -209,8 +211,16 @@ import { UiIcon } from '../shared/ui-icon';
     .mini span { font-size: 11px; color: var(--theme-text-muted); }
     .mini span.on { color: var(--accent); }
 
+    :is(button, select):hover:not(:disabled) {
+      border-color: var(--accent);
+      box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 35%, transparent);
+    }
+    :is(button, select):focus-visible {
+      outline: 2px solid var(--theme-focus); outline-offset: 3px;
+    }
+
     @media (prefers-reduced-motion: reduce) {
-      .digits, .knob, .track, .switch, .step, .preview { transition: none; }
+      .digits, .knob, .track, button, select { transition: none; }
     }
   `],
 })
