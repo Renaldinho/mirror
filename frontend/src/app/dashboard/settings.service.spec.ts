@@ -16,6 +16,37 @@ describe('SettingsService', () => {
     expect(settings.matrixRain()).toBe(true);
   });
 
+  it('clamps and restores brightness and audio without allowing a black screen', () => {
+    const settings = TestBed.inject(SettingsService);
+    settings.setBrightness(0);
+    settings.setVolume(.4);
+    settings.audioMuted.set(true);
+    expect(settings.brightness()).toBe(.2);
+    expect(settings.effectiveVolume()).toBe(0);
+    TestBed.tick();
+    TestBed.resetTestingModule();
+    const restored = TestBed.inject(SettingsService);
+    expect(restored.brightness()).toBe(.2);
+    expect(restored.volume()).toBe(.4);
+    expect(restored.audioMuted()).toBe(true);
+    restored.audioMuted.set(false);
+    expect(restored.effectiveVolume()).toBe(.4);
+    restored.setVolume(-1);
+    expect(restored.effectiveVolume()).toBe(0);
+    restored.setBrightness(NaN);
+    expect(restored.brightness()).toBe(.2);
+    restored.setBrightness(2);
+    expect(restored.brightness()).toBe(1);
+  });
+
+  it('clamps invalid stored brightness on startup', () => {
+    localStorage.setItem('dash.display.brightness', '-100');
+    localStorage.setItem('dash.audio.volume', 'NaN');
+    const settings = TestBed.inject(SettingsService);
+    expect(settings.brightness()).toBe(.2);
+    expect(settings.volume()).toBe(1);
+  });
+
   it('remembers when the code rain background is disabled', () => {
     const settings = TestBed.inject(SettingsService);
     expect(settings.matrixRain()).toBe(true);

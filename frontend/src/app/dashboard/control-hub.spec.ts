@@ -42,7 +42,7 @@ describe('ControlHub', () => {
     const settings = TestBed.inject(SettingsService);
     open(fixture, 'effects');
 
-    const rain = fixture.nativeElement.querySelectorAll('.row')[0] as HTMLButtonElement;
+    const rain = fixture.nativeElement.querySelectorAll('.row')[1] as HTMLButtonElement;
     expect(settings.matrixRain()).toBe(true);
     rain.click();
     expect(settings.matrixRain()).toBe(false);
@@ -53,11 +53,11 @@ describe('ControlHub', () => {
     const settings = TestBed.inject(SettingsService);
     open(fixture, 'effects');
 
-    const fxToggle = fixture.nativeElement.querySelectorAll('.row')[1] as HTMLButtonElement;
+    const fxToggle = fixture.nativeElement.querySelectorAll('.row')[2] as HTMLButtonElement;
     fxToggle.click();
     expect(settings.cursorFx()).toBe(true);
 
-    const style = fixture.nativeElement.querySelectorAll('.row')[2] as HTMLButtonElement;
+    const style = fixture.nativeElement.querySelectorAll('.row')[3] as HTMLButtonElement;
     style.click();
     expect(settings.cursorFxMode()).toBe('glitter');
   });
@@ -71,6 +71,25 @@ describe('ControlHub', () => {
     const firstTile = fixture.nativeElement.querySelector('.tile') as HTMLButtonElement;
     firstTile.click();
     expect(dash.widgets().length).toBe(1);
+  });
+
+  it('adjusts volume and brightness from the effects panel and restores volume after mute', () => {
+    const fixture = TestBed.createComponent(ControlHub);
+    const settings = TestBed.inject(SettingsService);
+    open(fixture, 'effects');
+    const volume = fixture.nativeElement.querySelector('#mirror-volume') as HTMLInputElement;
+    volume.value = '.35';
+    volume.dispatchEvent(new Event('input'));
+    const mute = fixture.nativeElement.querySelector('.row') as HTMLButtonElement;
+    mute.click();
+    expect(settings.effectiveVolume()).toBe(0);
+    mute.click();
+    expect(settings.effectiveVolume()).toBe(.35);
+    const brightness = fixture.nativeElement.querySelector('#mirror-brightness') as HTMLInputElement;
+    expect(brightness.min).toBe('.2');
+    brightness.value = '.2';
+    brightness.dispatchEvent(new Event('input'));
+    expect(settings.brightness()).toBe(.2);
   });
 
   it('selects a theme from the theme panel', () => {

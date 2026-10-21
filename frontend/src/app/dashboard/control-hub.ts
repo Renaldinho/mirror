@@ -8,6 +8,7 @@ import { SettingsService, CURSOR_FX_MODES } from './settings.service';
 import { THEMES } from './theme-registry';
 import { WIDGETS } from './widget-registry';
 import { GamesService } from '../minigames/games.service';
+import { AudioFx } from '../minigames/audio';
 import { GAMES, GameId } from '../minigames/games-registry';
 import { IconName, UiIcon } from '../shared/ui-icon';
 
@@ -167,6 +168,21 @@ interface Petal {
           }
 
           @case ('effects') {
+            <label class="slider-control" for="mirror-volume">
+              <span>Volume <output>{{ round(settings.effectiveVolume() * 100) }}%</output></span>
+              <input id="mirror-volume" type="range" min="0" max="1" step=".01"
+                [value]="settings.volume()" (input)="settings.setVolume($any($event.target).valueAsNumber)" />
+            </label>
+            <button class="row" type="button" [attr.aria-pressed]="settings.audioMuted()"
+              (click)="settings.audioMuted.update(toggleMuted)">
+              <app-ui-icon [name]="settings.effectiveVolume() === 0 ? 'volume-off' : 'volume'" />
+              <span>{{ settings.audioMuted() ? 'Unmute audio' : 'Mute audio' }}</span>
+            </button>
+            <label class="slider-control" for="mirror-brightness">
+              <span>Brightness <output>{{ round(settings.brightness() * 100) }}%</output></span>
+              <input id="mirror-brightness" type="range" min=".2" max="1" step=".01"
+                [value]="settings.brightness()" (input)="settings.setBrightness($any($event.target).valueAsNumber)" />
+            </label>
             <button class="row" type="button" [class.on]="settings.matrixRain()"
               [attr.aria-pressed]="settings.matrixRain()" (click)="settings.matrixRain.set(!settings.matrixRain())">
               <app-ui-icon name="matrix" />
@@ -238,6 +254,10 @@ interface Petal {
         box-shadow: var(--theme-shadow-strong);
       }
       .panel header { display: flex; }
+      .slider-control { display: grid; gap: 10px; padding: 10px; border: 1px solid var(--theme-border); border-radius: var(--control-radius); }
+      .slider-control span { display: flex; justify-content: space-between; font-size: 13px; color: var(--theme-text); }
+      .slider-control input { width: 100%; accent-color: var(--theme-primary); cursor: pointer; }
+      .slider-control:hover { border-color: var(--theme-primary); background: var(--theme-surface-hover); }
       .eyebrow { color: var(--theme-text-muted); font: 600 9px/1 var(--theme-font-body); letter-spacing: 0.22em; text-transform: uppercase; }
 
       .tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
@@ -335,6 +355,8 @@ export class ControlHub {
   readonly settings = inject(SettingsService);
 
   readonly games = inject(GamesService);
+  private readonly sfx = inject(AudioFx);
+  readonly toggleMuted = (muted: boolean) => !muted;
   readonly widgets = WIDGETS;
   readonly pets = PETS;
   readonly themes = THEMES;
@@ -391,6 +413,7 @@ export class ControlHub {
 
   playGame(id: GameId): void {
     this.games.open(id);
+    this.sfx.play('start');
     this.closeAll();
   }
 

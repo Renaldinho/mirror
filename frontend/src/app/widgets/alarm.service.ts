@@ -1,5 +1,6 @@
 import { DestroyRef, Injectable, computed, effect, inject, signal } from '@angular/core';
 import { DashboardService } from '../dashboard/dashboard.service';
+import { SettingsService } from '../dashboard/settings.service';
 import { DEFAULT_RINGTONE, getRingtone, RINGTONES } from './ringtones';
 
 interface AlarmSettings { time: string; enabled: boolean; nextAt: number | null; ringtone: string }
@@ -20,9 +21,14 @@ export class AlarmService {
   /** The currently selected ringtone (sound + popup face). */
   readonly ringtone = computed(() => getRingtone(this.settings().ringtone));
   private readonly dashboard = inject(DashboardService);
+  private readonly preferences = inject(SettingsService);
   private audio: HTMLAudioElement | null = null;
 
   constructor() {
+    effect(() => {
+      const volume = this.preferences.effectiveVolume();
+      if (this.audio) this.audio.volume = volume;
+    });
     effect((onCleanup) => {
       const settings = this.settings();
       localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
@@ -82,6 +88,7 @@ export class AlarmService {
       this.audio = new Audio(source);
     }
     const audio = this.audio;
+    audio.volume = this.preferences.effectiveVolume();
     audio.loop = true;
     this.soundError.set(null);
     void audio.play().catch((error: unknown) => {

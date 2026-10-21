@@ -110,16 +110,17 @@ export class Whack implements OnInit {
   }
 
   restart(): void {
+    this.sfx.play('start');
     this.start();
   }
 
   whack(i: number): void {
     if (this.phase() !== 'play') return;
     const holes = this.holes();
-    if (!holes[i].up) return;
+    if (!holes[i].up) { this.sfx.play('miss'); return; }
     this.set(i, false);
     this.score.update((s) => s + 1);
-    this.sfx.play('hit');
+    this.sfx.play('bonk');
   }
 
   private start(): void {
@@ -162,7 +163,7 @@ export class Whack implements OnInit {
       if (down.length) {
         const i = down[Math.floor(Math.random() * down.length)];
         holes[i] = { up: true, ttl: 0.6 + Math.random() * 0.6 };
-        this.sfx.play('quack');
+        this.sfx.play('pop');
         changed = true;
       }
     }
@@ -179,7 +180,7 @@ export class Whack implements OnInit {
   private gameOver(): void {
     this.stop();
     this.phase.set('over');
-    this.sfx.play('gameover');
     this.record.set(this.games.submitScore('whack', this.score()));
+    this.sfx.play(this.record() ? 'record' : 'gameover');
   }
 }

@@ -345,6 +345,7 @@ export class DuckHunt implements AfterViewInit {
   }
 
   restart(): void {
+    this.sfx.play('start');
     this.aim.setHandicap(this.mode.handicap);
     this.ducks = [];
     this.impacts = [];
@@ -471,6 +472,8 @@ export class DuckHunt implements AfterViewInit {
       this.score.update((value) => value + Math.round(100 + this.speed() * .3));
       this.sfx.play('hit');
       this.dog = { mode: 'jump', t: 0, x: best.x };
+    } else {
+      this.sfx.play('miss');
     }
   }
 
@@ -569,8 +572,8 @@ export class DuckHunt implements AfterViewInit {
   private gameOver(): void {
     this.phase.set('gameover');
     this.games.gameCursorSuppressed.set(false);
-    this.sfx.play('gameover');
     this.record.set(this.games.submitScore('duck-hunt', this.score()));
+    this.sfx.play(this.record() ? 'record' : 'gameover');
   }
 
   private updateDog(dt: number): void {

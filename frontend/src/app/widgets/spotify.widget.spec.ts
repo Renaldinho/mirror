@@ -25,4 +25,30 @@ describe('Spotify connection messages', () => {
     fixture.nativeElement.querySelector('button').click();
     expect(spotify.login).toHaveBeenCalledOnce();
   });
+
+  it('renders playback controls as SVG icons in both layouts', () => {
+    localStorage.clear();
+    const spotify = {
+      configured: signal(true), authed: signal(true), error: signal(null),
+      track: signal({ title: 'Track', artists: 'Artist', durationMs: 1000, artUrl: '' }),
+      paused: signal(true), positionMs: signal(0), volume: signal(.5),
+      premiumError: signal(false), hasDevice: signal(false), deviceName: signal(''),
+      prev: vi.fn(), next: vi.fn(), togglePlay: vi.fn(),
+    };
+    TestBed.configureTestingModule({
+      imports: [SpotifyWidget], providers: [{ provide: SpotifyService, useValue: spotify }],
+    });
+    const fixture = TestBed.createComponent(SpotifyWidget);
+    for (const collapsed of [false, true]) {
+      fixture.componentRef.setInput('collapsed', collapsed);
+      spotify.paused.set(true);
+      fixture.detectChanges();
+      for (const label of ['Previous', 'Play', 'Next']) {
+        expect(fixture.nativeElement.querySelector(`button[aria-label="${label}"] svg path`)).not.toBeNull();
+      }
+      spotify.paused.set(false);
+      fixture.detectChanges();
+      expect(fixture.nativeElement.querySelector('button[aria-label="Pause"] svg path')).not.toBeNull();
+    }
+  });
 });

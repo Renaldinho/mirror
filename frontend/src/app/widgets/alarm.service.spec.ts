@@ -2,6 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { vi } from 'vitest';
 import { DashboardService } from '../dashboard/dashboard.service';
 import { AlarmService } from './alarm.service';
+import { SettingsService } from '../dashboard/settings.service';
 
 describe('one-time mirror alarm', () => {
   beforeEach(() => {
@@ -100,5 +101,20 @@ describe('one-time mirror alarm', () => {
     alarm.playSound();
     await Promise.resolve();
     expect(alarm.soundError()).toBeNull();
+  });
+
+  it('applies volume and mute to an alarm that is already playing', () => {
+    const settings = TestBed.inject(SettingsService);
+    const alarm = TestBed.inject(AlarmService);
+    settings.setVolume(.3);
+    alarm.test();
+    const audio = vi.mocked(HTMLMediaElement.prototype.play).mock.instances[0] as HTMLAudioElement;
+    expect(audio.volume).toBe(.3);
+    settings.audioMuted.set(true);
+    TestBed.tick();
+    expect(audio.volume).toBe(0);
+    settings.audioMuted.set(false);
+    TestBed.tick();
+    expect(audio.volume).toBe(.3);
   });
 });

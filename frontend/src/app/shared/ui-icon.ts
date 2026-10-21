@@ -6,6 +6,10 @@ const ICON_PATHS = {
   quote: ['M5 7h5v5H7v5H4v-6a4 4 0 0 1 4-4', 'M14 7h5v5h-3v5h-3v-6a4 4 0 0 1 4-4'],
   note: ['M6 4h9l3 3v13H6Z', 'M15 4v4h3', 'M9 12h6', 'M9 16h4'],
   music: ['M9 18V6l10-2v12', 'M9 8l10-2', 'M6.5 21A2.5 2.5 0 1 0 6.5 16a2.5 2.5 0 0 0 0 5Z', 'M16.5 19a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z'],
+  play: ['m8 5 11 7-11 7Z'],
+  pause: ['M8 5v14', 'M16 5v14'],
+  previous: ['M5 5v14', 'm19 5-11 7 11 7Z'],
+  next: ['M19 5v14', 'M5 5l11 7-11 7Z'],
   lyrics: ['M5 5h14', 'M5 9h10', 'M5 13h8', 'M8 20v-5l7-1v4', 'M6.5 21a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z', 'M13.5 20a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z'],
   circle: ['M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Z'],
   mushroom: ['M5 11a7 7 0 0 1 14 0Z', 'M9 11v7c0 2 6 2 6 0v-7', 'M9 15h6'],
@@ -59,7 +63,7 @@ export type IconName = keyof typeof ICON_PATHS;
       @for (path of paths(); track path) { <path [attr.d]="path" /> }
     </svg>
   `,
-  styles: [`:host { display: inline-grid; width: 1em; height: 1em; place-items: center; } svg { display: block; width: 100%; height: 100%; }`],
+  styles: [`:host { display: inline-grid; width: 1em; height: 1em; flex-shrink: 0; place-items: center; } svg { display: block; width: 100%; height: 100%; }`],
 })
 export class UiIcon {
   readonly name = input.required<IconName>();

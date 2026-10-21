@@ -2,10 +2,12 @@ import { ChangeDetectionStrategy, Component, computed, inject, input } from '@an
 import { SpotifyService } from './spotify/spotify.service';
 import { SettingsService } from '../dashboard/settings.service';
 import { themeFlavor } from '../dashboard/theme-flavor';
+import { UiIcon } from '../shared/ui-icon';
 
 /** Now-playing display and remote controls for the user's active Spotify device. */
 @Component({
   selector: 'app-spotify',
+  imports: [UiIcon],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (collapsed()) {
@@ -29,11 +31,11 @@ import { themeFlavor } from '../dashboard/theme-flavor';
             <span class="mini-artist">{{ sp.track()?.artists || '—' }}</span>
           </div>
           <div class="mini-ctrls">
-            <button (click)="sp.prev()" aria-label="Previous">⏮</button>
+            <button (click)="sp.prev()" aria-label="Previous"><app-ui-icon name="previous" /></button>
             <button class="mini-play" (click)="sp.togglePlay()" [attr.aria-label]="sp.paused() ? 'Play' : 'Pause'">
-              {{ sp.paused() ? '▶' : '⏸' }}
+              <app-ui-icon [name]="sp.paused() ? 'play' : 'pause'" />
             </button>
-            <button (click)="sp.next()" aria-label="Next">⏭</button>
+            <button (click)="sp.next()" aria-label="Next"><app-ui-icon name="next" /></button>
           </div>
           <div
             class="mini-bar"
@@ -88,11 +90,11 @@ import { themeFlavor } from '../dashboard/theme-flavor';
         </div>
 
         <div class="controls">
-          <button (click)="sp.prev()" aria-label="Previous">⏮</button>
+          <button (click)="sp.prev()" aria-label="Previous"><app-ui-icon name="previous" /></button>
           <button class="play" (click)="sp.togglePlay()" [attr.aria-label]="sp.paused() ? 'Play' : 'Pause'">
-            {{ sp.paused() ? '▶' : '⏸' }}
+            <app-ui-icon [name]="sp.paused() ? 'play' : 'pause'" />
           </button>
-          <button (click)="sp.next()" aria-label="Next">⏭</button>
+          <button (click)="sp.next()" aria-label="Next"><app-ui-icon name="next" /></button>
           <input
             class="vol"
             type="range"
