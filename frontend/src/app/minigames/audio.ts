@@ -2,7 +2,7 @@ import { DestroyRef, Injectable, effect, inject } from '@angular/core';
 import { GamesService } from './games.service';
 import { SettingsService } from '../dashboard/settings.service';
 
-type Sfx = 'shot' | 'quack' | 'hit' | 'laugh' | 'point' | 'gameover' | 'start' | 'record' | 'bonk' | 'pop' | 'miss';
+type Sfx = 'shot' | 'quack' | 'hit' | 'laugh' | 'point' | 'gameover' | 'start' | 'record' | 'bonk' | 'pop' | 'miss' | 'bounce';
 
 /**
  * Recorded shotgun blast plus synthesized arcade cues. The AudioContext is created
@@ -33,6 +33,9 @@ export class AudioFx {
     const t = ctx.currentTime;
 
     switch (sfx) {
+      case 'bounce':
+        this.tone(ctx, t, 360, 320, .055, 'square', .12);
+        break;
       case 'start':
       case 'record':
         (sfx === 'record' ? [523, 659, 784, 1047] : [392, 523, 784]).forEach((f, i) =>

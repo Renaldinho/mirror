@@ -40,4 +40,31 @@ describe('DashboardService widget layouts', () => {
       },
     ]);
   });
+
+  it('reorders portrait widgets without moving pinned slots or losing desktop coordinates', () => {
+    const dashboard = TestBed.inject(DashboardService);
+    for (const type of ['clock', 'weather', 'notes', 'alarm'] as const) dashboard.add(type);
+    dashboard.move('clock', 220, 180);
+    dashboard.togglePin('weather');
+    dashboard.reorder('clock', 'alarm');
+    expect(dashboard.widgets().map((widget) => widget.type)).toEqual(['notes', 'weather', 'alarm', 'clock']);
+    expect(dashboard.widgets()[3]).toMatchObject({ x: 220, y: 180 });
+    dashboard.reorder('weather', 'notes');
+    expect(dashboard.widgets()[1].type).toBe('weather');
+    TestBed.tick();
+    TestBed.resetTestingModule();
+    expect(TestBed.inject(DashboardService).widgets().map((widget) => widget.type)).toEqual(['notes', 'weather', 'alarm', 'clock']);
+  });
+
+  it('rejects invalid positions and keeps pinned widgets fixed', () => {
+    const dashboard = TestBed.inject(DashboardService);
+    dashboard.add('clock');
+    dashboard.move('clock', -10, -20);
+    expect(dashboard.widgets()[0]).toMatchObject({ x: 0, y: 0 });
+    dashboard.move('clock', NaN, Infinity);
+    expect(dashboard.widgets()[0]).toMatchObject({ x: 0, y: 0 });
+    dashboard.togglePin('clock');
+    dashboard.move('clock', 120, 140);
+    expect(dashboard.widgets()[0]).toMatchObject({ x: 0, y: 0 });
+  });
 });

@@ -32,7 +32,8 @@ const TICK = 0.1;
       <div class="grid" [class.dim]="phase() === 'over'">
         @for (hole of holes(); track $index) {
           <button class="hole" [class.up]="hole.up" (pointerdown)="whack($index)" aria-label="Mole">
-            <span class="mole">🐹</span>
+            <img class="mole" src="/games/whack/mole.svg" alt="" aria-hidden="true"
+              width="180" height="200" draggable="false" />
           </button>
         }
       </div>
@@ -70,7 +71,7 @@ const TICK = 0.1;
           var(--theme-control-bg);
       }
       .mole {
-        font-size: clamp(28px, min(14cqw, 12cqh), 180px);
+        display: block; width: 85%; height: 85%; object-fit: contain; pointer-events: none;
         transform: translateY(120%);
         transition: transform 0.11s ease;
       }

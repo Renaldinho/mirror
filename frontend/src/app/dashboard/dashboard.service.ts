@@ -112,9 +112,25 @@ export class DashboardService {
   }
 
   move(type: WidgetType, x: number, y: number): void {
+    if (!Number.isFinite(x) || !Number.isFinite(y)) return;
     this.widgets.update((list) =>
-      list.map((widget) => (widget.type === type ? { ...widget, x, y } : widget)),
+      list.map((widget) => (widget.type === type && !widget.pinned ? { ...widget, x: Math.max(0, x), y: Math.max(0, y) } : widget)),
     );
+  }
+
+  /** Reorder movable widgets while keeping pinned slots and desktop positions. */
+  reorder(type: WidgetType, target: WidgetType): void {
+    if (type === target) return;
+    this.widgets.update((list) => {
+      const movable = list.filter((widget) => !widget.pinned);
+      const from = movable.findIndex((widget) => widget.type === type);
+      const to = movable.findIndex((widget) => widget.type === target);
+      if (from < 0 || to < 0) return list;
+      const [moved] = movable.splice(from, 1);
+      movable.splice(to, 0, moved);
+      let index = 0;
+      return list.map((widget) => widget.pinned ? widget : movable[index++]);
+    });
   }
 
   private nextSlot(): { x: number; y: number } {

@@ -32,11 +32,22 @@ Pulls the newest version, rebuilds, and restarts the service. See
 [`deploy/pi/UPDATING.md`](deploy/pi/UPDATING.md) for options (`--reboot`,
 `--force`), health checks, logs, and backups.
 
+## Arrange widgets
+
+Use the visible grip handle at the left of each widget header. In landscape,
+drag to position the widget freely; bounds follow its displayed size. In
+portrait, drag onto another widget to change the grid order. The order is saved,
+and the widget's landscape coordinates are retained when rotating the display.
+Pinned widgets stay fixed; the pin/unpin button is available in both orientations.
+You can also focus the grip handle and use **Alt + arrow keys** to move or reorder.
+Header buttons and widget contents are separate from the handle, so using them
+does not start a drag.
+
 ## Spotify (optional)
 
 1. Create an app in the [Spotify developer dashboard](https://developer.spotify.com/dashboard).
 2. Register this redirect URI **exactly** for the installed Pi: `http://127.0.0.1:80/`
-3. Put the (public) client ID in `/etc/mirror/config.js` on the Pi:
+3. Put the (public) client ID in `frontend/public/config.js` in your checkout:
 
    ```js
    window.__MIRROR_CONFIG__ = {
@@ -46,9 +57,12 @@ Pulls the newest version, rebuilds, and restarts the service. See
    ```
 
 The client ID is public and can be committed in `frontend/public/config.js`.
-An existing Pi installation serves `/etc/mirror/config.js` instead and preserves
-it during updates, so edit that file too. For local development on port 4200,
-register and configure `http://127.0.0.1:4200/`.
+Each Pi install/update copies this file to `/etc/mirror/config.js`, which Nginx
+serves without caching. A differing previous Pi config is backed up alongside
+it as `config.js.backup.*`. Repo configuration is the source of truth; edits
+only in `/etc/mirror/config.js` will be replaced on the next update. For local
+development on port 4200, register `http://127.0.0.1:4200/`; the checked-in config
+already chooses the redirect URI based on the port.
 
 4. Reload the kiosk (Ctrl+R) and choose **Connect Spotify**.
 
@@ -69,6 +83,19 @@ click. Restart the kiosk after updating to apply that launcher setting. Normal
 browsers may require a click; the popup offers **Play sound** if audio is
 blocked. Audio and image assets are bundled locally; their sources are listed
 in [`frontend/public/alarms/ASSETS.md`](frontend/public/alarms/ASSETS.md).
+
+## Pong
+
+Open **Menu → Games → Pong**. Play against the AI representing your selected
+companion (or Computer if no pet is selected). Pick Easy, Normal, or Hard;
+first to seven points wins. The saved high score is your longest rally.
+
+Move your mouse/controller pointer or drag on the court to move your paddle.
+Arrow keys or W/S work in landscape; left/right or A/D work in portrait.
+The portrait court rotates so your paddle is at the bottom. Use **P**, Space,
+or the pause button to pause, then **Resume match** to continue. Losing focus,
+hiding the tab, or opening an alarm pauses the match automatically. The shared
+game mute and app volume controls apply to Pong's sounds.
 
 ## Check it's running / troubleshooting
 
@@ -112,8 +139,9 @@ sudo bash deploy/pi/install.sh
 
 The installer now removes Raspberry Pi OS's default Nginx site, restarts both
 services, and verifies the UI plus the direct and proxied API before reporting
-success. Reinstalling preserves `/etc/mirror/config.js` and
-`/var/lib/mirror/mirror.db`. If it fails, the command prints the API status and
+success, including verifying that `/config.js` matches the checkout.
+Reinstalling preserves `/var/lib/mirror/mirror.db` and backs up a differing old
+Pi config before syncing the repo config. If it fails, the command prints the API status and
 recent logs instead of leaving a silently broken installation.
 
 ## Develop on your PC (optional)

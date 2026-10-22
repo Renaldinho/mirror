@@ -22,6 +22,8 @@ done
 
 publish_dir="$repo_root/.publish/api"
 
+node --check "$repo_root/frontend/public/config.js"
+
 sudo -u "$kiosk_user" npm ci --prefix "$repo_root/frontend"
 sudo -u "$kiosk_user" npm run build --prefix "$repo_root/frontend"
 rm -rf -- "$publish_dir"
@@ -54,9 +56,8 @@ cp -a "$publish_dir/." /opt/mirror/api/
 install -m 0755 "$repo_root/deploy/pi/mirror-kiosk" /opt/mirror/bin/mirror-kiosk
 install -m 0755 "$repo_root/deploy/pi/mirror-diagnose" /opt/mirror/bin/mirror-diagnose
 
-if [[ ! -f /etc/mirror/config.js ]]; then
-  install -m 0644 "$repo_root/frontend/public/config.js" /etc/mirror/config.js
-fi
+bash "$repo_root/deploy/pi/install-config.sh" \
+  "$repo_root/frontend/public/config.js" /etc/mirror/config.js
 
 install -m 0644 "$repo_root/deploy/pi/nginx-mirror.conf" /etc/nginx/sites-available/mirror
 ln -sfn /etc/nginx/sites-available/mirror /etc/nginx/sites-enabled/mirror
@@ -130,5 +131,14 @@ if ! grep -q '<app-root' <<<"$ui_response"; then
 fi
 
 echo
+served_config="$(curl -fsS --max-time 5 http://127.0.0.1/config.js)" || {
+  echo "Nginx could not serve /config.js." >&2
+  exit 1
+}
+if [[ "$served_config" != "$(cat "$repo_root/frontend/public/config.js")" ]]; then
+  echo "Nginx is not serving the browser configuration from this checkout." >&2
+  exit 1
+fi
+
 echo "Mirror installed and verified at http://127.0.0.1/."
-echo "Configure /etc/mirror/config.js if needed, then restart Chromium."
+echo "Browser config synced from frontend/public/config.js. Restart Chromium to apply it."

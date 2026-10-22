@@ -69,13 +69,6 @@ import { SettingsService } from './settings.service';
       pointer-events: auto;
     }
     .portrait app-widget-frame { display: grid; place-items: center; min-width: 0; }
-    .portrait [data-widget='clock'] { order: 0; }
-    .portrait [data-widget='weather'] { order: 1; }
-    .portrait [data-widget='quote'] { order: 2; }
-    .portrait [data-widget='notes'] { order: 3; }
-    .portrait [data-widget='spotify'] { order: 4; }
-    .portrait [data-widget='lyrics'] { order: 5; }
-    .portrait [data-widget='alarm'] { order: 6; }
     @media (max-width: 599px) {
       .widget-board.portrait {
         grid-template-columns: minmax(0, 1fr);

@@ -1,5 +1,5 @@
 import { CdkDrag, CdkDragEnd, CdkDragHandle } from '@angular/cdk/drag-drop';
-import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, computed, inject, input } from '@angular/core';
 import { ClockWidget } from '../widgets/clock';
 import { NotesWidget } from '../widgets/notes';
 import { QuoteWidget } from '../widgets/quote';
@@ -19,8 +19,8 @@ import { DisplayService } from './display.service';
  * A pressed-botanical "specimen plate": an arched frosted-glass sheet (so the
  * mirror backlight glows through), a small illustrated emblem crowning the arch,
  * a large faint botanical watermark, winding-flower corners, and a herbarium
- * label (common + latin name) at the foot. Dragged by its crown; controls appear
- * on hover to keep the app-feel minimal. Each plate is tinted by its accent.
+ * label (common + latin name) at the foot. A dedicated crown handle moves it;
+ * the adjacent controls stay clickable. Each plate is tinted by its accent.
  */
 @Component({
   selector: 'app-widget-frame',
@@ -46,10 +46,11 @@ import { DisplayService } from './display.service';
       cdkDragBoundary=".board-surface"
       class="anchor absolute"
       [class.portrait]="display.portrait()"
-      [style.width.px]="display.portrait() ? layout().width * displayScale() : null"
-      [style.height.px]="display.portrait() ? portraitHeight() * displayScale() : null"
+      [style.width.px]="layout().width * displayScale()"
+      [style.height.px]="portraitHeight() * displayScale()"
       [cdkDragFreeDragPosition]="display.portrait() ? { x: 0, y: 0 } : { x: widget().x, y: widget().y }"
-      [cdkDragDisabled]="display.portrait() || widget().pinned"
+      [cdkDragDisabled]="widget().pinned"
+      [cdkDragStartDelay]="{ mouse: 0, touch: 120 }"
       (cdkDragEnded)="onDragEnded($event)"
     >
       <div
@@ -60,7 +61,7 @@ import { DisplayService } from './display.service';
         [attr.data-variant]="layout().id"
         [style.--accent]="meta().accent"
         [style.width.px]="layout().width"
-        [style.height.px]="widget().collapsed ? null : layout().height"
+        [style.height.px]="portraitHeight()"
         [style.transform]="'scale(' + displayScale() + ')'"
       >
         <!-- winding-flower corners -->
@@ -75,22 +76,16 @@ import { DisplayService } from './display.service';
 
         <!-- crown: emblem + drag handle + hover controls; double-click to collapse -->
         <div
-          cdkDragHandle
           class="crown relative z-10"
-          [class.cursor-move]="!display.portrait() && !widget().pinned"
           (dblclick)="onCrownDblClick()"
         >
-          @if (!display.portrait() && !widget().pinned) {
-            <span class="grip" aria-hidden="true" title="Drag to move"><app-ui-icon name="grip" /></span>
-          }
-          @if (settings.theme() === 'mushroom') {
-            <app-specimen-art [art]="meta().art" class="emblem" />
-          } @else {
-            <span class="theme-emblem" aria-hidden="true"><app-ui-icon [name]="meta().icon" /></span>
-          }
-          @if (widget().collapsed && !hasMini()) {
-            <span class="crown-name">{{ meta().label }}</span>
-          }
+          <button type="button" cdkDragHandle class="drag-handle" [disabled]="widget().pinned"
+            [attr.aria-label]="(display.portrait() ? 'Reorder ' : 'Move ') + meta().label"
+            [title]="widget().pinned ? 'Pinned: unpin to move' : display.portrait() ? 'Drag onto another widget to reorder. Alt + arrows also works.' : 'Drag to move'"
+            (keydown)="onHandleKeydown($event)">
+            <app-ui-icon [name]="widget().pinned ? 'pin' : 'grip'" />
+            @if (widget().collapsed && !hasMini()) { <span class="crown-name">{{ meta().label }}</span> }
+          </button>
           <div class="controls" (dblclick)="$event.stopPropagation()">
             <span class="scaler">
               <button
@@ -133,16 +128,17 @@ import { DisplayService } from './display.service';
                 <app-ui-icon name="layout" />
               </button>
             }
-            @if (!display.portrait()) {
               <button
+                type="button"
                 [class.text-parchment-dim]="!widget().pinned"
                 [style.color]="widget().pinned ? meta().accent : null"
                 [title]="widget().pinned ? 'Unpin' : 'Pin in place'"
+                [attr.aria-label]="(widget().pinned ? 'Unpin ' : 'Pin ') + meta().label"
+                [attr.aria-pressed]="widget().pinned"
                 (click)="dash.togglePin(widget().type)"
               >
                 <app-ui-icon [name]="widget().pinned ? 'pin' : 'pin-off'" />
               </button>
-            }
             <button class="text-parchment-dim hover:text-cap" title="Remove" (click)="dash.remove(widget().type)">
               <app-ui-icon name="close" />
             </button>
@@ -181,6 +177,7 @@ import { DisplayService } from './display.service';
         width: max-content;
       }
       .anchor.portrait { position: relative; }
+      .anchor.cdk-drag-dragging { z-index: 50; }
       .portrait .plate { position: absolute; top: 0; left: 0; }
       .plate {
         position: relative;
@@ -217,8 +214,7 @@ import { DisplayService } from './display.service';
         padding-bottom: 8px;
       }
       .plate.is-collapsed .crown {
-        height: auto;
-        padding-bottom: 8px;
+        height: 46px;
       }
       .plate::before,
       .plate::after {
@@ -264,35 +260,20 @@ import { DisplayService } from './display.service';
       .crown {
         display: flex;
         align-items: center;
-        justify-content: center;
-        padding-top: 8px;
-        height: 46px;
+        gap: 4px; padding: 4px 8px; height: 46px; flex-shrink: 0; box-sizing: border-box;
       }
-      .emblem {
-        width: 30px;
-        height: 30px;
-        color: var(--accent);
-        opacity: 0.95;
+      .drag-handle {
+        display: flex; align-items: center; justify-content: center; gap: 6px;
+        flex: 1; min-width: 44px; height: 38px; padding: 0 4px;
+        border: 1px solid transparent; border-radius: var(--control-radius);
+        background: transparent; color: var(--theme-text-muted); cursor: grab;
+        touch-action: none; user-select: none;
       }
-      .theme-emblem {
-        display: grid; width: 31px; height: 31px; place-items: center;
-        color: var(--accent); font: 600 21px/1 var(--theme-font-display);
-        text-shadow: 0 0 14px color-mix(in srgb, var(--accent) 45%, transparent);
-      }
-      .grip {
-        position: absolute;
-        top: 50%;
-        left: 8px;
-        transform: translateY(-50%);
-        color: var(--theme-text-muted);
-        opacity: 0.5;
-        font-size: 13px;
-        line-height: 1;
-        letter-spacing: -1px;
-        pointer-events: none;
-      }
+      .drag-handle app-ui-icon { font-size: 20px; }
+      .drag-handle:hover:not(:disabled) { color: var(--accent); background: var(--theme-surface-hover); border-color: var(--theme-border); }
+      .drag-handle:active:not(:disabled) { cursor: grabbing; }
+      .drag-handle:disabled { cursor: default; }
       .crown-name {
-        margin-left: 8px;
         font-family: var(--theme-font-display);
         font-size: 11px;
         letter-spacing: 0.22em;
@@ -300,13 +281,10 @@ import { DisplayService } from './display.service';
         color: var(--theme-text);
       }
       .controls {
-        position: absolute;
-        top: 4px;
-        right: 8px;
         display: flex;
         align-items: center;
-        gap: 8px;
-        opacity: 0;
+        flex-shrink: 0; gap: 4px;
+        opacity: .8;
         transition: opacity 0.2s ease;
         font-size: 14px;
         line-height: 1;
@@ -314,7 +292,8 @@ import { DisplayService } from './display.service';
       .group:hover .controls,
       .group:focus-within .controls,
       .is-collapsed .controls { opacity: 1; }
-      .controls button { cursor: pointer; }
+      .controls button { display: grid; place-items: center; min-width: 24px; min-height: 28px; cursor: pointer; }
+      .controls button:hover:not(:disabled) { color: var(--accent); background: var(--theme-surface-hover); }
       .controls button:disabled {
         opacity: 0.3;
         cursor: default;
@@ -367,6 +346,7 @@ import { DisplayService } from './display.service';
   ],
 })
 export class WidgetFrame {
+  private readonly element = inject<ElementRef<HTMLElement>>(ElementRef);
   readonly widget = input.required<WidgetInstance>();
   readonly dash = inject(DashboardService);
   readonly settings = inject(SettingsService);
@@ -390,10 +370,10 @@ export class WidgetFrame {
   readonly canCollapse = computed(() => MINI_COLLAPSE.has(this.widget().type));
   /** True once the widget is collapsed AND its type renders a compact view. */
   readonly hasMini = computed(() => this.widget().collapsed && MINI_COLLAPSE.has(this.widget().type));
-  /** Portrait rows size to a crown (46) or a taller mini player (108) when collapsed. */
+  /** The visible card height, including a compact crown or mini player. */
   readonly portraitHeight = computed(() => {
     if (!this.widget().collapsed) return this.layout().height;
-    return MINI_COLLAPSE.has(this.widget().type) ? 108 : 46;
+    return MINI_COLLAPSE.has(this.widget().type) ? 108 : 48;
   });
   readonly scalePercent = computed(() => Math.round(this.displayScale() * 100));
   readonly atMinScale = computed(() => this.widget().scale <= SCALE_STEPS[0]);
@@ -407,7 +387,58 @@ export class WidgetFrame {
   }
 
   onDragEnded(event: CdkDragEnd): void {
+    if (this.display.portrait()) {
+      this.reorderAt(event.dropPoint.x, event.dropPoint.y);
+      event.source.reset();
+      return;
+    }
     const p = event.source.getFreeDragPosition();
     this.dash.move(this.widget().type, p.x, p.y);
+  }
+
+  onHandleKeydown(event: KeyboardEvent): void {
+    if (!event.altKey || this.widget().pinned) return;
+    const direction = event.key === 'ArrowLeft' ? -1 : event.key === 'ArrowRight' ? 1
+      : event.key === 'ArrowUp' ? -this.display.columns() : event.key === 'ArrowDown' ? this.display.columns() : 0;
+    if (!direction) return;
+    event.preventDefault();
+    event.stopPropagation();
+    if (this.display.portrait()) {
+      const widgets = this.dash.widgets();
+      const index = widgets.findIndex((widget) => widget.type === this.widget().type);
+      const target = widgets[index + direction];
+      if (target) this.dash.reorder(this.widget().type, target.type);
+    } else {
+      const dx = event.key === 'ArrowLeft' ? -20 : event.key === 'ArrowRight' ? 20 : 0;
+      const dy = event.key === 'ArrowUp' ? -20 : event.key === 'ArrowDown' ? 20 : 0;
+      const bounds = this.element.nativeElement.closest('.board-surface')?.getBoundingClientRect();
+      const x = this.widget().x + dx;
+      const y = this.widget().y + dy;
+      this.dash.move(this.widget().type,
+        bounds ? Math.min(x, Math.max(0, bounds.width - this.layout().width * this.displayScale())) : x,
+        bounds ? Math.min(y, Math.max(0, bounds.height - this.portraitHeight() * this.displayScale())) : y);
+    }
+  }
+
+  private reorderAt(x: number, y: number): void {
+    const board = this.element.nativeElement.closest('.widget-board');
+    if (!board) return;
+    const bounds = board.getBoundingClientRect();
+    if (x < bounds.left || x > bounds.right || y < bounds.top || y > bounds.bottom) return;
+    let closest = this.widget().type;
+    let distance = Infinity;
+    for (const frame of board.querySelectorAll<HTMLElement>(':scope > app-widget-frame')) {
+      const rect = frame.getBoundingClientRect();
+      const inside = x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom;
+      const nextDistance = inside ? 0 : Math.hypot(x - (rect.left + rect.right) / 2, y - (rect.top + rect.bottom) / 2);
+      if (nextDistance < distance) {
+        const type = frame.getAttribute('data-widget');
+        if (this.dash.widgets().some((widget) => widget.type === type)) {
+          closest = type as WidgetInstance['type'];
+          distance = nextDistance;
+        }
+      }
+    }
+    this.dash.reorder(this.widget().type, closest);
   }
 }

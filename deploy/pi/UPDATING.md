@@ -42,8 +42,10 @@ Useful variants:
   Keep your edits with `git stash` (re-apply later with `git stash pop`), or throw
   them away with `git reset --hard`, then run the update again.
 
-> Note: `/etc/mirror/config.js` (your Spotify client ID) is **not** in the repo,
-> so updates never touch it.
+> Every install/update syncs `frontend/public/config.js` from the repo to
+> `/etc/mirror/config.js`. If the previous Pi copy differs, it is backed up as
+> `/etc/mirror/config.js.backup.*` before replacement. Commit and push your public
+> Spotify configuration so the Pi receives it with the rest of the app.
 
 ---
 
@@ -80,8 +82,9 @@ sudo bash deploy/pi/install.sh
 ```
 
 The installer replaces the default Nginx site and verifies the UI, backend, and
-API proxy before it reports success. It preserves `/etc/mirror/config.js` and
-`/var/lib/mirror/mirror.db`. When verification fails it prints the backend
+API proxy and served browser config before it reports success. It preserves
+`/var/lib/mirror/mirror.db` and backs up a differing Pi config before syncing
+the repo config. When verification fails it prints the backend
 status and recent service logs for diagnosis.
 
 ## Watch logs / see errors
@@ -102,8 +105,13 @@ sudo reboot                             # full restart (also refreshes the kiosk
 ## Configure Spotify
 
 ```bash
-sudo nano /etc/mirror/config.js         # set spotifyClientId, then Ctrl+R on the kiosk
+nano frontend/public/config.js         # set the public Spotify client ID
+sudo bash deploy/pi/install.sh         # sync config and rebuild
 ```
+
+The checked-in config selects port 4200 for development and port 80 on the Pi.
+Reload Chromium after installation to apply it. Make persistent changes in the
+repo file; editing only `/etc/mirror/config.js` is temporary until the next update.
 
 ## Back up the data (the note, pet names, active pet)
 

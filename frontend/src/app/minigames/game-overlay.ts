@@ -3,6 +3,7 @@ import { DuckHunt } from './duck-hunt/duck-hunt';
 import { GamesService } from './games.service';
 import { GameId, GAMES } from './games-registry';
 import { Whack } from './whack/whack';
+import { Pong } from './pong/pong';
 import { UiIcon } from '../shared/ui-icon';
 
 /** Fullscreen modal that hosts the active game. Provides shared chrome
@@ -10,7 +11,7 @@ import { UiIcon } from '../shared/ui-icon';
 @Component({
   selector: 'app-game-overlay',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DuckHunt, Whack, UiIcon],
+  imports: [DuckHunt, Whack, Pong, UiIcon],
   template: `
     @if (games.activeGame(); as id) {
       <button class="backdrop" (click)="games.close()" aria-label="Close game"></button>
@@ -32,6 +33,7 @@ import { UiIcon } from '../shared/ui-icon';
           @switch (id) {
             @case ('duck-hunt') { <app-duck-hunt /> }
             @case ('whack') { <app-whack /> }
+            @case ('pong') { <app-pong /> }
           }
         </div>
       </section>
