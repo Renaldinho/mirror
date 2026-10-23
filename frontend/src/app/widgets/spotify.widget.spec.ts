@@ -51,4 +51,34 @@ describe('Spotify connection messages', () => {
       expect(fixture.nativeElement.querySelector('button[aria-label="Pause"] svg path')).not.toBeNull();
     }
   });
+
+  it('keeps disconnect in a separate footer and signs out with no active track', () => {
+    localStorage.clear();
+    const spotify = {
+      configured: signal(true), authed: signal(true), track: signal(null),
+      error: signal('Start playing on a Spotify device. This message can wrap onto several lines.'),
+      paused: signal(true), positionMs: signal(0), volume: signal(.5),
+      premiumError: signal(false), hasDevice: signal(false), deviceName: signal(''),
+      logout: vi.fn(), login: vi.fn(),
+    };
+    spotify.logout.mockImplementation(() => spotify.authed.set(false));
+    TestBed.configureTestingModule({
+      imports: [SpotifyWidget], providers: [{ provide: SpotifyService, useValue: spotify }],
+    });
+    const fixture = TestBed.createComponent(SpotifyWidget);
+    fixture.nativeElement.style.height = '320px';
+    fixture.detectChanges();
+    const disconnect = fixture.nativeElement.querySelector('button[aria-label="Disconnect Spotify"]') as HTMLButtonElement;
+    const player = fixture.nativeElement.querySelector('.np') as HTMLElement;
+    expect(disconnect).not.toBeNull();
+    expect(player.contains(disconnect)).toBe(false);
+    expect(fixture.nativeElement.querySelector('.expanded').lastElementChild.classList.contains('account-actions')).toBe(true);
+    expect(getComputedStyle(player).overflowY).not.toBe('auto');
+    expect(getComputedStyle(fixture.nativeElement).display).toBe('block');
+    disconnect.click();
+    fixture.detectChanges();
+    expect(spotify.logout).toHaveBeenCalledOnce();
+    expect(fixture.nativeElement.querySelector('.logout')).toBeNull();
+    expect(fixture.nativeElement.querySelector('.connect button')).not.toBeNull();
+  });
 });

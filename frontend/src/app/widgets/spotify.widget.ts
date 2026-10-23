@@ -51,6 +51,7 @@ import { UiIcon } from '../shared/ui-icon';
         }
       </div>
     } @else {
+    <div class="expanded">
     <div class="np">
       @if (!sp.configured()) {
         <p class="hint">Spotify is not configured on this mirror.</p>
@@ -117,17 +118,34 @@ import { UiIcon } from '../shared/ui-icon';
           <div class="badge warn">Start playing on any Spotify device</div>
         }
 
-        <button class="logout" (click)="sp.logout()">disconnect</button>
+      }
+    </div>
+      @if (sp.configured() && sp.authed()) {
+        <div class="account-actions">
+          <button type="button" class="logout" aria-label="Disconnect Spotify" (click)="sp.logout()">
+            <app-ui-icon name="enter" /> Disconnect
+          </button>
+        </div>
       }
     </div>
     }
   `,
   styles: [
     `
-      .np { display: flex; height: 100%; flex-direction: column; gap: 8px; justify-content: center; }
+      :host { display: block; height: 100%; min-height: 0; }
+      .expanded { display: flex; flex-direction: column; gap: 6px; height: 100%; min-height: 0; }
+      .account-actions {
+        display: flex; justify-content: center; flex-shrink: 0; padding-top: 6px;
+        border-top: 1px solid var(--theme-border);
+      }
+      .np {
+        display: flex; flex: 1; min-height: 0; flex-direction: column; gap: 8px;
+        justify-content: center; padding: 2px 4px 8px;
+      }
+      .np > * { flex-shrink: 0; }
       .hint { color: var(--theme-text-muted); font-size: 12px; text-align: center; }
       .hint code { color: var(--accent); }
-      .connect { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+      .connect { display: flex; flex-direction: column; align-items: center; gap: 12px; margin: auto 0; }
       .logo {
         display: grid; width: 54px; height: 54px; place-items: center;
         border-radius: 50%; background: var(--theme-surface-soft); color: var(--accent); font-size: 28px;
@@ -156,7 +174,15 @@ import { UiIcon } from '../shared/ui-icon';
       .badge { text-align: center; font: 600 9px/1.3 var(--theme-font-body); letter-spacing: .04em; }
       .badge.on { color: var(--accent); }
       .badge.warn { color: var(--theme-warning, #d8a24a); }
-      .logout { align-self: center; color: var(--theme-text-muted); background: none; border: none; font-size: 10px; text-transform: uppercase; letter-spacing: .18em; cursor: pointer; }
+      .logout {
+        display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+        min-height: 30px; padding: 5px 12px; border: 1px solid transparent;
+        border-radius: var(--control-radius); color: var(--theme-text-muted); background: transparent;
+        font: 600 11px/1.2 var(--theme-font-body); cursor: pointer;
+        transition: color 150ms ease, border-color 150ms ease, background-color 150ms ease;
+      }
+      .logout:hover { color: var(--theme-text); border-color: var(--accent); background: var(--theme-surface-hover); }
+      .logout:focus-visible { outline: 2px solid var(--theme-focus); outline-offset: 2px; }
 
       .mini { position: relative; display: flex; align-items: center; gap: 10px; height: 100%; padding-bottom: 4px; }
       .mini-art { width: 44px; height: 44px; border-radius: 8px; object-fit: cover; flex: none; box-shadow: 0 4px 12px rgba(0, 0, 0, .4); }

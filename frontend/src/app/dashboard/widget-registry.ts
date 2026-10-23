@@ -78,7 +78,7 @@ export const WIDGETS: WidgetMeta[] = [
     icon: 'music',
     art: 'mushroom',
     accent: 'var(--widget-spotify-accent)',
-    layouts: [{ id: 'default', label: 'Default', width: 320, height: 320 }],
+    layouts: [{ id: 'default', label: 'Default', width: 320, height: 420 }],
   },
   {
     type: 'lyrics',
