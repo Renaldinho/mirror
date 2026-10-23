@@ -5,7 +5,7 @@ fixture="$(mktemp -d)"
 launcher=""
 cleanup() {
   if [[ -n "$launcher" ]]; then kill "$launcher" 2>/dev/null || true; wait "$launcher" 2>/dev/null || true; fi
-  rm -f -- "$fixture/bin/chromium" "$fixture/bin/flock" "$fixture/log" "$fixture/lock" "$fixture/control/"* "$fixture/state/mirror/chromium/launcher.lock"
+  rm -f -- "$fixture/bin/chromium" "$fixture/bin/flock" "$fixture/log" "$fixture/lock" "$fixture/index.html" "$fixture/control/"* "$fixture/state/mirror/chromium/launcher.lock"
   rmdir -- "$fixture/state/mirror/chromium" "$fixture/state/mirror" "$fixture/state" "$fixture/control" "$fixture/bin" "$fixture"
 }
 trap cleanup EXIT
@@ -25,6 +25,8 @@ LOCK
 chmod +x "$fixture/bin/chromium" "$fixture/bin/flock"
 export PATH="$fixture/bin:$PATH" XDG_STATE_HOME="$fixture/state"
 export MIRROR_KIOSK_CONTROL_DIR="$fixture/control" KIOSK_TEST_LOG="$fixture/log" KIOSK_TEST_LOCK="$fixture/lock"
+printf '<app-root></app-root><script src="main-current.js"></script>\n' > "$fixture/index.html"
+export MIRROR_UI_INDEX="$fixture/index.html"
 bash "$script_dir/../mirror-kiosk" &
 launcher=$!
 wait_mode() {
@@ -36,6 +38,8 @@ wait_mode() {
 }
 wait_mode kiosk
 grep -q -- '--kiosk' "$fixture/log"
+expected_hash="$(sha256sum "$fixture/index.html")"
+grep -Fq -- "http://127.0.0.1/?build=${expected_hash:0:16}" "$fixture/log"
 printf 'desktop\n' > "$fixture/control/requested-mode"
 wait_mode desktop
 grep -q -- '--new-window --window-size=1000,760' "$fixture/log"

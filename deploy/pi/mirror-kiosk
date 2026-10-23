@@ -16,10 +16,16 @@ fi
 control_dir="${MIRROR_KIOSK_CONTROL_DIR:-/var/lib/mirror-kiosk}"
 browser_args=(--no-first-run --autoplay-policy=no-user-gesture-required
   --disable-session-crashed-bubble --user-data-dir="$profile_root")
+mirror_url="http://127.0.0.1/"
+ui_index="${MIRROR_UI_INDEX:-/opt/mirror/ui/index.html}"
+if [[ -r "$ui_index" ]]; then
+  ui_hash="$(sha256sum "$ui_index")"
+  mirror_url="${mirror_url}?build=${ui_hash:0:16}"
+fi
 
 # Older/manual installations can still launch the kiosk before the helper is installed.
 if [[ ! -d "$control_dir" || ! -w "$control_dir" ]]; then
-  exec "$browser" --kiosk "${browser_args[@]}" http://127.0.0.1/
+  exec "$browser" --kiosk "${browser_args[@]}" "$mirror_url"
 fi
 
 browser_pid=""
@@ -62,7 +68,7 @@ trap 'exit 0' INT TERM
 start_browser() {
   local mode_args=()
   if [[ "$mode" == kiosk ]]; then mode_args=(--kiosk); else mode_args=(--new-window --window-size=1000,760); fi
-  "$browser" "${mode_args[@]}" "${browser_args[@]}" http://127.0.0.1/ 9>&- &
+  "$browser" "${mode_args[@]}" "${browser_args[@]}" "$mirror_url" 9>&- &
   browser_pid=$!
   write_state applied-mode "$mode"
   touch "$control_dir/heartbeat"

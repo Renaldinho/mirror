@@ -137,6 +137,26 @@ if ! grep -q '<app-root' <<<"$ui_response"; then
   nginx -T >&2 || true
   exit 1
 fi
+if [[ "$ui_response" != "$(cat "$ui_build/index.html")" ]]; then
+  echo "Nginx is serving a different frontend than the build just installed." >&2
+  nginx -T >&2 || true
+  exit 1
+fi
+main_bundle="$(grep -oE 'src="main-[A-Za-z0-9_-]+\.js"' "$ui_build/index.html" | head -n 1 | cut -d '"' -f 2)"
+if [[ -z "$main_bundle" || ! -f "$ui_build/$main_bundle" ]]; then
+  echo "Could not identify the built frontend bundle." >&2
+  exit 1
+fi
+served_bundle_hash="$(curl -fsS --max-time 15 "http://127.0.0.1/$main_bundle" | sha256sum)" || {
+  echo "Nginx could not serve $main_bundle." >&2
+  exit 1
+}
+expected_bundle_hash="$(sha256sum "$ui_build/$main_bundle")"
+if [[ "${served_bundle_hash%% *}" != "${expected_bundle_hash%% *}" ]]; then
+  echo "The served frontend bundle does not match the build." >&2
+  exit 1
+fi
+echo "    Frontend verified: $main_bundle"
 
 echo
 served_config="$(curl -fsS --max-time 5 http://127.0.0.1/config.js)" || {
