@@ -221,9 +221,10 @@ interface Petal {
     `
       :host { position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%); z-index: 40; }
       .scrim { position: fixed; inset: 0; z-index: -1; border: 0; background: rgba(0, 0, 0, 0.28); cursor: default; }
-      .hub-ring { position: relative; width: 56px; height: 56px; }
+      .hub-ring { position: relative; width: 56px; height: 56px; overflow: visible; }
 
       .hub {
+        z-index: 1;
         position: absolute; inset: 0; display: grid; place-items: center; outline: none;
         border: 1px solid var(--theme-border-strong); border-radius: 50%;
         background: var(--theme-panel-opaque); color: var(--theme-primary);
@@ -237,6 +238,7 @@ interface Petal {
       .petal:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--theme-focus), var(--theme-shadow-soft); }
 
       .petal {
+        z-index: 0; overflow: visible;
         position: absolute; left: 4px; top: 4px; display: grid; place-items: center; outline: none;
         width: 48px; height: 48px; border: 1px solid var(--theme-border-strong); border-radius: 50%;
         background: var(--theme-panel-opaque); color: var(--theme-text-muted);
@@ -244,14 +246,19 @@ interface Petal {
         transition: transform 0.3s cubic-bezier(0.2, 0.9, 0.3, 1.3), opacity 0.25s ease,
           color 0.2s ease, border-color 0.2s ease;
       }
-      .hub-ring.open .petal { opacity: 1; }
+      .hub-ring.open .petal { opacity: 1; z-index: 2; }
+      .hub-ring.open .petal.active { z-index: 3; }
+      .hub-ring.open .petal:hover,
+      .hub-ring.open .petal:focus-visible { z-index: 4; }
       .petal:hover { color: var(--theme-primary-bright); border-color: var(--theme-primary); }
       .petal.active { color: var(--theme-primary-bright); border-color: var(--theme-primary); background: var(--theme-primary-soft); }
       /* Labels reveal one-at-a-time on hover/focus/active so they never collide. */
       .petal-label {
-        position: absolute; bottom: -15px; font: 600 8px/1 var(--theme-font-body);
+        position: absolute; bottom: -24px; font: 600 8px/1 var(--theme-font-body);
         letter-spacing: 0.14em; text-transform: uppercase; white-space: nowrap; color: var(--theme-text);
         opacity: 0; transition: opacity 0.15s ease; text-shadow: 0 1px 4px var(--theme-bg);
+        pointer-events: none; padding: 4px 6px; border: 1px solid var(--theme-border);
+        border-radius: var(--control-radius); background: var(--theme-panel-opaque);
       }
       .petal:hover .petal-label,
       .petal:focus-visible .petal-label,
