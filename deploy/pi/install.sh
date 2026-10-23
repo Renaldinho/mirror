@@ -37,6 +37,10 @@ if [[ ! -f "$ui_build/index.html" ]]; then
   echo "Frontend build did not produce $ui_build/index.html" >&2
   exit 1
 fi
+if [[ ! -f "$ui_build/PI-INSTRUCTIONS.txt" ]]; then
+  echo "Frontend build did not include PI-INSTRUCTIONS.txt." >&2
+  exit 1
+fi
 if [[ ! -f "$publish_dir/Mirror.Server.dll" ]]; then
   echo "Backend publish did not produce $publish_dir/Mirror.Server.dll" >&2
   exit 1
@@ -137,6 +141,14 @@ served_config="$(curl -fsS --max-time 5 http://127.0.0.1/config.js)" || {
 }
 if [[ "$served_config" != "$(cat "$repo_root/frontend/public/config.js")" ]]; then
   echo "Nginx is not serving the browser configuration from this checkout." >&2
+  exit 1
+fi
+served_guide="$(curl -fsS --max-time 5 http://127.0.0.1/PI-INSTRUCTIONS.txt)" || {
+  echo "Nginx could not serve the downloadable Pi guide." >&2
+  exit 1
+}
+if [[ "$served_guide" != "$(cat "$repo_root/PI-INSTRUCTIONS.txt")" ]]; then
+  echo "The downloadable Pi guide does not match this checkout." >&2
   exit 1
 fi
 

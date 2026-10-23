@@ -32,6 +32,19 @@ Pulls the newest version, rebuilds, and restarts the service. See
 [`deploy/pi/UPDATING.md`](deploy/pi/UPDATING.md) for options (`--reboot`,
 `--force`), health checks, logs, and backups.
 
+## Pi help inside the mirror
+
+Choose **Menu → Help** to read the Pi instructions without closing the kiosk.
+The guide covers updates, closing/reopening the kiosk, SSH, usernames and IPs,
+password changes, audio, diagnostics, and shutdown. **Save TXT** downloads a copy.
+Close it with the close button or Escape.
+
+`PI-INSTRUCTIONS.txt` at the repo root is the source of truth. The frontend npm
+scripts embed it in the UI and copy it into the downloadable assets before
+serving, building, or testing. Reading Help makes no separate file request and
+works without an internet connection. Running its commands requires a Pi keyboard
+or an SSH connection from another device; the browser does not open a terminal.
+
 ## Arrange widgets
 
 Use the visible grip handle at the left of each widget header. In landscape,

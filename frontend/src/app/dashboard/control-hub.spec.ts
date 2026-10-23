@@ -3,6 +3,7 @@ import { vi } from 'vitest';
 import { ControlHub } from './control-hub';
 import { SettingsService } from './settings.service';
 import { DashboardService } from './dashboard.service';
+import { PiHelpService } from './pi-help';
 
 describe('ControlHub', () => {
   beforeEach(() => {
@@ -29,7 +30,7 @@ describe('ControlHub', () => {
     hub.toggleMenu();
     fixture.detectChanges();
     expect(hub.menuOpen()).toBe(true);
-    expect(fixture.nativeElement.querySelectorAll('.petal').length).toBe(5);
+    expect(fixture.nativeElement.querySelectorAll('.petal').length).toBe(6);
 
     hub.openSection('theme');
     hub.toggleMenu();
@@ -46,6 +47,15 @@ describe('ControlHub', () => {
     expect(settings.matrixRain()).toBe(true);
     rain.click();
     expect(settings.matrixRain()).toBe(false);
+  });
+
+  it('opens the Pi guide from the Help menu button', () => {
+    const fixture = TestBed.createComponent(ControlHub);
+    fixture.componentInstance.toggleMenu();
+    fixture.detectChanges();
+    fixture.nativeElement.querySelector('button[aria-label="Help"]').click();
+    expect(TestBed.inject(PiHelpService).open()).toBe(true);
+    expect(fixture.componentInstance.section()).toBeNull();
   });
 
   it('cycles the cursor FX style from the effects panel', () => {

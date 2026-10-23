@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, input } from '@angular/co
 
 const ICON_PATHS = {
   clock: ['M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Z', 'M12 7v5l3 2'],
+  help: ['M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Z', 'M9.5 8.5a2.5 2.5 0 1 1 4 2c-1 .7-1.5 1-1.5 2.5', 'M12 17h.01'],
   cloud: ['M6.5 18h10a4.5 4.5 0 0 0 .4-9A6 6 0 0 0 5.6 11 3.5 3.5 0 0 0 6.5 18Z'],
   quote: ['M5 7h5v5H7v5H4v-6a4 4 0 0 1 4-4', 'M14 7h5v5h-3v5h-3v-6a4 4 0 0 1 4-4'],
   note: ['M6 4h9l3 3v13H6Z', 'M15 4v4h3', 'M9 12h6', 'M9 16h4'],

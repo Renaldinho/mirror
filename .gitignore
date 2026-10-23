@@ -16,3 +16,7 @@ frontend/.angular/
 .DS_Store
 .idea/
 .vscode/
+
+# Generated from the root Pi guide by frontend npm scripts.
+/frontend/public/PI-INSTRUCTIONS.txt
+/frontend/src/app/dashboard/pi-instructions.generated.ts

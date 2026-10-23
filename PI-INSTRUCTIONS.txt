@@ -1,0 +1,205 @@
+MIRROR - RASPBERRY PI QUICK GUIDE
+===============================
+
+For the person using the mirror. Read it inside the mirror with Menu -> Help,
+or open this file in the Pi's text editor. Help works without closing the kiosk.
+Commands below go in a TERMINAL, not in this text file.
+Run each command on its own line and press Enter.
+
+1. CLOSE THE MIRROR / OPEN A TERMINAL
+-----------------------------------
+On the Pi keyboard, press Alt + F4 to close the kiosk window.
+This closes the browser; it does not delete anything.
+Press Ctrl + Alt + T to open a terminal on the Pi desktop.
+
+If you are connected remotely by SSH, close the mirror with:
+  pkill -f '[c]hromium.*mirror/chromium'
+
+2. FIND THE USERNAME, DEVICE NAME, AND IP
+---------------------------------------
+Run these on the Pi:
+  whoami
+  hostname
+  hostname -I
+
+whoami = the Linux username used for SSH and sudo.
+hostname = the Pi's device name on the network.
+hostname -I = its IP addresses; it can list more than one.
+
+Previously this Pi used username "renars" and hostname "raspberrypi".
+Its previous local IP was 192.168.1.69, but IP addresses can change.
+
+3. PASSWORDS
+------------
+The current password cannot be displayed. It is not stored in this guide.
+SSH uses the Pi's Linux account password, not a Spotify or GitHub password.
+When entering a password in a terminal, no characters or stars appear.
+Type it anyway and press Enter.
+
+To change your own password while logged into the Pi:
+  passwd
+
+This asks for the current password, then the new password twice.
+If you forgot it but can still run sudo, you can reset your own password:
+  sudo passwd "$(whoami)"
+
+That requires working sudo access and may ask for your sudo password first.
+If you do not have the password or sudo access, ask Renars before changing it.
+
+4. CONNECT FROM A WINDOWS COMPUTER
+----------------------------------
+Use the same home network as the Pi. Open Windows PowerShell and run:
+  ssh renars@raspberrypi.local
+
+If the name does not resolve, use the current IP from section 2, for example:
+  ssh renars@192.168.1.69
+
+Replace renars if whoami showed a different username.
+Enter the Pi account password when prompted.
+If connecting for the first time, check that it is the correct Pi before
+accepting its SSH host-key prompt.
+To end the SSH connection:
+  exit
+
+5. GET INTO THE MIRROR REPO FOLDER
+---------------------------------
+Try:
+  cd ~/mirror
+
+If it says the folder does not exist, try:
+  cd ~/mirror-agent
+
+If neither exists, run "ls ~" to see the home folders and ask Renars where
+the repo was cloned. You should see frontend, backend, and deploy inside it.
+Use this repo folder for the update commands below.
+
+6. INSTALL THE LATEST CHANGES AND RESTART THE PI
+-----------------------------------------------
+Renars must commit and push changes from the development computer first.
+From the mirror repo folder, run:
+  bash deploy/pi/update.sh --force --reboot
+
+This pulls the latest commits on the current branch, rebuilds the app,
+installs it, and reboots after a successful install. It can take several
+minutes. Keep the Pi powered on and wait for it to finish.
+Run this as your normal user, WITHOUT putting sudo before bash.
+The script asks for sudo itself when needed.
+SSH disconnecting during the reboot is normal. Reconnect after startup.
+
+IMPORTANT: "git pull" by itself does not rebuild the installed mirror.
+The installed app runs from /opt/mirror, not directly from the repo folder.
+
+To update without rebooting:
+  bash deploy/pi/update.sh --force
+
+Then press Ctrl + Shift + R in the kiosk to reload the UI.
+
+If update.sh is missing in an older checkout, first run:
+  git pull --ff-only origin main
+
+Then run the update command above.
+
+7. IF AN UPDATE FAILS
+--------------------
+If it says there are local changes, inspect them from the repo folder:
+  git status --short
+  git diff
+
+Do not delete files or reset the repo blindly. Send Renars the error and
+the status output so local changes can be kept safely.
+GitHub login/access errors and Git permission errors need fixing before
+the update can succeed; rebooting does not fix those.
+
+To see the currently checked-out commit:
+  git log -1 --oneline
+
+8. OPEN THE MIRROR AGAIN
+-----------------------
+Run this in a terminal ON THE PI DESKTOP:
+  nohup /opt/mirror/bin/mirror-kiosk > ~/mirror-kiosk.log 2>&1 < /dev/null &
+
+It opens the kiosk in the background, so the terminal stays usable.
+This command needs the Pi's desktop session; running it over SSH alone
+may not have access to the display. From SSH, the simplest restart is:
+  sudo reboot
+
+The kiosk is configured to open automatically when the desktop starts.
+
+9. USEFUL KEYBOARD SHORTCUTS
+---------------------------
+Alt + F4          Close the kiosk/browser window.
+Ctrl + Alt + T    Open a desktop terminal on the Pi.
+Ctrl + R          Reload the current kiosk page.
+Ctrl + Shift + R  Reload while bypassing the browser cache.
+Ctrl + C          Stop a running terminal command or live log view.
+Ctrl + Shift + C  Copy selected text in the Pi terminal.
+Ctrl + Shift + V  Paste into the Pi terminal.
+
+10. VOLUME, BRIGHTNESS, AND SPOTIFY
+----------------------------------
+Mirror menu -> Effects has app volume/mute and brightness controls.
+App volume controls game sounds and alarms. Brightness has a 20% minimum.
+The brightness control dims the interface; it does not change the physical
+monitor's backlight. Use the monitor's buttons for actual backlight settings.
+Spotify playback/device volume has its own slider in the Now Playing widget.
+
+To unmute the Pi's default audio output and set its system volume to 100%:
+  wpctl set-mute @DEFAULT_AUDIO_SINK@ 0
+  wpctl set-volume @DEFAULT_AUDIO_SINK@ 100%
+
+If wpctl is unavailable, use the desktop's sound controls.
+To disconnect Spotify, expand Now Playing and click Disconnect in its footer.
+This clears the mirror's tokens; Spotify's browser login can remain signed in.
+
+The public Spotify config comes from frontend/public/config.js in the repo.
+Each install copies it to /etc/mirror/config.js and backs up a differing old
+Pi copy as config.js.backup.*. Change the repo file for lasting configuration
+changes. The app uses PKCE and does not need a Spotify client secret.
+
+11. QUICK HEALTH CHECKS AND LOGS
+--------------------------------
+Check the app services:
+  systemctl status mirror-api nginx --no-pager
+
+Both should say active (running). The backend service is mirror-api;
+there is no ssj.service in this installation.
+
+Check the backend through the web server:
+  curl -fsS http://127.0.0.1/api/health
+
+Expected response includes "status":"ok".
+
+Show recent backend errors:
+  sudo journalctl -u mirror-api -n 100 --no-pager
+
+Watch live backend logs (Ctrl + C stops watching):
+  sudo journalctl -u mirror-api -f
+
+If you opened the kiosk using section 8, view its browser log:
+  cat ~/mirror-kiosk.log
+
+Collect a diagnostics file onto the desktop to send to Renars:
+  /opt/mirror/bin/mirror-diagnose > ~/Desktop/mirror-diagnostics.txt 2>&1
+
+Restart only the web server and backend:
+  sudo systemctl restart mirror-api nginx
+
+This does not close/reopen Chromium. Reload the kiosk afterwards.
+
+12. REBOOT OR SHUT DOWN
+-----------------------
+Restart the Pi:
+  sudo reboot
+
+Shut it down before unplugging power:
+  sudo poweroff
+
+Wait for shutdown to finish before unplugging it.
+
+13. KEEP THIS GUIDE ON THE DESKTOP
+---------------------------------
+After pulling updates, run this from the mirror repo folder:
+  cp PI-INSTRUCTIONS.txt ~/Desktop/PI-INSTRUCTIONS.txt
+
+Double-click the desktop copy to read it. Repeat this copy command if the
+guide changes later; an existing desktop copy is not updated automatically.

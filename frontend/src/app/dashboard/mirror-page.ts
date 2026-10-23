@@ -11,6 +11,7 @@ import { SpotifyService } from '../widgets/spotify/spotify.service';
 import { DisplayService } from './display.service';
 import { AlarmPopup } from '../widgets/alarm-popup';
 import { SettingsService } from './settings.service';
+import { PiHelp, PiHelpService } from './pi-help';
 
 /** The mirror display itself: the ambient dark-academia board shown on the Pi. */
 @Component({
@@ -24,6 +25,7 @@ import { SettingsService } from './settings.service';
     RetroCursor,
     GameOverlay,
     AlarmPopup,
+    PiHelp,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -47,6 +49,7 @@ import { SettingsService } from './settings.service';
 
       <app-game-overlay />
       <app-alarm-popup />
+      @if (help.open()) { <app-pi-help /> }
 
       <app-retro-cursor />
       <div class="display-dimmer" aria-hidden="true" [style.opacity]="1 - settings.brightness()"></div>
@@ -81,6 +84,7 @@ export class MirrorPage {
   readonly dash = inject(DashboardService);
   readonly display = inject(DisplayService);
   readonly settings = inject(SettingsService);
+  readonly help = inject(PiHelpService);
   rows(): number { return Math.max(1, Math.ceil(this.dash.widgets().length / this.display.columns())); }
   // Constructed so the Spotify OAuth redirect is handled on load.
   private readonly spotify = inject(SpotifyService);

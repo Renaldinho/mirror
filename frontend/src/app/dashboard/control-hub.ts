@@ -11,11 +11,13 @@ import { GamesService } from '../minigames/games.service';
 import { AudioFx } from '../minigames/audio';
 import { GAMES, GameId } from '../minigames/games-registry';
 import { IconName, UiIcon } from '../shared/ui-icon';
+import { PiHelpService } from './pi-help';
 
 type Section = 'widgets' | 'companion' | 'games' | 'theme' | 'effects';
+type MenuItem = Section | 'help';
 
 interface Petal {
-  id: Section;
+  id: MenuItem;
   label: string;
   icon: IconName;
 }
@@ -355,6 +357,7 @@ export class ControlHub {
   readonly settings = inject(SettingsService);
 
   readonly games = inject(GamesService);
+  private readonly help = inject(PiHelpService);
   private readonly sfx = inject(AudioFx);
   readonly toggleMuted = (muted: boolean) => !muted;
   readonly widgets = WIDGETS;
@@ -371,6 +374,7 @@ export class ControlHub {
     { id: 'games', label: 'Games', icon: 'gamepad' },
     { id: 'theme', label: 'Theme', icon: 'brush' },
     { id: 'effects', label: 'Effects', icon: 'sparkle' },
+    { id: 'help', label: 'Help', icon: 'help' },
   ];
 
   readonly themeIcon = computed<IconName>(
@@ -386,7 +390,7 @@ export class ControlHub {
     const spread = 150;
     const start = (180 - spread) / 2; // leftmost angle above horizontal
     const angle = (start + (spread / (count - 1)) * index) * (Math.PI / 180);
-    const radius = 92;
+    const radius = 104;
     const x = Math.cos(angle) * radius;
     const y = -Math.sin(angle) * radius;
     return `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px)`;
@@ -397,7 +401,12 @@ export class ControlHub {
     else this.menuOpen.set(true);
   }
 
-  openSection(id: Section): void {
+  openSection(id: MenuItem): void {
+    if (id === 'help') {
+      this.section.set(null);
+      this.help.open.set(true);
+      return;
+    }
     this.section.set(this.section() === id ? null : id);
   }
 
