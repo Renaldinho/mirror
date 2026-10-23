@@ -32,6 +32,19 @@ Pulls the newest version, rebuilds, and restarts the service. See
 [`deploy/pi/UPDATING.md`](deploy/pi/UPDATING.md) for options (`--reboot`,
 `--force`), health checks, logs, and backups.
 
+## Desktop / kiosk switching
+
+Use **Menu → Settings → Desktop mode** to reopen the mirror in a normal browser
+window. The Pi's desktop panel and network menu are then accessible for Wi-Fi
+setup. Choose **Settings → Return to kiosk** to restore fullscreen mode.
+If you close the browser, launch **Mirror** from the desktop shortcut. Clicking
+that shortcut also returns an already-open mirror to kiosk mode.
+
+Install the update and reboot once to activate the new launcher and local mode
+control. Layout and Spotify login are retained in the same browser profile.
+New desktop sessions start in kiosk mode. The mode control is disabled on
+installations without the running Pi launcher.
+
 ## Pi help inside the mirror
 
 Choose **Menu → Help** to read the Pi instructions without closing the kiosk.

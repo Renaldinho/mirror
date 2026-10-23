@@ -12,6 +12,7 @@ import { AudioFx } from '../minigames/audio';
 import { GAMES, GameId } from '../minigames/games-registry';
 import { IconName, UiIcon } from '../shared/ui-icon';
 import { PiHelpService } from './pi-help';
+import { KioskService } from './kiosk.service';
 
 type Section = 'widgets' | 'companion' | 'games' | 'theme' | 'effects';
 type MenuItem = Section | 'help';
@@ -170,6 +171,15 @@ interface Petal {
           }
 
           @case ('effects') {
+            <button class="wide desktop-switch" type="button" [disabled]="!kiosk.available() || kiosk.busy()"
+              (click)="kiosk.switchMode(kiosk.mode() === 'kiosk' ? 'desktop' : 'kiosk')">
+              <app-ui-icon name="layout" />
+              <span>{{ kiosk.busy() ? 'Switching browser…' : kiosk.mode() === 'kiosk' ? 'Desktop mode' : 'Return to kiosk' }}</span>
+            </button>
+            <p class="mode-hint" role="status">
+              {{ kiosk.error() || (!kiosk.available() ? 'Desktop switching needs the updated Pi launcher. Restart the Pi after updating.' :
+                kiosk.mode() === 'kiosk' ? 'Use desktop mode to access the Pi network menu and connect to Wi-Fi.' : 'Use the Pi desktop network menu for Wi-Fi, then return here to enter kiosk mode.') }}
+            </p>
             <label class="slider-control" for="mirror-volume">
               <span>Volume <output>{{ round(settings.effectiveVolume() * 100) }}%</output></span>
               <input id="mirror-volume" type="range" min="0" max="1" step=".01"
@@ -256,6 +266,7 @@ interface Petal {
         box-shadow: var(--theme-shadow-strong);
       }
       .panel header { display: flex; }
+      .mode-hint { margin: 2px 0; padding: 0 4px; font-size: 12px; line-height: 1.5; color: var(--theme-text-muted); }
       .slider-control { display: grid; gap: 10px; padding: 10px; border: 1px solid var(--theme-border); border-radius: var(--control-radius); }
       .slider-control span { display: flex; justify-content: space-between; font-size: 13px; color: var(--theme-text); }
       .slider-control input { width: 100%; accent-color: var(--theme-primary); cursor: pointer; }
@@ -281,6 +292,7 @@ interface Petal {
         cursor: pointer; transition: 150ms ease;
       }
       .wide:hover { color: var(--theme-text); background: var(--theme-surface-hover); }
+      .desktop-switch { min-height: 44px; font-size: 12px; letter-spacing: .04em; }
 
       .companions { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
       .companion {
@@ -357,6 +369,7 @@ export class ControlHub {
   readonly settings = inject(SettingsService);
 
   readonly games = inject(GamesService);
+  readonly kiosk = inject(KioskService);
   private readonly help = inject(PiHelpService);
   private readonly sfx = inject(AudioFx);
   readonly toggleMuted = (muted: boolean) => !muted;
@@ -373,7 +386,7 @@ export class ControlHub {
     { id: 'companion', label: 'Companion', icon: 'duck' },
     { id: 'games', label: 'Games', icon: 'gamepad' },
     { id: 'theme', label: 'Theme', icon: 'brush' },
-    { id: 'effects', label: 'Effects', icon: 'sparkle' },
+    { id: 'effects', label: 'Settings', icon: 'sparkle' },
     { id: 'help', label: 'Help', icon: 'help' },
   ];
 
@@ -407,6 +420,7 @@ export class ControlHub {
       this.help.open.set(true);
       return;
     }
+    if (id === 'effects') void this.kiosk.refresh();
     this.section.set(this.section() === id ? null : id);
   }
 

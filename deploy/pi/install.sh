@@ -13,7 +13,7 @@ if [[ -z "$kiosk_user" || "$kiosk_user" == root ]]; then
 fi
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-for tool in npm dotnet nginx curl; do
+for tool in npm dotnet nginx curl flock; do
   command -v "$tool" >/dev/null 2>&1 || {
     echo "Missing prerequisite: $tool" >&2
     exit 1
@@ -51,6 +51,7 @@ id mirror-api >/dev/null 2>&1 ||
 
 install -d -m 0755 /opt/mirror/ui /opt/mirror/api /opt/mirror/bin /etc/mirror
 install -d -o mirror-api -g mirror-api -m 0750 /var/lib/mirror
+install -d -o mirror-api -g "$(id -gn "$kiosk_user")" -m 0770 /var/lib/mirror-kiosk
 
 systemctl stop mirror-api 2>/dev/null || true
 find /opt/mirror/ui -mindepth 1 -delete
@@ -76,6 +77,9 @@ install -d -o "$kiosk_user" -g "$kiosk_user" -m 0755 "$kiosk_home/.config/autost
 install -o "$kiosk_user" -g "$kiosk_user" -m 0644 \
   "$repo_root/deploy/pi/mirror-kiosk.desktop" \
   "$kiosk_home/.config/autostart/mirror-kiosk.desktop"
+install -d -o "$kiosk_user" -g "$(id -gn "$kiosk_user")" -m 0755 "$kiosk_home/Desktop"
+install -o "$kiosk_user" -g "$(id -gn "$kiosk_user")" -m 0755 \
+  "$repo_root/deploy/pi/mirror-kiosk.desktop" "$kiosk_home/Desktop/Mirror.desktop"
 
 show_service_diagnostics() {
   echo >&2

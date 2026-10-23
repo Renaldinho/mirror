@@ -4,6 +4,7 @@ import { ControlHub } from './control-hub';
 import { SettingsService } from './settings.service';
 import { DashboardService } from './dashboard.service';
 import { PiHelpService } from './pi-help';
+import { KioskService } from './kiosk.service';
 
 describe('ControlHub', () => {
   beforeEach(() => {
@@ -56,6 +57,26 @@ describe('ControlHub', () => {
     fixture.nativeElement.querySelector('button[aria-label="Help"]').click();
     expect(TestBed.inject(PiHelpService).open()).toBe(true);
     expect(fixture.componentInstance.section()).toBeNull();
+  });
+
+  it('offers desktop mode and return to kiosk in Settings', () => {
+    const fixture = TestBed.createComponent(ControlHub);
+    const kiosk = TestBed.inject(KioskService);
+    const refresh = vi.spyOn(kiosk, 'refresh').mockResolvedValue();
+    const change = vi.spyOn(kiosk, 'switchMode').mockResolvedValue();
+    kiosk.available.set(true);
+    open(fixture, 'effects');
+    expect(refresh).toHaveBeenCalledOnce();
+    let button = Array.from(fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>)
+      .find((item) => item.textContent?.includes('Desktop mode'))!;
+    button.click();
+    expect(change).toHaveBeenCalledWith('desktop');
+    kiosk.mode.set('desktop');
+    fixture.detectChanges();
+    button = Array.from(fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>)
+      .find((item) => item.textContent?.includes('Return to kiosk'))!;
+    button.click();
+    expect(change).toHaveBeenCalledWith('kiosk');
   });
 
   it('cycles the cursor FX style from the effects panel', () => {

@@ -136,10 +136,14 @@ public sealed class MirrorApiFactory : WebApplicationFactory<Program>, IAsyncLif
         "mirror-tests",
         Guid.NewGuid().ToString("N"));
 
+    public string KioskDirectory => Path.Combine(directory, "kiosk");
+
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         Directory.CreateDirectory(directory);
         builder.UseSetting("Database:Path", Path.Combine(directory, "mirror.db"));
+        Directory.CreateDirectory(KioskDirectory);
+        builder.UseSetting("Kiosk:ControlDirectory", KioskDirectory);
     }
 
     public Task InitializeAsync() => Task.CompletedTask;

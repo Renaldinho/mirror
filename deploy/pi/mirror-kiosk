@@ -13,10 +13,73 @@ else
   exit 1
 fi
 
-exec "$browser" \
-  --kiosk \
-  --no-first-run \
-  --autoplay-policy=no-user-gesture-required \
-  --disable-session-crashed-bubble \
-  --user-data-dir="$profile_root" \
-  http://127.0.0.1/
+control_dir="${MIRROR_KIOSK_CONTROL_DIR:-/var/lib/mirror-kiosk}"
+browser_args=(--no-first-run --autoplay-policy=no-user-gesture-required
+  --disable-session-crashed-bubble --user-data-dir="$profile_root")
+
+# Older/manual installations can still launch the kiosk before the helper is installed.
+if [[ ! -d "$control_dir" || ! -w "$control_dir" ]]; then
+  exec "$browser" --kiosk "${browser_args[@]}" http://127.0.0.1/
+fi
+
+browser_pid=""
+
+write_state() {
+  local temporary
+  temporary="$(mktemp "$control_dir/$1.XXXXXXXX")"
+  printf '%s\n' "$2" > "$temporary"
+  chmod 0644 "$temporary"
+  mv -f -- "$temporary" "$control_dir/$1"
+}
+
+exec 9>"$profile_root/launcher.lock"
+if ! flock -n 9; then
+  # Clicking the desktop shortcut returns the existing browser to kiosk mode.
+  write_state requested-mode kiosk
+  exit 0
+fi
+
+stop_browser() {
+  if [[ -n "$browser_pid" ]] && kill -0 "$browser_pid" 2>/dev/null; then
+    kill "$browser_pid" 2>/dev/null || true
+    for _ in {1..40}; do
+      kill -0 "$browser_pid" 2>/dev/null || break
+      sleep .1
+    done
+    kill -KILL "$browser_pid" 2>/dev/null || true
+  fi
+  if [[ -n "$browser_pid" ]]; then wait "$browser_pid" 2>/dev/null || true; fi
+  browser_pid=""
+}
+
+cleanup() {
+  stop_browser
+  rm -f -- "$control_dir/heartbeat" "$control_dir/applied-mode"
+}
+trap cleanup EXIT
+trap 'exit 0' INT TERM
+
+start_browser() {
+  local mode_args=()
+  if [[ "$mode" == kiosk ]]; then mode_args=(--kiosk); else mode_args=(--new-window --window-size=1000,760); fi
+  "$browser" "${mode_args[@]}" "${browser_args[@]}" http://127.0.0.1/ 9>&- &
+  browser_pid=$!
+  write_state applied-mode "$mode"
+  touch "$control_dir/heartbeat"
+}
+
+# Always start a fresh desktop session in kiosk mode, even after setup last time.
+mode=kiosk
+write_state requested-mode "$mode"
+start_browser
+while kill -0 "$browser_pid" 2>/dev/null; do
+  touch "$control_dir/heartbeat"
+  sleep 1
+  requested="$(cat "$control_dir/requested-mode" 2>/dev/null || true)"
+  case "$requested" in kiosk|desktop) ;; *) continue ;; esac
+  if [[ "$requested" != "$mode" ]]; then
+    stop_browser
+    mode="$requested"
+    start_browser
+  fi
+done

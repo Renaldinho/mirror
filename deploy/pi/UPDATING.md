@@ -96,6 +96,11 @@ sudo journalctl -u mirror-api -n 100    # last 100 lines
 
 ## Restart things by hand
 
+With the updated launcher, **Menu → Settings → Desktop mode** exits fullscreen
+for Wi-Fi setup. **Return to kiosk** restores it. The desktop **Mirror** shortcut
+reopens the kiosk or returns an existing normal mirror window to kiosk mode.
+Reboot once after installing this update to enable the new launcher.
+
 ```bash
 sudo systemctl restart mirror-api       # restart just the API
 sudo systemctl reload nginx             # reload the web server

@@ -12,6 +12,7 @@ ExecStart=/usr/bin/env dotnet /opt/mirror/api/Mirror.Server.dll
 Environment="PATH=/usr/local/bin:/usr/bin:/bin"
 Environment=ASPNETCORE_URLS=http://127.0.0.1:5000
 Environment=Database__Path=/var/lib/mirror/mirror.db
+Environment=Kiosk__ControlDirectory=/var/lib/mirror-kiosk
 Restart=on-failure
 RestartSec=3
 
@@ -19,7 +20,7 @@ NoNewPrivileges=true
 PrivateTmp=true
 ProtectHome=true
 ProtectSystem=strict
-ReadWritePaths=/var/lib/mirror
+ReadWritePaths=/var/lib/mirror /var/lib/mirror-kiosk
 
 [Install]
 WantedBy=multi-user.target

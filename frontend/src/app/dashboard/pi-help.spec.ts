@@ -12,7 +12,7 @@ describe('Pi guide in the kiosk', () => {
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('pre').textContent).toContain('ssh renars@raspberrypi.local');
     expect(fixture.nativeElement.querySelector('pre').textContent).toContain('bash deploy/pi/update.sh --force --reboot');
-    expect(fixture.nativeElement.querySelector('.terminal-note').textContent).toContain('Without a Pi keyboard');
+    expect(fixture.nativeElement.querySelector('pre').textContent).toContain('Without a Pi keyboard');
     expect(fixture.nativeElement.querySelector('pre script')).toBeNull();
     expect(fixture.nativeElement.querySelector('a[download]').getAttribute('href')).toBe('/PI-INSTRUCTIONS.txt');
     fixture.nativeElement.querySelector('section').dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
